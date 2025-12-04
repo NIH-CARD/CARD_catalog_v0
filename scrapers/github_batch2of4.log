@@ -1,0 +1,753 @@
+Loaded 99 studies from ../tables/dataset-inventory-June_20_2025.tab
+Processing studies 25 to 49 (25 studies in this batch)
+
+[26/25] Searching GitHub for repositories related to iPSC Neurodegenerative Disease Initiative Cell Line Collection (iNDI-JAX)...
+  Searching: iNDI-JAX alzheimer
+  No repositories found
+  Searching: iNDI-JAX parkinson
+  No repositories found
+  Searching: iNDI-JAX dementia
+  No repositories found
+  Searching: iNDI-JAX brain
+  No repositories found
+
+[27/25] Searching GitHub for repositories related to Longitudinal Early-onset Alzheimer's Disease Study (LEADS)...
+  Searching: LEADS alzheimer
+  Found 6 repositories
+  Analyzing: https://github.com/BenoitFaure/MedGemma_DeepMind
+  Analyzing: https://github.com/chandrasekarnarayana/Hotspot_detection_in_Yeast_Cell_Model-Image_Processing
+  Analyzing: https://github.com/ankitganeshpurkar/AlzLeads
+  Analyzing: https://github.com/MyronFernandes/Alzheimer-s-MRI-Image-Classification-Model
+  Analyzing: https://github.com/rf2485/eoad_wmh
+  Analyzing: https://github.com/Shalimar01/Health-Benefits-of-Red-Chilli-Powder-Shalimars.com
+  Successfully processed 6 repositories
+  Searching: LEADS parkinson
+  Found 6 repositories
+  Analyzing: https://github.com/Akshaybhat5/Parkinson-s-disease-predictor
+  Analyzing: https://github.com/Srishtichauhan5359/Parkinson-s-Disease-Detection
+  Analyzing: https://github.com/JKBehnke/Beta_profile
+  Analyzing: https://github.com/ashu979/FAll_DETECTION
+  Analyzing: https://github.com/pooja2893/Global-Overactive-Bladder-Treatment-Market-Trends-Size-Competitive-Analysis-and-Forecast---2019-20
+  Skipping https://github.com/pooja2893/Global-Overactive-Bladder-Treatment-Market-Trends-Size-Competitive-Analysis-and-Forecast---2019-20 - insufficient content
+  Successfully processed 4 repositories
+  Searching: LEADS dementia
+  Found 1 repositories
+  Successfully processed 0 repositories
+  Searching: LEADS brain
+  Found 30 repositories
+  Analyzing: https://github.com/rprokap/pset-9
+  Skipping https://github.com/rprokap/pset-9 - insufficient content
+  Analyzing: https://github.com/dia2018/What-is-the-Difference-Between-AI-and-Machine-Learning
+  Skipping https://github.com/dia2018/What-is-the-Difference-Between-AI-and-Machine-Learning - insufficient content
+  Analyzing: https://github.com/Tanaybalraj/Eye-blink-to-speech
+  Analyzing: https://github.com/mehdi4027/satoshi-Nakomoto
+  Analyzing: https://github.com/mehdi4027/Solar-Gold-smart-safe-
+  Analyzing: https://github.com/vineethsaivs/Brain-Tumor-Detection-using-Deep-Learning
+  Analyzing: https://github.com/jslota/scRNAseq-prion-infection
+  Skipping https://github.com/jslota/scRNAseq-prion-infection - insufficient content
+  Analyzing: https://github.com/virtualscreenlab/Drug-Design-at-BBB-
+  Skipping https://github.com/virtualscreenlab/Drug-Design-at-BBB- - insufficient content
+  Analyzing: https://github.com/Franchglobal2/6-Ways-To-Be-Fit-And-Strengthen-Your-Immune-System-
+  Analyzing: https://github.com/Franchglobal2/6-Ways-To-Be-Fit-And-Strengthen-Your-Immune-System
+  Analyzing: https://github.com/guilhermeverdoodt/brainx-crm-chatbot
+  Analyzing: https://github.com/adrielyeung/comp-neuro
+  Analyzing: https://github.com/Aman0525/Drowsiness-Detection
+  Analyzing: https://github.com/MananKhare/Blind-Stick-Navigator
+  Analyzing: https://github.com/eduardomiranda/brainncare_streamlit_leads
+  Analyzing: https://github.com/Talha-24/Brain-Booster-..
+  Skipping https://github.com/Talha-24/Brain-Booster-.. - insufficient content
+  Analyzing: https://github.com/cran/LeadSense
+  Skipping https://github.com/cran/LeadSense - insufficient content
+  Analyzing: https://github.com/martindessart/Brain_Like_A_Sieve
+  Analyzing: https://github.com/ge567x65/Brain_Lead
+  Analyzing: https://github.com/bishtshweta/CNN-and-Python--Based-detection-of-Brain-Strokes-using-MRI-Brain-images-that-leads-to-Epilepsy
+  Analyzing: https://github.com/Gopher2016/Border-Detection-and-Image-Analysis-of-Implanted-Deep-Brain-Stimulation-Leads-in-Close-Proximity
+  Analyzing: https://github.com/Technix-Technothon2k22/Binary-brains
+  Analyzing: https://github.com/tonylincon1/Automacao-de-pesquisa-e-coleta-de-leads-no-linkedin
+  Analyzing: https://github.com/JonJon50/Brain-Storm
+  Analyzing: https://github.com/19960728/Cry2-paper
+  Skipping https://github.com/19960728/Cry2-paper - insufficient content
+  Analyzing: https://github.com/Shivani-Ananya/Simon-game-using-JQuery
+  Analyzing: https://github.com/ArmanAbroumand/supplementary-of-SCI
+  Successfully processed 20 repositories
+
+[28/25] Searching GitHub for repositories related to LRRK2 Cohort Consortium (LCC)...
+  Searching: LCC alzheimer
+  No repositories found
+  Searching: LCC parkinson
+  No repositories found
+  Searching: LCC dementia
+  No repositories found
+  Searching: LCC brain
+  Found 1 repositories
+  Analyzing: https://github.com/DappStarter/brainy-lonimip-bLcc
+  Successfully processed 1 repositories
+
+[29/25] Searching GitHub for repositories related to Mayo Clinic Study of Aging (MCSA)...
+  Searching: MCSA alzheimer
+  No repositories found
+  Searching: MCSA parkinson
+  No repositories found
+  Searching: MCSA dementia
+  No repositories found
+  Searching: MCSA brain
+  Found 1 repositories
+  Analyzing: https://github.com/herrypotter/-70-765-Exam-Braindumps
+  Skipping https://github.com/herrypotter/-70-765-Exam-Braindumps - insufficient content
+  Successfully processed 0 repositories
+
+[30/25] Searching GitHub for repositories related to Memory and Aging Project (MAP)...
+  Searching: MAP alzheimer
+  Found 30 repositories
+  Analyzing: https://github.com/himanshub1007/Alzhimers-Disease-Prediction-Using-Deep-learning
+  Analyzing: https://github.com/shahidzikria/ADD-Net
+  Analyzing: https://github.com/Ajax121/Comparison-of-Convolutional-neural-network-training-parameters-for-detecting-Alzheimer-s-disease-and
+  Analyzing: https://github.com/martindyrba/VisualAiD
+  Analyzing: https://github.com/jamesmroe/AgeSym
+  Analyzing: https://github.com/chandrasekarnarayana/Hotspot_detection_in_Yeast_Cell_Model-Image_Processing
+  Analyzing: https://github.com/nrohani/CAD-system-for-Alzheimer-detection-
+  Analyzing: https://github.com/NewWr/MAP-Net
+  Analyzing: https://github.com/sumanrawat1026/Deep-Learning-for-Brain-Mapping
+  Analyzing: https://github.com/shivamarora111/Alzheimer-detection-app
+  Analyzing: https://github.com/SKVirk27/Alzheimer-s-at-the-Cellular-Level-Integrative-Mapping-from-GWAS-SNPs-to-Gene-Expression
+  Analyzing: https://github.com/leeeang/WearAreYou
+  Analyzing: https://github.com/naomihabiblab/HumanDLPFC24
+  Analyzing: https://github.com/roger35972134/AlzheimerMap
+  Skipping https://github.com/roger35972134/AlzheimerMap - insufficient content
+  Analyzing: https://github.com/beratridvanasilturk/AlzheimersReminder
+  Analyzing: https://github.com/ChiaChunHou/ROS-MAP-AD-
+  Skipping https://github.com/ChiaChunHou/ROS-MAP-AD- - insufficient content
+  Analyzing: https://github.com/ChiaChunHou/ROS-MAP-Alzheimer-s-disease-analysis
+  Skipping https://github.com/ChiaChunHou/ROS-MAP-Alzheimer-s-disease-analysis - insufficient content
+  Analyzing: https://github.com/Nibeth/Mapping-Alzheimers-disease
+  Analyzing: https://github.com/EnvejecimientoEnRed/envejecimiento_alzheimer_mapa
+  Analyzing: https://github.com/willgocode/alzheimers-diagnosis-mapreduce
+  Analyzing: https://github.com/anoopctkm/Alzheimer-s-mapping-US
+  Skipping https://github.com/anoopctkm/Alzheimer-s-mapping-US - insufficient content
+  Analyzing: https://github.com/mayuan-0117/Alzheimer-s-project-MAPT-and-APPLOF
+  Analyzing: https://github.com/bia-amg/AD-Invivo-Amyloid-Mapping
+  Analyzing: https://github.com/shuilinggirl/Mapping-Brain-Synergy-Redundancy-Dysfunction-in-Alzheimer-s-Disease
+  Analyzing: https://github.com/josealonso21/alzheimer-reminder
+  Skipping https://github.com/josealonso21/alzheimer-reminder - insufficient content
+  Analyzing: https://github.com/binmishr/Mapping-the-Prevalence-of-Alzheimer-Disease-Mortality-in-the-USA
+  Analyzing: https://github.com/bricemcconnell/Mapping-Sleep-Oscillatory-Events
+  Analyzing: https://github.com/santiblas/betavae-xai-ad
+  Analyzing: https://github.com/ernest431/Geofencing
+  Analyzing: https://github.com/GallinM/Clinical-Patient-Pathway-Map
+  Successfully processed 25 repositories
+  Searching: MAP parkinson
+  Found 10 repositories
+  Analyzing: https://github.com/RajLabMSSM/Fine_Mapping
+  Analyzing: https://github.com/tatsuhikonaito/Trans-ethnic_MHC_fine-mapping_SS
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+  Analyzing: https://github.com/GP2code/MAPThaplotype
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+  Skipping https://github.com/GP2code/MAPThaplotype - insufficient content
+  Analyzing: https://github.com/DamarisVinueza/deberphyton
+  Analyzing: https://github.com/sknoth/parkinson-help
+  Analyzing: https://github.com/alexCortinaU/parkinson_classification
+  Analyzing: https://github.com/kajuni/Bodily-maps-of-symptoms-and-emotions-in-PD
+  Analyzing: https://github.com/khareyash05/Parkinson-s-Disease-Brain-Imaging
+  Analyzing: https://github.com/ahmedmoustafa/AfricaPD
+  Successfully processed 8 repositories
+  Searching: MAP dementia
+  Found 9 repositories
+  Analyzing: https://github.com/GSC23-HeadHome/HeadHome
+  Analyzing: https://github.com/tmi-lab/AD-VD-ChronologicalMapping
+  Analyzing: https://github.com/gvnberaldi/Pose2Action
+  Analyzing: https://github.com/cenacchi2000/dementia_3d_face_mapping
+  Analyzing: https://github.com/sufystudios/facebook-oauth-map-dementia-sufferers
+  Skipping https://github.com/sufystudios/facebook-oauth-map-dementia-sufferers - insufficient content
+  Analyzing: https://github.com/swaharoy/carepartners_map
+  Analyzing: https://github.com/mynevermore/Life-Assistant
+  Skipping https://github.com/mynevermore/Life-Assistant - insufficient content
+  Analyzing: https://github.com/raisarezaa/Hackathon-2025
+  Successfully processed 6 repositories
+  Searching: MAP brain
+  Found 30 repositories
+  Analyzing: https://github.com/SpaceTimee/Fusion-JetBrainsMapleMono
+  Analyzing: https://github.com/netneurolab/neuromaps
+  Analyzing: https://github.com/MICA-MNI/ENIGMA
+  Analyzing: https://github.com/xeden3/joplin-plugin-kity-minder
+  Analyzing: https://github.com/connectomicslab/connectomemapper3
+  Analyzing: https://github.com/Aryia-Behroziuan/neurons
+  Analyzing: https://github.com/sina-mansour/UKB-connectomics
+  Analyzing: https://github.com/dolphin-in-a-coma/multi-task-cnn-eeg-emotion
+  Analyzing: https://github.com/murraylab/brainsmash
+  Analyzing: https://github.com/spin-test/spin-test
+  Analyzing: https://github.com/quadbio/VoxHunt
+  Analyzing: https://github.com/DierMeng/JavaBrainMap
+  Analyzing: https://github.com/sarslancs/graph_saliency_maps
+  Analyzing: https://github.com/chrisgorgo/alleninf
+  Analyzing: https://github.com/ins-amu/BVEP
+  Analyzing: https://github.com/OishiLab/OpenMAP-T1
+  Analyzing: https://github.com/AICONSlab/HippMapp3r
+  Analyzing: https://github.com/int-brain-lab/paper-brain-wide-map
+  Analyzing: https://github.com/OpenXAIProject/Preprocessed_IXI_Dataset
+  Analyzing: https://github.com/sheepduke/silver-brain
+  Analyzing: https://github.com/OpenXAIProject/Preprocessed_ABIDE_Dataset
+  Analyzing: https://github.com/PRIME-RE/RheMAP
+  Analyzing: https://github.com/ngohgia/text2brain
+  Analyzing: https://github.com/vzachari/IronSmithQSM
+  Analyzing: https://github.com/owenrandlett/Z-Brain
+  Analyzing: https://github.com/AmarBhatt/Temporal_Difference_Learning_Path_Planning
+  Analyzing: https://github.com/netneurolab/markello_spatialnulls
+  Analyzing: https://github.com/aviralchharia/Brain-Tumor-Detection-with-VGG-16-Transfer-Learning
+  Analyzing: https://github.com/CPernet/brain_colours
+  Successfully processed 29 repositories
+
+[31/25] Searching GitHub for repositories related to National Alzheimer's Coordinating Center Uniform Data Set (NACC-UDS)...
+  Searching: NACC-UDS alzheimer
+  Found 1 repositories
+  Analyzing: https://github.com/manvis2/Predicting-Alzheimers-Disease-Progression
+  Successfully processed 1 repositories
+  Searching: NACC-UDS parkinson
+  No repositories found
+  Searching: NACC-UDS dementia
+  No repositories found
+  Searching: NACC-UDS brain
+  No repositories found
+
+[32/25] Searching GitHub for repositories related to National Centralized Repository for Alzheimer's Disease and Related Dementias (NCRAD)...
+  Searching: NCRAD alzheimer
+  No repositories found
+  Searching: NCRAD parkinson
+  No repositories found
+  Searching: NCRAD dementia
+  No repositories found
+  Searching: NCRAD brain
+  No repositories found
+
+[33/25] Searching GitHub for repositories related to Open Access Series of Imaging Studies - Clinical Memory Disorders (OASIS-4)...
+  Searching: OASIS-4 alzheimer
+  No repositories found
+  Searching: OASIS-4 parkinson
+  No repositories found
+  Searching: OASIS-4 dementia
+  Found 1 repositories
+  Analyzing: https://github.com/jobayer/OASIS4-JPG-Data-and-Label-Extractor
+  Successfully processed 1 repositories
+  Searching: OASIS-4 brain
+  No repositories found
+
+[34/25] Searching GitHub for repositories related to Open Access Series of Imaging Studies - Cross-sectional (OASIS-1)...
+  Searching: OASIS-1 alzheimer
+  Found 6 repositories
+  Analyzing: https://github.com/clin-projects/MRI-alzheimers-classification-OASIS1-
+  Analyzing: https://github.com/smhooten/MRI-Learn
+  Analyzing: https://github.com/twast0/OASIS_Alzheimers
+  Analyzing: https://github.com/mayasarkar/alzheimers-mri
+  Analyzing: https://github.com/Nahidhasan07/Alzheimer-s-Disease-Detection
+  Analyzing: https://github.com/Nathansuares/Alzheimer-s-disease-Prediction
+  Successfully processed 6 repositories
+  Searching: OASIS-1 parkinson
+  No repositories found
+  Searching: OASIS-1 dementia
+  Found 2 repositories
+  Analyzing: https://github.com/anilmenon14/OASIS_CNN_dementia_patterns
+  Successfully processed 1 repositories
+  Searching: OASIS-1 brain
+  Found 4 repositories
+  Analyzing: https://github.com/aurgas/Brain-age-prediction
+  Analyzing: https://github.com/williamrtam/deepbrain
+  Skipping https://github.com/williamrtam/deepbrain - insufficient content
+  Analyzing: https://github.com/SuperEgoooo/BrainCuter
+  Skipping https://github.com/SuperEgoooo/BrainCuter - insufficient content
+  Analyzing: https://github.com/FahimFBA/organize-OASIS
+  Successfully processed 2 repositories
+
+[35/25] Searching GitHub for repositories related to Open Access Series of Imaging Studies - Longitudinal (OASIS-2)...
+  Searching: OASIS-2 alzheimer
+  Found 6 repositories
+  Analyzing: https://github.com/ThalesMMS/brain-mri-pipelines-py
+  Analyzing: https://github.com/CrisCorreaS/AD-prediction-classification-models
+  Analyzing: https://github.com/MansiSinghal502/Investigating-Bias-and-Fairness-for-Alzheimer-s-Diagnosis-Using-the-OASIS-2-Dataset
+  Analyzing: https://github.com/MansiSinghal502/BMEN691
+  Analyzing: https://github.com/MansiSinghal502/Mansi_30235170_BMEN619.03_Final_Project
+  Analyzing: https://github.com/UmairAmir/Alzheimer-Detection-23-
+  Successfully processed 6 repositories
+  Searching: OASIS-2 parkinson
+  No repositories found
+  Searching: OASIS-2 dementia
+  Found 7 repositories
+  Analyzing: https://github.com/NanaNyarko/dementia_prediction
+  Analyzing: https://github.com/anilmenon14/OASIS_CNN_dementia_patterns
+  Analyzing: https://github.com/divijsharma123/Dementia-Analysis
+  Analyzing: https://github.com/gopibattineni/Dementia-prediciton_OASIS2
+  Skipping https://github.com/gopibattineni/Dementia-prediciton_OASIS2 - insufficient content
+  Analyzing: https://github.com/peixotopsi-ctrl/oasis_2_4models_predict
+  Analyzing: https://github.com/aliciagonsalves/longitudinal-neuroimaging-prediction
+  Successfully processed 5 repositories
+  Searching: OASIS-2 brain
+  Found 1 repositories
+  Successfully processed 0 repositories
+
+[36/25] Searching GitHub for repositories related to Open Access Series of Imaging Studies - Multimodal (OASIS-3)...
+  Searching: OASIS-3 alzheimer
+  Found 4 repositories
+  Analyzing: https://github.com/princepraveen0513-collab/XAI-CNNs-Alzheimer-Detection-OASIS3
+  Analyzing: https://github.com/Sedidanku/OASIS-Analysis-
+  Analyzing: https://github.com/costad3atwit/Alzheimer-s-Neuroimaging-Analysis
+  Analyzing: https://github.com/aycancagriemen/Masters_Thesis
+  Successfully processed 4 repositories
+  Searching: OASIS-3 parkinson
+  No repositories found
+  Searching: OASIS-3 dementia
+  Found 2 repositories
+  Analyzing: https://github.com/EIB-sawbones/craNNium
+  Analyzing: https://github.com/davidechicco/dementia-clustering-OASIS-3
+  Successfully processed 2 repositories
+  Searching: OASIS-3 brain
+  Found 1 repositories
+  Analyzing: https://github.com/gemmamoffat/OASIS3_LMEanalyses
+  Successfully processed 1 repositories
+
+[37/25] Searching GitHub for repositories related to Parkinson's Disease Biomarkers Program (PDBP)...
+  Searching: PDBP alzheimer
+  No repositories found
+  Searching: PDBP parkinson
+  No repositories found
+  Searching: PDBP dementia
+  No repositories found
+  Searching: PDBP brain
+  No repositories found
+
+[38/25] Searching GitHub for repositories related to Parkinson's Progression Markers Initiative (PPMI)...
+  Searching: PPMI alzheimer
+  No repositories found
+  Searching: PPMI parkinson
+  Found 30 repositories
+  Analyzing: https://github.com/rmarkello/pypmi
+  Analyzing: https://github.com/sameerd/ppmi
+  Analyzing: https://github.com/IoBT-VISTEC/PPMI_DL
+  Analyzing: https://github.com/sheryl-ai/PPMI-Subtype-Analysis
+  Analyzing: https://github.com/Rrtk2/PPMI-ML-Cognition-PD
+  Analyzing: https://github.com/MJFF-ResearchCommunity/PIE
+  Analyzing: https://github.com/ck37/ppmi-challenge-2016
+  Analyzing: https://github.com/rmarkello/ppmitobids
+  Analyzing: https://github.com/vtn6/PPMI-Data-Mining
+  Analyzing: https://github.com/dhareshvadalia/PPMI
+  Analyzing: https://github.com/arunava5764/Predictive_Analysis_of_Parkinsons_Disease_from_Gait_Sensor_Data_and_Brain_MRI_Images
+  Analyzing: https://github.com/GalvanizeDataScience/Project-PPMI
+  Analyzing: https://github.com/vtn6/parkinsonsDataMining
+  Skipping https://github.com/vtn6/parkinsonsDataMining - insufficient content
+  Analyzing: https://github.com/sayadennis/ppmi
+  Analyzing: https://github.com/iammahbubalam/PPMI_Research_on_Parkinsons
+  Skipping https://github.com/iammahbubalam/PPMI_Research_on_Parkinsons - insufficient content
+  Analyzing: https://github.com/Niharika626/PD_DETECTION
+  Analyzing: https://github.com/slerman12/DiseaseModeling
+  Skipping https://github.com/slerman12/DiseaseModeling - insufficient content
+  Analyzing: https://github.com/ffaghri1/ppmi-mjff
+  Analyzing: https://github.com/TianjieCheng/PPMI
+  Analyzing: https://github.com/brian-j-smith/PPMIChallenge2016
+  Analyzing: https://github.com/IshaGarg2332/PPMI-HearingMarkers
+  Skipping https://github.com/IshaGarg2332/PPMI-HearingMarkers - insufficient content
+  Analyzing: https://github.com/IshaGarg2332/PPMI-LogisticRegressions
+  Skipping https://github.com/IshaGarg2332/PPMI-LogisticRegressions - insufficient content
+  Analyzing: https://github.com/Andreater/parkinson_cdss
+  Analyzing: https://github.com/IshaGarg2332/PPMI-TableScripts
+  Skipping https://github.com/IshaGarg2332/PPMI-TableScripts - insufficient content
+  Analyzing: https://github.com/ahmedfawaz879/Parkinson-s-Voice-and-Clinical-Modeling
+  Analyzing: https://github.com/MJFF-ResearchCommunity/PIE-clean
+  Analyzing: https://github.com/jhaker/PPMI
+  Analyzing: https://github.com/brian-j-smith/PPMITrialDesign
+  Skipping https://github.com/brian-j-smith/PPMITrialDesign - insufficient content
+  Analyzing: https://github.com/jw592/PPMI
+  Skipping https://github.com/jw592/PPMI - insufficient content
+  Analyzing: https://github.com/JiayuanDing100/Parkinson-Progression-Prediction
+  Successfully processed 22 repositories
+  Searching: PPMI dementia
+  No repositories found
+  Searching: PPMI brain
+  Found 3 repositories
+  Analyzing: https://github.com/Frenda1005/PPMI
+  Skipping https://github.com/Frenda1005/PPMI - insufficient content
+  Analyzing: https://github.com/Hari-P-22121/Parkinsons-3D-MRI-Classifier
+  Successfully processed 1 repositories
+
+[39/25] Searching GitHub for repositories related to Psychiatric Genomics Consortium Alzheimer's Disease Working Group (PsychAD)...
+  Searching: PsychAD alzheimer
+  No repositories found
+  Searching: PsychAD parkinson
+  No repositories found
+  Searching: PsychAD dementia
+  No repositories found
+  Searching: PsychAD brain
+  No repositories found
+
+[40/25] Searching GitHub for repositories related to Religious Orders Study (ROS)...
+  Searching: ROS alzheimer
+  Found 6 repositories
+  Analyzing: https://github.com/paulinapglz99/ROSMAP_RNASeq_networks
+  Skipping https://github.com/paulinapglz99/ROSMAP_RNASeq_networks - insufficient content
+  Analyzing: https://github.com/ChiaChunHou/ROS-MAP-AD-
+  Skipping https://github.com/ChiaChunHou/ROS-MAP-AD- - insufficient content
+  Analyzing: https://github.com/ChiaChunHou/ROS-MAP-Alzheimer-s-disease-analysis
+  Skipping https://github.com/ChiaChunHou/ROS-MAP-Alzheimer-s-disease-analysis - insufficient content
+  Analyzing: https://github.com/Polster-lab/m6a_regulators_rosmap
+  Analyzing: https://github.com/kkkiyomi1/ROSC-S
+  Analyzing: https://github.com/daiqile96/ROSMAP_C2C
+  Skipping https://github.com/daiqile96/ROSMAP_C2C - insufficient content
+  Successfully processed 2 repositories
+  Searching: ROS parkinson
+  Found 2 repositories
+  Analyzing: https://github.com/alexeykolodkin/ROS_model
+  Analyzing: https://github.com/LordJpz18/roselyne-pipernos
+  Successfully processed 2 repositories
+  Searching: ROS dementia
+  Found 1 repositories
+  Successfully processed 0 repositories
+  Searching: ROS brain
+  Found 30 repositories
+  Analyzing: https://github.com/OpenAgricultureFoundation/openag_brain
+  Analyzing: https://github.com/matrix97317/UniRobot
+  Analyzing: https://github.com/UTAH-VEXU-Robotics/ros_lib
+  Analyzing: https://github.com/gaitech-robotics/gaitech-bci
+  Analyzing: https://github.com/Mufrad6502/SSVEP-BASED-BCI-SYSTEM
+  Analyzing: https://github.com/ECC-BFMC/Brain_ROS
+  Analyzing: https://github.com/UGA-AgRobotics/red-rover
+  Analyzing: https://github.com/paoloach/ROS-JetBrains-Plugin
+  Skipping https://github.com/paoloach/ROS-JetBrains-Plugin - insufficient content
+  Analyzing: https://github.com/elizabethkoh/BrainROS
+  Analyzing: https://github.com/BrainCoTech/brainco_hand_ros2
+  Analyzing: https://github.com/methylDragon/teleop_twist_brain_bridge
+  Analyzing: https://github.com/Costopoulos/NTUA-Robotics-II
+  Analyzing: https://github.com/MaidReal/brain
+  Analyzing: https://github.com/ChrisChr1/Rosalind
+  Skipping https://github.com/ChrisChr1/Rosalind - insufficient content
+  Analyzing: https://github.com/RossRichardson/rossrichardson.github.io
+  Skipping https://github.com/RossRichardson/rossrichardson.github.io - insufficient content
+  Analyzing: https://github.com/Zakhar-the-Robot/brain
+  Analyzing: https://github.com/Lwjcasia/BrainRos
+  Skipping https://github.com/Lwjcasia/BrainRos - insufficient content
+  Analyzing: https://github.com/cmh0728/Brain_ROS2
+  Skipping https://github.com/cmh0728/Brain_ROS2 - insufficient content
+  Analyzing: https://github.com/elizabethkoh/BrainROS_dataproc
+  Analyzing: https://github.com/cornellev/brain_ros2
+  Analyzing: https://github.com/denizasam28-lang/RosterTaxBrain
+  Analyzing: https://github.com/El7agAdel/ROS_BrainComputer_Interface
+  Analyzing: https://github.com/coreyt429/rover_ros2
+  Analyzing: https://github.com/neelpatel114/Brain_ROS
+  Analyzing: https://github.com/yan-galaxy/brainco_ros
+  Skipping https://github.com/yan-galaxy/brainco_ros - insufficient content
+  Analyzing: https://github.com/Shikamoto/Brain_ROS
+  Analyzing: https://github.com/HuanyuL/ros_brain
+  Analyzing: https://github.com/MS71/BrainNodeROS2DE
+  Analyzing: https://github.com/Amro-Khairi/brainnest-roshambo
+  Skipping https://github.com/Amro-Khairi/brainnest-roshambo - insufficient content
+  Analyzing: https://github.com/OxKybot/OxKybot_ros1_brain
+  Successfully processed 23 repositories
+
+[41/25] Searching GitHub for repositories related to Swedish BioFINDER-1 Study (BioFINDER-1)...
+  Searching: BioFINDER-1 alzheimer
+  No repositories found
+  Searching: BioFINDER-1 parkinson
+  No repositories found
+  Searching: BioFINDER-1 dementia
+  No repositories found
+  Searching: BioFINDER-1 brain
+  No repositories found
+
+[42/25] Searching GitHub for repositories related to Swedish BioFINDER-2 Study (BioFINDER-2)...
+  Searching: BioFINDER-2 alzheimer
+  No repositories found
+  Searching: BioFINDER-2 parkinson
+  No repositories found
+  Searching: BioFINDER-2 dementia
+  No repositories found
+  Searching: BioFINDER-2 brain
+  No repositories found
+
+[43/25] Searching GitHub for repositories related to Swedish BioFINDER-Preclinical AD Study (BioFINDER-Preclinical)...
+  Searching: BioFINDER-Preclinical alzheimer
+  No repositories found
+  Searching: BioFINDER-Preclinical parkinson
+  No repositories found
+  Searching: BioFINDER-Preclinical dementia
+  No repositories found
+  Searching: BioFINDER-Preclinical brain
+  No repositories found
+
+[44/25] Searching GitHub for repositories related to UK Biobank Neurodegenerative Cohort (UKB-Neuro)...
+  Searching: UKB-Neuro alzheimer
+  No repositories found
+  Searching: UKB-Neuro parkinson
+  No repositories found
+  Searching: UKB-Neuro dementia
+  No repositories found
+  Searching: UKB-Neuro brain
+  No repositories found
+
+[45/25] Searching GitHub for repositories related to Accelerating Medicines Partnership - Parkinson's Disease (AMP-PD)...
+  Searching: AMP-PD alzheimer
+  No repositories found
+  Searching: AMP-PD parkinson
+  Found 5 repositories
+  Analyzing: https://github.com/Nvl1024/InfoTheoryParkinson
+  Analyzing: https://github.com/alextabac/kaggle_parkinson_predict
+  Skipping https://github.com/alextabac/kaggle_parkinson_predict - insufficient content
+  Analyzing: https://github.com/aneesh-aparajit/amp-pdpp-rl
+  Analyzing: https://github.com/helenyjx/Accelerating-Medicines-Partnership-Parkinson-s-Disease-AMP-PD-Progression-Prediction
+  Analyzing: https://github.com/samuUma/tfm_clustering_integration_pd
+  Skipping https://github.com/samuUma/tfm_clustering_integration_pd - insufficient content
+  Successfully processed 3 repositories
+  Searching: AMP-PD dementia
+  No repositories found
+  Searching: AMP-PD brain
+  No repositories found
+
+[46/25] Searching GitHub for repositories related to Accelerating Medicines Partnership - Alzheimer's Disease (AMP-AD)...
+  Searching: AMP-AD alzheimer
+  No repositories found
+  Searching: AMP-AD parkinson
+  No repositories found
+  Searching: AMP-AD dementia
+  No repositories found
+  Searching: AMP-AD brain
+  No repositories found
+
+[47/25] Searching GitHub for repositories related to AD Knowledge Portal Multi-Study Collection (AD-Portal)...
+  Searching: AD-Portal alzheimer
+  No repositories found
+  Searching: AD-Portal parkinson
+  No repositories found
+  Searching: AD-Portal dementia
+  No repositories found
+  Searching: AD-Portal brain
+  Found 1 repositories
+  Analyzing: https://github.com/BrainaryBackend/Brainary-admin-portal
+  Successfully processed 1 repositories
+
+[48/25] Searching GitHub for repositories related to Accelerating Medicines Partnership - PD and Related Disorders (AMP-PDRD)...
+  Searching: AMP-PDRD alzheimer
+  No repositories found
+  Searching: AMP-PDRD parkinson
+  No repositories found
+  Searching: AMP-PDRD dementia
+  No repositories found
+  Searching: AMP-PDRD brain
+  No repositories found
+
+[49/25] Searching GitHub for repositories related to Aligning Science Across Parkinson's Collaborative Research Network (ASAP-CRN)...
+  Searching: ASAP-CRN alzheimer
+  No repositories found
+  Searching: ASAP-CRN parkinson
+  Found 1 repositories
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+  Analyzing: https://github.com/ASAP-CRN/asap-crn-learning-lab
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+  Skipping https://github.com/ASAP-CRN/asap-crn-learning-lab - insufficient content
+  Successfully processed 0 repositories
+  Searching: ASAP-CRN dementia
+  No repositories found
+  Searching: ASAP-CRN brain
+  No repositories found
+
+[50/25] Searching GitHub for repositories related to Banner Alzheimer's Prevention Initiative (Banner-API)...
+  Searching: Banner-API alzheimer
+  No repositories found
+  Searching: Banner-API parkinson
+  No repositories found
+  Searching: Banner-API dementia
+  No repositories found
+  Searching: Banner-API brain
+  No repositories found
+
+Removing duplicate repositories...
+
+============================================================
+SUCCESS: Results saved to ../tables/gits_batch2of4_20251130_223027.tsv
+Total repositories found: 182
+Duplicates removed: 0
+============================================================
+
+FAIR compliance log saved to fair_compliance_log_20251130_223029.tsv
+
+============================================================
+FAIR COMPLIANCE SUMMARY
+============================================================
+Total repositories analyzed: 225
+
+Issues Found:
+  No README: 38 (16.9%)
+  Insufficient content: 43 (19.1%)
+  No dependency info: 179 (79.6%)
+  No version info: 223 (99.1%)
+  No environment info: 218 (96.9%)
+  No container: 219 (97.3%)
+
+FAIR Best Practices:
+  Has container (Docker/etc): 6 (2.7%)
+  Has version info: 2 (0.9%)
+  Has dependencies: 233 (103.6%)
+============================================================

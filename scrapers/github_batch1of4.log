@@ -1,0 +1,356 @@
+Loaded 99 studies from ../tables/dataset-inventory-June_20_2025.tab
+Processing studies 0 to 24 (25 studies in this batch)
+
+[1/25] Searching GitHub for repositories related to Aging, Demographics, and Memory Study (ADAMS)...
+  Searching: ADAMS alzheimer
+  No repositories found
+  Searching: ADAMS parkinson
+  No repositories found
+  Searching: ADAMS dementia
+  No repositories found
+  Searching: ADAMS brain
+  Found 5 repositories
+  Analyzing: https://github.com/AmurdAmzer/AdamsBrain
+  Analyzing: https://github.com/adamjamo/adams-brainfood-proj
+  Analyzing: https://github.com/Cliffypal/Brain-Stroke-For-Mr.-Adams-Awodey
+  Analyzing: https://github.com/rybern/hMusicBrainz
+  Skipping https://github.com/rybern/hMusicBrainz - insufficient content
+  Analyzing: https://github.com/SubnauticaLaserMain/howToMakeAdamsSisBrainDead
+  Skipping https://github.com/SubnauticaLaserMain/howToMakeAdamsSisBrainDead - insufficient content
+  Successfully processed 3 repositories
+
+[2/25] Searching GitHub for repositories related to Alzheimer's Disease Connectome Project (ADCP)...
+  Searching: ADCP alzheimer
+  No repositories found
+  Searching: ADCP parkinson
+  No repositories found
+  Searching: ADCP dementia
+  No repositories found
+  Searching: ADCP brain
+  No repositories found
+
+[3/25] Searching GitHub for repositories related to Alzheimer's Disease Cooperative Study Clinical Trials Dataset (ADCS)...
+  Searching: ADCS alzheimer
+  Found 1 repositories
+  Analyzing: https://github.com/ravitedlapu/ADC-RBK-a-multimodal-approach-for-early-detection-of-chronic-diseases-and-focusing-on-Alzheimer-s
+  Successfully processed 1 repositories
+  Searching: ADCS parkinson
+  No repositories found
+  Searching: ADCS dementia
+  No repositories found
+  Searching: ADCS brain
+  Found 4 repositories
+  Analyzing: https://github.com/bothlab/galdur
+  Analyzing: https://github.com/DevEraY/Stroke_Detector_AI_using_mri_and_ct_slices
+  Analyzing: https://github.com/Rishi8520/S.H.R.A.V.Y.A
+  Analyzing: https://github.com/ilyakh/serial-trigger
+  Skipping https://github.com/ilyakh/serial-trigger - insufficient content
+  Successfully processed 3 repositories
+
+[4/25] Searching GitHub for repositories related to Alzheimer's Disease Genetics Consortium (ADGC)...
+  Searching: ADGC alzheimer
+  No repositories found
+  Searching: ADGC parkinson
+  No repositories found
+  Searching: ADGC dementia
+  No repositories found
+  Searching: ADGC brain
+  No repositories found
+
+[5/25] Searching GitHub for repositories related to Alzheimer's Disease Metabolomics Consortium (ADMC)...
+  Searching: ADMC alzheimer
+  No repositories found
+  Searching: ADMC parkinson
+  No repositories found
+  Searching: ADMC dementia
+  No repositories found
+  Searching: ADMC brain
+  No repositories found
+
+[6/25] Searching GitHub for repositories related to Alzheimer's Disease Neuroimaging Initiative Grand Opportunities (ADNI-GO)...
+  Searching: ADNI-GO alzheimer
+  Found 1 repositories
+  Analyzing: https://github.com/himanshub1007/Alzhimers-Disease-Prediction-Using-Deep-learning
+  Successfully processed 1 repositories
+  Searching: ADNI-GO parkinson
+  No repositories found
+  Searching: ADNI-GO dementia
+  No repositories found
+  Searching: ADNI-GO brain
+  Found 1 repositories
+  Successfully processed 0 repositories
+
+[7/25] Searching GitHub for repositories related to Alzheimer's Disease Neuroimaging Initiative Phase 1 (ADNI-1)...
+  Searching: ADNI-1 alzheimer
+  Found 2 repositories
+  Analyzing: https://github.com/mitchell-s17/ADNI1-RVAS
+  Analyzing: https://github.com/mitchell-s17/ADNI1-GeneBurdenAnalysis
+  Skipping https://github.com/mitchell-s17/ADNI1-GeneBurdenAnalysis - insufficient content
+  Successfully processed 1 repositories
+  Searching: ADNI-1 parkinson
+  No repositories found
+  Searching: ADNI-1 dementia
+  No repositories found
+  Searching: ADNI-1 brain
+  Found 1 repositories
+  Analyzing: https://github.com/FahimFBA/organize-ADNI
+  Successfully processed 1 repositories
+
+[8/25] Searching GitHub for repositories related to Alzheimer's Disease Neuroimaging Initiative Phase 2 (ADNI-2)...
+  Searching: ADNI-2 alzheimer
+  Found 3 repositories
+  Analyzing: https://github.com/atri-biostats/ADNIMERGE2
+  Analyzing: https://github.com/myousefnezhad/adni202
+  Analyzing: https://github.com/CarlosTheran/REU-ADNIC-2021
+  Successfully processed 3 repositories
+  Searching: ADNI-2 parkinson
+  No repositories found
+  Searching: ADNI-2 dementia
+  No repositories found
+  Searching: ADNI-2 brain
+  No repositories found
+
+[9/25] Searching GitHub for repositories related to Alzheimer's Disease Neuroimaging Initiative Phase 3 (ADNI-3)...
+  Searching: ADNI-3 alzheimer
+  Found 2 repositories
+  Analyzing: https://github.com/BorgwardtLab/ADNI_3DCNNvsTDA
+  Analyzing: https://github.com/yingjiegaryzhou/ADNI3_TauPET_TDA
+  Successfully processed 2 repositories
+  Searching: ADNI-3 parkinson
+  No repositories found
+  Searching: ADNI-3 dementia
+  No repositories found
+  Searching: ADNI-3 brain
+  Found 2 repositories
+  Analyzing: https://github.com/H-Snoussi/ADNI3-Blueprints
+  Successfully processed 1 repositories
+
+[10/25] Searching GitHub for repositories related to Alzheimer's Disease Sequencing Project - Whole Exome Sequencing (ADSP-WES)...
+  Searching: ADSP-WES alzheimer
+  No repositories found
+  Searching: ADSP-WES parkinson
+  No repositories found
+  Searching: ADSP-WES dementia
+  No repositories found
+  Searching: ADSP-WES brain
+  No repositories found
+
+[11/25] Searching GitHub for repositories related to Alzheimer's Disease Sequencing Project - Whole Genome Sequencing (ADSP-WGS)...
+  Searching: ADSP-WGS alzheimer
+  No repositories found
+  Searching: ADSP-WGS parkinson
+  No repositories found
+  Searching: ADSP-WGS dementia
+  No repositories found
+  Searching: ADSP-WGS brain
+  No repositories found
+
+[12/25] Searching GitHub for repositories related to Anti-Amyloid Treatment in Asymptomatic Alzheimer's Study (A4)...
+  Searching: A4 alzheimer
+  Found 2 repositories
+  Analyzing: https://github.com/Keskinsevval/basic_seq_analysis
+  Skipping https://github.com/Keskinsevval/basic_seq_analysis - insufficient content
+  Analyzing: https://github.com/bmcastrow/AmyloidbetaA4-pIC50-prediction
+  Successfully processed 1 repositories
+  Searching: A4 parkinson
+  Found 1 repositories
+  Analyzing: https://github.com/AAA-lab-genetic/Multiancestry_LRRK2_p.A419V
+  Successfully processed 1 repositories
+  Searching: A4 dementia
+  No repositories found
+  Searching: A4 brain
+  Found 5 repositories
+  Analyzing: https://github.com/RoxanneWAAANG/A4-Unet
+  Analyzing: https://github.com/menglutao/Motor-imagery-classification-from-EEG-for-brain-computer-interface
+  Analyzing: https://github.com/allengaller/a4c-rocky-club
+  Analyzing: https://github.com/Nano204/Brainnest-A4-JS
+  Skipping https://github.com/Nano204/Brainnest-A4-JS - insufficient content
+  Analyzing: https://github.com/henrymasterlof/brainpill-a41e75f3-ind
+  Successfully processed 4 repositories
+
+[13/25] Searching GitHub for repositories related to Australian Imaging Biomarkers and Lifestyle Study of Ageing (AIBL)...
+  Searching: AIBL alzheimer
+  Found 2 repositories
+  Analyzing: https://github.com/akshaydeore/Alzheimer-disease-dashboard
+  Skipping https://github.com/akshaydeore/Alzheimer-disease-dashboard - insufficient content
+  Analyzing: https://github.com/akinyeraakintunde/Data-Validation-with-Python-
+  Successfully processed 1 repositories
+  Searching: AIBL parkinson
+  No repositories found
+  Searching: AIBL dementia
+  No repositories found
+  Searching: AIBL brain
+  Found 3 repositories
+  Analyzing: https://github.com/xiaoxingxingkz/BrainStatTrans-GAN
+  Analyzing: https://github.com/cihanelibol/Classical-Piano-Composer-with-Artificial-Neural-Networks
+  Skipping https://github.com/cihanelibol/Classical-Piano-Composer-with-Artificial-Neural-Networks - insufficient content
+  Analyzing: https://github.com/xiaoxingxingkz/BrainStatTrans-GAN-MindSpore
+  Successfully processed 2 repositories
+
+[14/25] Searching GitHub for repositories related to Baltimore Longitudinal Study of Aging (BLSA)...
+  Searching: BLSA alzheimer
+  No repositories found
+  Searching: BLSA parkinson
+  No repositories found
+  Searching: BLSA dementia
+  No repositories found
+  Searching: BLSA brain
+  No repositories found
+
+[15/25] Searching GitHub for repositories related to BioFIND Study (BioFIND)...
+  Searching: BioFIND alzheimer
+  No repositories found
+  Searching: BioFIND parkinson
+  No repositories found
+  Searching: BioFIND dementia
+  No repositories found
+  Searching: BioFIND brain
+  No repositories found
+
+[16/25] Searching GitHub for repositories related to Brain Health Registry (BHR)...
+  Searching: BHR alzheimer
+  No repositories found
+  Searching: BHR parkinson
+  No repositories found
+  Searching: BHR dementia
+  No repositories found
+  Searching: BHR brain
+  Found 1 repositories
+  Analyzing: https://github.com/PathipakaSujita/bhr2
+  Successfully processed 1 repositories
+
+[17/25] Searching GitHub for repositories related to De Novo Parkinson's Disease Study (DeNoPa)...
+  Searching: DeNoPa alzheimer
+  No repositories found
+  Searching: DeNoPa parkinson
+  No repositories found
+  Searching: DeNoPa dementia
+  No repositories found
+  Searching: DeNoPa brain
+  No repositories found
+
+[18/25] Searching GitHub for repositories related to Department of Defense ADNI (ADNI-DOD)...
+  Searching: ADNI-DOD alzheimer
+  No repositories found
+  Searching: ADNI-DOD parkinson
+  No repositories found
+  Searching: ADNI-DOD dementia
+  No repositories found
+  Searching: ADNI-DOD brain
+  No repositories found
+
+[19/25] Searching GitHub for repositories related to Dominantly Inherited Alzheimer Network (DIAN)...
+  Searching: DIAN alzheimer
+  Found 3 repositories
+  Analyzing: https://github.com/stephaschultz/PSEN1_GSC_DIAN
+  Skipping https://github.com/stephaschultz/PSEN1_GSC_DIAN - insufficient content
+  Analyzing: https://github.com/llevitis/DIAN_ESM_AmyloidBeta_Project
+  Analyzing: https://github.com/WheelockLab/Tu-2024-DIAN-HubDisruption-FC
+  Successfully processed 2 repositories
+  Searching: DIAN parkinson
+  No repositories found
+  Searching: DIAN dementia
+  Found 3 repositories
+  Analyzing: https://github.com/scify/Dianoia-app
+  Analyzing: https://github.com/scify/Dianoia-Marketplace
+  Successfully processed 2 repositories
+  Searching: DIAN brain
+  Found 2 repositories
+  Analyzing: https://github.com/ekatsuta/diane
+  Skipping https://github.com/ekatsuta/diane - insufficient content
+  Analyzing: https://github.com/seowork321/https-dianaandroma.site-diana-and-roma-study-human-body-organs-
+  Successfully processed 1 repositories
+
+[20/25] Searching GitHub for repositories related to European Medical Information Framework for Alzheimer's Disease (EMIF-AD)...
+  Searching: EMIF-AD alzheimer
+  Found 1 repositories
+  Analyzing: https://github.com/UoE-Dementia-Genomics/EMIF_Biomarkers_Methylation
+  Successfully processed 1 repositories
+  Searching: EMIF-AD parkinson
+  No repositories found
+  Searching: EMIF-AD dementia
+  No repositories found
+  Searching: EMIF-AD brain
+  No repositories found
+
+[21/25] Searching GitHub for repositories related to European Prevention of Alzheimer's Dementia Longitudinal Cohort Study (EPAD-LCS)...
+  Searching: EPAD-LCS alzheimer
+  No repositories found
+  Searching: EPAD-LCS parkinson
+  No repositories found
+  Searching: EPAD-LCS dementia
+  No repositories found
+  Searching: EPAD-LCS brain
+  No repositories found
+
+[22/25] Searching GitHub for repositories related to Global Neurodegenerative Diseases Proteomics Consortium (GNPC)...
+  Searching: GNPC alzheimer
+  No repositories found
+  Searching: GNPC parkinson
+  No repositories found
+  Searching: GNPC dementia
+  No repositories found
+  Searching: GNPC brain
+  No repositories found
+
+[23/25] Searching GitHub for repositories related to Global Parkinson's Genetics Program - Complex Disease Network (GP2-Complex)...
+  Searching: GP2-Complex alzheimer
+  No repositories found
+  Searching: GP2-Complex parkinson
+  No repositories found
+  Searching: GP2-Complex dementia
+  No repositories found
+  Searching: GP2-Complex brain
+  No repositories found
+
+[24/25] Searching GitHub for repositories related to Global Parkinson's Genetics Program - Monogenic Network (GP2-Monogenic)...
+  Searching: GP2-Monogenic alzheimer
+  No repositories found
+  Searching: GP2-Monogenic parkinson
+  No repositories found
+  Searching: GP2-Monogenic dementia
+  No repositories found
+  Searching: GP2-Monogenic brain
+  No repositories found
+
+[25/25] Searching GitHub for repositories related to Harvard Biomarker Study (HBS)...
+  Searching: HBS alzheimer
+  No repositories found
+  Searching: HBS parkinson
+  No repositories found
+  Searching: HBS dementia
+  No repositories found
+  Searching: HBS brain
+  Found 2 repositories
+  Analyzing: https://github.com/williamkoller/challenge-brain-agriculture
+  Analyzing: https://github.com/brainrot02back/brainrot02back
+  Successfully processed 2 repositories
+
+Removing duplicate repositories...
+
+============================================================
+SUCCESS: Results saved to ../tables/gits_batch1of4_20251130_121637.tsv
+Total repositories found: 34
+Duplicates removed: 0
+============================================================
+
+FAIR compliance log saved to fair_compliance_log_20251130_121638.tsv
+
+============================================================
+FAIR COMPLIANCE SUMMARY
+============================================================
+Total repositories analyzed: 44
+
+Issues Found:
+  No README: 10 (22.7%)
+  Insufficient content: 10 (22.7%)
+  No dependency info: 36 (81.8%)
+  No version info: 41 (93.2%)
+  No environment info: 44 (100.0%)
+  No container: 43 (97.7%)
+
+FAIR Best Practices:
+  Has container (Docker/etc): 1 (2.3%)
+  Has version info: 3 (6.8%)
+  Has dependencies: 42 (95.5%)
+============================================================

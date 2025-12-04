@@ -1,0 +1,60 @@
+# CARD Catalog Requirements
+# Python 3.10+ required
+# Tested on: Python 3.10.12, Linux (WSL2), Intel i9-14900HX, 32GB RAM
+
+# ============================
+# Core Dependencies
+# ============================
+
+# Web Framework
+streamlit==1.50.0
+
+# Data Processing
+pandas==2.3.3
+numpy>=1.24.0,<2.0.0
+
+# Visualization
+plotly==5.18.0
+
+# Network Analysis
+networkx==3.2.1
+
+# AI/LLM
+anthropic==0.57.1
+
+# HTTP Requests
+requests==2.32.4
+
+# Environment Variables
+python-dotenv==1.0.0
+
+# ============================
+# System Requirements
+# ============================
+# OS: Linux (WSL2), macOS, or Windows
+# CPU: Intel i9-14900HX or equivalent (multi-core recommended for AI analysis)
+# RAM: 32GB recommended (minimum 8GB for basic features)
+# Python: 3.10+ (tested on 3.10.12)
+# Disk: ~500MB for dependencies + data files
+
+# ============================
+# Installation
+# ============================
+# pip install -r requirements.txt
+
+# ============================
+# Optional Dependencies
+# ============================
+# For development/testing:
+# pytest>=7.0.0
+# black>=22.0.0
+# flake8>=5.0.0
+# mypy>=1.0.0
+
+# ============================
+# Notes
+# ============================
+# - All versions are pinned for reproducibility
+# - Tested and verified on the system configuration above
+# - For production deployment, consider using a virtual environment
+# - AI features require Anthropic API key (see .streamlit/secrets.toml.template)

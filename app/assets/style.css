@@ -1,0 +1,407 @@
+/*
+ * CARD Catalog Custom Styles
+ * Color Palette: Black (#000000), White (#FFFFFF), Grey (#808080), Mint (#98FF98)
+ * Designed for both light and dark mode compatibility
+ */
+
+/* ========== Root Variables ========== */
+:root {
+    --primary-black: #000000;
+    --primary-white: #FFFFFF;
+    --primary-grey: #808080;
+    --primary-mint: #98FF98;
+    --mint-light: #D4FFD4;
+    --mint-dark: #7FE67F;
+    --shadow-light: rgba(0, 0, 0, 0.1);
+    --shadow-medium: rgba(0, 0, 0, 0.2);
+}
+
+/* ========== Global Styles ========== */
+body {
+    font-family: 'Source Sans Pro', sans-serif;
+}
+
+/* ========== Headers ========== */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--primary-black);
+    font-weight: 600;
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+    h1, h2, h3, h4, h5, h6 {
+        color: var(--primary-white);
+    }
+}
+
+/* ========== Links ========== */
+a {
+    color: var(--mint-dark);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+a:hover {
+    color: var(--primary-mint);
+    text-decoration: underline;
+}
+
+/* ========== Buttons ========== */
+.stButton > button {
+    border-radius: 8px;
+    border: 1px solid var(--primary-grey);
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.stButton > button:hover {
+    border-color: var(--primary-mint);
+    box-shadow: 0 2px 8px var(--shadow-light);
+    transform: translateY(-1px);
+}
+
+.stButton > button[kind="primary"] {
+    background-color: var(--primary-mint);
+    color: var(--primary-black);
+    border: none;
+}
+
+.stButton > button[kind="primary"]:hover {
+    background-color: var(--mint-dark);
+}
+
+/* ========== Download Buttons ========== */
+.stDownloadButton > button {
+    border-radius: 8px;
+    border: 1px solid var(--primary-mint);
+    background-color: var(--mint-light);
+    color: var(--primary-black);
+    transition: all 0.3s ease;
+}
+
+.stDownloadButton > button:hover {
+    background-color: var(--primary-mint);
+    box-shadow: 0 2px 8px var(--shadow-light);
+}
+
+/* ========== Sidebar ========== */
+.css-1d391kg, [data-testid="stSidebar"] {
+    background-color: var(--primary-white);
+    border-right: 1px solid var(--primary-grey);
+}
+
+@media (prefers-color-scheme: dark) {
+    .css-1d391kg, [data-testid="stSidebar"] {
+        background-color: #1E1E1E;
+        border-right: 1px solid var(--primary-grey);
+    }
+}
+
+/* ========== Metrics ========== */
+[data-testid="stMetricValue"] {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-black);
+}
+
+[data-testid="stMetricLabel"] {
+    color: var(--primary-grey);
+    font-weight: 500;
+}
+
+@media (prefers-color-scheme: dark) {
+    [data-testid="stMetricValue"] {
+        color: var(--primary-white);
+    }
+}
+
+/* ========== Expanders ========== */
+.streamlit-expanderHeader {
+    border-radius: 8px;
+    border: 1px solid var(--primary-grey);
+    background-color: var(--primary-white);
+    transition: all 0.3s ease;
+}
+
+.streamlit-expanderHeader:hover {
+    border-color: var(--primary-mint);
+    background-color: var(--mint-light);
+}
+
+@media (prefers-color-scheme: dark) {
+    .streamlit-expanderHeader {
+        background-color: #2E2E2E;
+        border-color: var(--primary-grey);
+    }
+
+    .streamlit-expanderHeader:hover {
+        background-color: #3E3E3E;
+    }
+}
+
+/* ========== Info/Warning/Error Boxes ========== */
+.stAlert {
+    border-radius: 8px;
+    border-left: 4px solid;
+}
+
+[data-baseweb="notification"] {
+    border-radius: 8px;
+}
+
+/* Info boxes */
+.stAlert[data-baseweb="notification"][kind="info"] {
+    border-left-color: var(--primary-mint);
+    background-color: var(--mint-light);
+}
+
+/* Success boxes */
+.stAlert[data-baseweb="notification"][kind="success"] {
+    border-left-color: var(--mint-dark);
+}
+
+/* ========== Dataframes ========== */
+[data-testid="stDataFrame"] {
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--primary-grey);
+}
+
+/* ========== Tabs ========== */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 8px;
+    background-color: transparent;
+}
+
+.stTabs [data-baseweb="tab"] {
+    border-radius: 8px 8px 0 0;
+    padding: 12px 24px;
+    background-color: transparent;
+    border: 1px solid var(--primary-grey);
+    border-bottom: none;
+    color: var(--primary-grey);
+    font-weight: 500;
+}
+
+.stTabs [aria-selected="true"] {
+    background-color: var(--mint-light);
+    color: var(--primary-black);
+    border-color: var(--primary-mint);
+}
+
+@media (prefers-color-scheme: dark) {
+    .stTabs [aria-selected="true"] {
+        background-color: #2E2E2E;
+        color: var(--primary-white);
+    }
+}
+
+/* ========== Multiselect ========== */
+.stMultiSelect [data-baseweb="tag"] {
+    background-color: var(--mint-light);
+    color: var(--primary-black);
+    border-radius: 6px;
+}
+
+/* ========== Sliders ========== */
+.stSlider [data-baseweb="slider"] {
+    background: linear-gradient(
+        to right,
+        var(--mint-dark) 0%,
+        var(--primary-mint) 100%
+    );
+}
+
+/* ========== Text Input ========== */
+.stTextInput > div > div > input {
+    border-radius: 8px;
+    border: 1px solid var(--primary-grey);
+    transition: border-color 0.3s ease;
+}
+
+.stTextInput > div > div > input:focus {
+    border-color: var(--primary-mint);
+    box-shadow: 0 0 0 1px var(--primary-mint);
+}
+
+/* ========== Select Box ========== */
+.stSelectbox > div > div {
+    border-radius: 8px;
+    border: 1px solid var(--primary-grey);
+}
+
+/* ========== Plotly Charts ========== */
+.js-plotly-plot {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px var(--shadow-light);
+}
+
+/* ========== Horizontal Rules ========== */
+hr {
+    border: none;
+    border-top: 1px solid var(--primary-grey);
+    margin: 2rem 0;
+}
+
+/* ========== Cards/Containers ========== */
+.element-container {
+    transition: all 0.3s ease;
+}
+
+/* ========== Progress Bars ========== */
+.stProgress > div > div > div {
+    background-color: var(--primary-mint);
+}
+
+/* ========== Spinner ========== */
+.stSpinner > div {
+    border-color: var(--primary-mint);
+}
+
+/* ========== Code Blocks ========== */
+code {
+    background-color: var(--mint-light);
+    color: var(--primary-black);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+    code {
+        background-color: #2E2E2E;
+        color: var(--primary-white);
+    }
+}
+
+pre {
+    background-color: var(--mint-light);
+    border: 1px solid var(--primary-grey);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+@media (prefers-color-scheme: dark) {
+    pre {
+        background-color: #2E2E2E;
+    }
+}
+
+/* ========== Tooltips ========== */
+[data-baseweb="tooltip"] {
+    background-color: var(--primary-black);
+    color: var(--primary-white);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+}
+
+/* ========== Logo Images ========== */
+img {
+    border-radius: 8px;
+}
+
+/* ========== Custom Classes ========== */
+.metric-card {
+    background-color: var(--mint-light);
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid var(--primary-grey);
+    text-align: center;
+}
+
+.highlight-box {
+    background-color: var(--mint-light);
+    border-left: 4px solid var(--primary-mint);
+    padding: 1rem;
+    border-radius: 4px;
+    margin: 1rem 0;
+}
+
+@media (prefers-color-scheme: dark) {
+    .metric-card,
+    .highlight-box {
+        background-color: #2E2E2E;
+    }
+}
+
+/* ========== Scrollbar Styling ========== */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--primary-white);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary-grey);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--mint-dark);
+}
+
+@media (prefers-color-scheme: dark) {
+    ::-webkit-scrollbar-track {
+        background: #1E1E1E;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #4E4E4E;
+    }
+}
+
+/* ========== Responsive Design ========== */
+@media (max-width: 768px) {
+    .stButton > button {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+
+    .stDownloadButton > button {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* ========== Animation Classes ========== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+/* ========== Footer ========== */
+footer {
+    color: var(--primary-grey);
+    text-align: center;
+    padding: 2rem 0;
+    font-size: 0.9rem;
+}
+
+/* ========== Hide Streamlit Branding (Optional) ========== */
+#MainMenu {
+    visibility: hidden;
+}
+
+footer {
+    visibility: hidden;
+}
+
+/* Show custom footer instead */
+.main-footer {
+    visibility: visible;
+    color: var(--primary-grey);
+}

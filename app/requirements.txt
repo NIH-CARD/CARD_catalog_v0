@@ -1,0 +1,24 @@
+# CARD Catalog Dependencies
+# Python 3.8+
+
+# Core framework
+streamlit>=1.28.0
+
+# Data processing
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Visualization
+plotly>=5.17.0
+
+# Network/Graph analysis
+networkx>=3.1
+
+# LLM integration
+anthropic>=0.18.0
+
+# Excel export support
+openpyxl>=3.1.0
+
+# Environment variables (optional)
+python-dotenv>=1.0.0

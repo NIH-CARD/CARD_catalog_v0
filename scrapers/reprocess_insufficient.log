@@ -1,0 +1,1765 @@
+================================================================================
+CARD CATALOG - REPROCESS INSUFFICIENT CONTENT REPOSITORIES
+================================================================================
+Start time: 2025-12-02 09:16:57
+================================================================================
+
+Environment variables loaded successfully
+
+================================================================================
+STEP 1: PARSING BATCH LOGS
+================================================================================
+
+Parsing batch log files:
+  Reading github_batch1of4.log...
+  Reading github_batch2of4.log...
+  Reading github_batch3of4.log...
+  Reading github_batch4of4.log...
+
+Found 140 repositories with insufficient content
+
+================================================================================
+STEP 2: LOADING DISEASE INFORMATION
+================================================================================
+
+Loading disease information from /mnt/c/Users/mike1/Projects/CARD_catalog/scrapers/../tables/dataset-inventory-June_20_2025.tab...
+  Loaded disease information for 98 studies
+
+================================================================================
+STEP 3: REPROCESSING REPOSITORIES
+================================================================================
+Total repositories to reprocess: 140
+================================================================================
+
+[1/140]
+  Reprocessing: https://github.com/rybern/hMusicBrainz
+    Study: Aging, Demographics, and Memory Study (ADAMS)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 3 directories)
+
+[2/140]
+  Reprocessing: https://github.com/SubnauticaLaserMain/howToMakeAdamsSisBrainDead
+    Study: Aging, Demographics, and Memory Study (ADAMS)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 1 directories)
+
+[3/140]
+  Reprocessing: https://github.com/ilyakh/serial-trigger
+    Study: Alzheimer's Disease Cooperative Study Clinical Trials Dataset (ADCS)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 2 directories)
+
+[4/140]
+  Reprocessing: https://github.com/mitchell-s17/ADNI1-GeneBurdenAnalysis
+    Study: Alzheimer's Disease Neuroimaging Initiative Phase 1 (ADNI-1)
+    Searching repository tree (up to 2 levels deep)...
+      Found notebook: GeneBurdenAnalysis(Regenie) - ADNI1.ipynb
+      Found notebook: GeneBurdenAnalysis(Regenie).ipynb
+    Content found:
+      - README: No
+      - Notebooks: 2
+      - Code files: 0
+      - Directories searched: 5
+    Running AI analysis (content length: 2100 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[5/140]
+  Reprocessing: https://github.com/Keskinsevval/basic_seq_analysis
+    Study: Anti-Amyloid Treatment in Asymptomatic Alzheimer's Study (A4)
+    Searching repository tree (up to 2 levels deep)...
+      Found notebook: biopython/protein_sequence_analysis.ipynb
+    Content found:
+      - README: No
+      - Notebooks: 1
+      - Code files: 0
+      - Directories searched: 2
+    Running AI analysis (content length: 1054 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[6/140]
+  Reprocessing: https://github.com/Nano204/Brainnest-A4-JS
+    Study: Anti-Amyloid Treatment in Asymptomatic Alzheimer's Study (A4)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: calculator/calculator.js
+      Found code file: paper_rock_scissors/brainnestGame.js
+      Found code file: paper_rock_scissors/game.js
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 3
+      - Directories searched: 4
+    Result: SKIP - Combined content too short (0 chars)
+
+[7/140]
+  Reprocessing: https://github.com/akshaydeore/Alzheimer-disease-dashboard
+    Study: Australian Imaging Biomarkers and Lifestyle Study of Ageing (AIBL)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 1 directories)
+
+[8/140]
+  Reprocessing: https://github.com/cihanelibol/Classical-Piano-Composer-with-Artificial-Neural-Networks
+    Study: Australian Imaging Biomarkers and Lifestyle Study of Ageing (AIBL)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: Program.py
+      Found code file: notalar.py
+      Found code file: tahmin.py
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 3
+      - Directories searched: 1
+    Running AI analysis (content length: 1571 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[9/140]
+  Reprocessing: https://github.com/stephaschultz/PSEN1_GSC_DIAN
+    Study: Generation Scotland (GS)
+    Searching repository tree (up to 2 levels deep)...
+      Found README at: README.md
+    Content found:
+      - README: Yes
+      - Notebooks: 0
+      - Code files: 0
+      - Directories searched: 1
+    Result: SKIP - Combined content too short (28 chars)
+
+[10/140]
+  Reprocessing: https://github.com/ekatsuta/diane
+    Study: Dominantly Inherited Alzheimer Network (DIAN)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: diane-backend/alembic/env.py
+      Found code file: diane-backend/app/__init__.py
+      Found code file: diane-backend/app/ai_service.py
+      Found code file: diane-backend/app/database.py
+      Found README at: diane-backend/migrations/README.md
+      Found README at: diane-backend/tests/README.md
+      Found code file: diane-backend/tests/__init__.py
+      Found code file: diane-backend/tests/conftest.py
+      Found code file: diane-backend/tests/test_api.py
+      Found README at: diane-frontend/README.md
+      Found code file: diane-frontend/eslint.config.js
+      Found code file: diane-frontend/postcss.config.js
+    Content found:
+      - README: Yes
+      - Notebooks: 0
+      - Code files: 12
+      - Directories searched: 10
+    Running AI analysis (content length: 3778 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[11/140]
+  Reprocessing: https://github.com/pooja2893/Global-Overactive-Bladder-Treatment-Market-Trends-Size-Competitive-Analysis-and-Forecast---2019-20
+    Study: Longitudinal Early-onset Alzheimer's Disease Study (LEADS)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 0 directories)
+
+[12/140]
+  Reprocessing: https://github.com/rprokap/pset-9
+    Study: The Caerphilly Prospective Study (CaPS)
+    Searching repository tree (up to 2 levels deep)...
+      Found README at: README.md
+      Found code file: js/app.js
+      Found code file: js/checkers.js
+      Found code file: js/connect4.js
+    Content found:
+      - README: Yes
+      - Notebooks: 0
+      - Code files: 4
+      - Directories searched: 5
+    Result: SKIP - Combined content too short (16 chars)
+
+[13/140]
+  Reprocessing: https://github.com/dia2018/What-is-the-Difference-Between-AI-and-Machine-Learning
+    Study: Longitudinal Early-onset Alzheimer's Disease Study (LEADS)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 0 directories)
+
+[14/140]
+  Reprocessing: https://github.com/jslota/scRNAseq-prion-infection
+    Study: Longitudinal Early-onset Alzheimer's Disease Study (LEADS)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: script_10_neuron_subcluster.R
+      Found code file: script_11_neuron_DE.R
+      Found code file: script_12_astrocyte_subclusters.R
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 20
+      - Directories searched: 1
+    Running AI analysis (content length: 1625 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[15/140]
+  Reprocessing: https://github.com/virtualscreenlab/Drug-Design-at-BBB-
+    Study: Longitudinal Early-onset Alzheimer's Disease Study (LEADS)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 1 directories)
+
+[16/140]
+  Reprocessing: https://github.com/Talha-24/Brain-Booster-..
+    Study: Longitudinal Early-onset Alzheimer's Disease Study (LEADS)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: script.js
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 1
+      - Directories searched: 1
+    Running AI analysis (content length: 523 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[17/140]
+  Reprocessing: https://github.com/cran/LeadSense
+    Study: Longitudinal Early-onset Alzheimer's Disease Study (LEADS)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: R/brain_sense_spectrogram.R
+      Found code file: R/data.R
+      Found code file: R/impedance_summary.R
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 5
+      - Directories searched: 4
+    Result: SKIP - Combined content too short (0 chars)
+
+[18/140]
+  Reprocessing: https://github.com/19960728/Cry2-paper
+    Study: Longitudinal Early-onset Alzheimer's Disease Study (LEADS)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: GSE138260 analysis.R
+      Found code file: GSE29378 analysis.R
+      Found code file: GSE48350 analysis.R
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 6
+      - Directories searched: 1
+    Running AI analysis (content length: 1600 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[19/140]
+  Reprocessing: https://github.com/herrypotter/-70-765-Exam-Braindumps
+    Study: Mayo Clinic Study of Aging (MCSA)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 0 directories)
+
+[20/140]
+  Reprocessing: https://github.com/roger35972134/AlzheimerMap
+    Study: Memory and Aging Project (MAP)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 5 directories)
+
+[21/140]
+  Reprocessing: https://github.com/ChiaChunHou/ROS-MAP-AD-
+    Study: Religious Orders Study (ROS)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 0 directories)
+
+[22/140]
+  Reprocessing: https://github.com/ChiaChunHou/ROS-MAP-Alzheimer-s-disease-analysis
+    Study: Religious Orders Study (ROS)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 0 directories)
+
+[23/140]
+  Reprocessing: https://github.com/anoopctkm/Alzheimer-s-mapping-US
+    Study: Memory and Aging Project (MAP)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: Alzheimer-s-mapping-US.R
+      Found README at: README.md
+    Content found:
+      - README: Yes
+      - Notebooks: 0
+      - Code files: 1
+      - Directories searched: 1
+    Result: SKIP - Combined content too short (24 chars)
+
+[24/140]
+  Reprocessing: https://github.com/josealonso21/alzheimer-reminder
+    Study: Memory and Aging Project (MAP)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 0 directories)
+
+[25/140]
+  Reprocessing: https://github.com/GP2code/MAPThaplotype
+    Study: Memory and Aging Project (MAP)
+    Searching repository tree (up to 2 levels deep)...
+  GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+  GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+  GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+    Result: SKIP - No content found (searched 0 directories)
+
+[26/140]
+  Reprocessing: https://github.com/sufystudios/facebook-oauth-map-dementia-sufferers
+    Study: Memory and Aging Project (MAP)
+    Searching repository tree (up to 2 levels deep)...
+  Request failed (attempt 1/3): HTTPSConnectionPool(host='api.github.com', port=443): Max retries exceeded with url: /repos/sufystudios/facebook-oauth-map-dementia-sufferers/contents/.vs (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x73c948bf9ea0>: Failed to establish a new connection: [Errno -5] No address associated with hostname')). Retrying in 60 seconds...
+    Result: SKIP - No content found (searched 34 directories)
+
+[27/140]
+  Reprocessing: https://github.com/mynevermore/Life-Assistant
+    Study: Memory and Aging Project (MAP)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 23 directories)
+
+[28/140]
+  Reprocessing: https://github.com/williamrtam/deepbrain
+    Study: Open Access Series of Imaging Studies - Cross-sectional (OASIS-1)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: DeepBrain.py
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 1
+      - Directories searched: 1
+    Running AI analysis (content length: 526 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[29/140]
+  Reprocessing: https://github.com/SuperEgoooo/BrainCuter
+    Study: Open Access Series of Imaging Studies - Cross-sectional (OASIS-1)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: src/__init__.py
+      Found code file: src/config.py
+      Found code file: src/dataset.py
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 10
+      - Directories searched: 2
+    Result: SKIP - Combined content too short (0 chars)
+
+[30/140]
+  Reprocessing: https://github.com/gopibattineni/Dementia-prediciton_OASIS2
+    Study: Open Access Series of Imaging Studies - Longitudinal (OASIS-2)
+    Searching repository tree (up to 2 levels deep)...
+      Found README at: README.md
+      Found notebook: predicting_dementia8_6.ipynb
+      Found notebook: predicting_dementia8_7.ipynb
+    Content found:
+      - README: Yes
+      - Notebooks: 2
+      - Code files: 0
+      - Directories searched: 1
+    Running AI analysis (content length: 110 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[31/140]
+  Reprocessing: https://github.com/vtn6/parkinsonsDataMining
+    Study: Parkinson's Progression Markers Initiative (PPMI)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: exploration.R
+      Found code file: heatPlot/heatPlotBulbasaur.R
+      Found code file: heatPlot/heatPlotPichu.R
+      Found code file: heatPlot/untit.R
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 6
+      - Directories searched: 13
+    Running AI analysis (content length: 527 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[32/140]
+  Reprocessing: https://github.com/iammahbubalam/PPMI_Research_on_Parkinsons
+    Study: Parkinson's Progression Markers Initiative (PPMI)
+    Searching repository tree (up to 2 levels deep)...
+      Found notebook: Texture Features.ipynb
+      Found notebook: src/Sadi/ClinicalProfiling.ipynb
+      Found notebook: src/Sadi/MasterDatasetAnalysis.ipynb
+      Found notebook: src/Sadi/Miscellaneous.ipynb
+      Found notebook: src/Sadi/StatisticalAnalysisMasterDataset.ipynb
+      Found notebook: src/Sadi/TabularAnalysis.ipynb
+      Found notebook: src/Sadi/TabularAnalysisV2.ipynb
+      Found notebook: src/Sadi/TabularAnalysisV2_4Visits.ipynb
+      Found notebook: src/Sadi/TabularAnalysisV3_4Visits.ipynb
+      Found notebook: src/Sadi/TextureFeaturesSadi.ipynb
+      Found notebook: src/Sadi/finalSegmentationCodeKNN_Sadi.ipynb
+      Found notebook: src/Sadi/ppmi-image-processing-v2.ipynb
+      Found notebook: src/Sadi/save_37-44_no_slice_as_png_from_final_dataset_Sadi.ipynb
+      Found notebook: src/mahbub/D_Reduce.ipynb
+      Found notebook: src/mahbub/Increased_accuracy_model.ipynb
+      Found notebook: src/mahbub/PCA_Code.ipynb
+      Found notebook: src/mahbub/Sequential_lstm_and_RNN_in_UPDRS_lbl_dataset.ipynb
+      Found notebook: src/mahbub/Sequential_lstm_and_RNN_in_manually_lbl_dataset.ipynb
+      Found notebook: src/mahbub/StatisticalAnalysis.ipynb
+      Found notebook: src/mahbub/analyseDataset.ipynb
+      Found notebook: src/mahbub/analysisOfImagePixels.ipynb
+      Found notebook: src/mahbub/customCdeforSegmentation.ipynb
+      Found code file: src/mahbub/diagram.py
+      Found notebook: src/mahbub/final.ipynb
+      Found notebook: src/mahbub/finalDatasetAnalysis.ipynb
+      Found notebook: src/mahbub/finalSegmentationCodeKMC.ipynb
+      Found notebook: src/mahbub/full_dataset_feature_extraction.ipynb
+      Found notebook: src/mahbub/hp_optimization_xai_with_basic_lstm.ipynb
+      Found notebook: src/mahbub/save_37-44_no_slice_as_png_from_final_dataset.ipynb
+      Found notebook: src/mahbub/tabular_data.ipynb
+      Found notebook: src/review/full_dataset_feature_extraction.ipynb
+      Found code file: src/review/longitudnal.py
+      Found notebook: src/review/review_exp.ipynb
+      Found code file: src/review/segment.py
+    Content found:
+      - README: No
+      - Notebooks: 31
+      - Code files: 3
+      - Directories searched: 7
+    Running AI analysis (content length: 20620 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[33/140]
+  Reprocessing: https://github.com/slerman12/DiseaseModeling
+    Study: Parkinson's Progression Markers Initiative (PPMI)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: DiseaseModeling.py
+      Found code file: MachineLearning.py
+      Found code file: __init__.py
+      Found code file: archived/DiseaseModelingArchived.py
+      Found code file: archived/KaggleTitanic.py
+      Found code file: archived/KaggleTitanic2.py
+      Found code file: bp_data_analytics/AllBP.py
+      Found code file: bp_data_analytics/AllHypertension.py
+      Found code file: bp_data_analytics/BaselineDatscan.py
+      Found code file: static/js/main.js
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 15
+      - Directories searched: 7
+    Running AI analysis (content length: 1242 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[34/140]
+  Reprocessing: https://github.com/IshaGarg2332/PPMI-HearingMarkers
+    Study: Parkinson's Progression Markers Initiative (PPMI)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: Demographics_HearingLoss_BMI_By_ParkinsonsStatus.R
+      Found code file: HeadInjury_ProportionRatios_HearingLoss_ByCohort.R
+      Found code file: Head_injury_hearing_loss_by_time.R
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 13
+      - Directories searched: 1
+    Running AI analysis (content length: 1676 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[35/140]
+  Reprocessing: https://github.com/IshaGarg2332/PPMI-LogisticRegressions
+    Study: Parkinson's Progression Markers Initiative (PPMI)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: HeadInjury_ProportionRatios_HearingLoss_ByCohort.R
+      Found code file: Logistic_smell_loss_pd_association.R
+      Found code file: PTSD_vs_parkinsons_logreg.R
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 4
+      - Directories searched: 1
+    Running AI analysis (content length: 1655 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[36/140]
+  Reprocessing: https://github.com/IshaGarg2332/PPMI-TableScripts
+    Study: Parkinson's Progression Markers Initiative (PPMI)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: Age_group_counts_by_diagnosis.R
+      Found code file: BMI_extremes_weight_height.R
+      Found code file: First_to_fifth_concussion_by_age.R
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 5
+      - Directories searched: 1
+    Running AI analysis (content length: 1635 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[37/140]
+  Reprocessing: https://github.com/brian-j-smith/PPMITrialDesign
+    Study: Parkinson's Progression Markers Initiative (PPMI)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: server.R
+      Found code file: ui.R
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 2
+      - Directories searched: 3
+    Running AI analysis (content length: 1040 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[38/140]
+  Reprocessing: https://github.com/jw592/PPMI
+    Study: Parkinson's Progression Markers Initiative (PPMI)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: ModelSelect/modelSelect.R
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 1
+      - Directories searched: 3
+    Result: SKIP - Combined content too short (0 chars)
+
+[39/140]
+  Reprocessing: https://github.com/Frenda1005/PPMI
+    Study: Parkinson's Progression Markers Initiative (PPMI)
+    Searching repository tree (up to 2 levels deep)...
+      Found notebook: ppmi_final.ipynb
+    Content found:
+      - README: No
+      - Notebooks: 1
+      - Code files: 0
+      - Directories searched: 1
+    Result: SKIP - Combined content too short (29 chars)
+
+[40/140]
+  Reprocessing: https://github.com/paulinapglz99/ROSMAP_RNASeq_networks
+    Study: Religious Orders Study (ROS)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: 0.handle_data_and_metadata.R
+      Found code file: 1.QC_pre_analysis.R
+      Found code file: 2.pre-pro-mRNA_ARSyn.R
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 27
+      - Directories searched: 1
+    Running AI analysis (content length: 1611 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[41/140]
+  Reprocessing: https://github.com/daiqile96/ROSMAP_C2C
+    Study: Religious Orders Study (ROS)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 0 directories)
+
+[42/140]
+  Reprocessing: https://github.com/paoloach/ROS-JetBrains-Plugin
+    Study: Religious Orders Study (ROS)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 3 directories)
+
+[43/140]
+  Reprocessing: https://github.com/ChrisChr1/Rosalind
+    Study: Religious Orders Study (ROS)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: Computing GC Content.py
+      Found code file: Counting Point Mutations.py
+      Found code file: Expected Offspring.py
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 17
+      - Directories searched: 1
+    Running AI analysis (content length: 1226 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[44/140]
+  Reprocessing: https://github.com/RossRichardson/rossrichardson.github.io
+    Study: Religious Orders Study (ROS)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 8 directories)
+
+[45/140]
+  Reprocessing: https://github.com/Lwjcasia/BrainRos
+    Study: Religious Orders Study (ROS)
+    Searching repository tree (up to 2 levels deep)...
+      Found README at: Auditory/SpikRes2Net/README.md
+      Found code file: Auditory/SpikRes2Net/create_data.py
+      Found code file: Auditory/SpikRes2Net/eval.py
+      Found code file: Auditory/SpikRes2Net/extract_features.py
+      Found code file: Basic_Algorithm/PiCCL/SiameseEval.py
+      Found code file: Basic_Algorithm/PiCCL/SiameseTrain.py
+      Found code file: Basic_Algorithm/PiCCL/models.py
+      Found README at: Basic_Algorithm/PiCCL/readme.md
+      Found README at: Basic_Algorithm/SNN-LMS/readme.md
+      Found code file: Basic_Algorithm/SNN-LMS/snn.py
+      Found code file: Basic_Algorithm/SNN-LMS/snn_lms.py
+      Found code file: Basic_Algorithm/SNN-LMS/snn_realtime.py
+      Found code file: Basic_Algorithm/SREBP/CNN_0402.py
+      Found code file: Basic_Algorithm/SREBP/CNN_SC_minibatchDL.py
+      Found code file: Basic_Algorithm/SREBP/CNN_SC_minibatchDL_test.py
+      Found README at: Basic_Algorithm/SREBP/readme.md
+      Found code file: Basic_Algorithm/SpikingSOM/CNNTrain.py
+      Found code file: Basic_Algorithm/SpikingSOM/CNN_sparse.py
+      Found code file: Basic_Algorithm/SpikingSOM/PiCCL.py
+      Found README at: Basic_Algorithm/SpikingSOM/readme.md
+      Found code file: Basic_Algorithm/mtssl/BOA.py
+      Found code file: Basic_Algorithm/mtssl/main.py
+      Found README at: Basic_Algorithm/mtssl/readme.md
+      Found README at: Basic_Algorithm/rossum/readme.md
+      Found code file: Haptic/dataset.py
+      Found code file: Haptic/main.py
+      Found code file: Haptic/model.py
+      Found README at: Haptic/readme.md
+      Found README at: Image Processing/PromptIQA/README.md
+      Found code file: Image Processing/PromptIQA/app.py
+      Found code file: Image Processing/PromptIQA/test.py
+      Found README at: Obstacle Avoidance/QSNN/README.md
+      Found code file: Olfactory/dataset.py
+      Found code file: Olfactory/dynamic_classes.py
+      Found code file: Olfactory/main.py
+      Found README at: Olfactory/readme.md
+      Found README at: Vision/DE-SNN-object-detection/README.en.md
+      Found code file: Vision/DE-SNN-object-detection/ann_to_snn.py
+      Found code file: Vision/DE-SNN-object-detection/debug.py
+      Found code file: Vision/DE-SNN-object-detection/detect.py
+      Found code file: Vision/FusionFlowNet/main_spike_flow.py
+      Found code file: Vision/FusionFlowNet/multiscaleloss.py
+      Found README at: Vision/FusionFlowNet/readme.md
+      Found code file: Vision/FusionFlowNet/util.py
+      Found code file: Vision/IBRA/ann2snn.py
+      Found code file: Vision/IBRA/data.py
+      Found code file: Vision/IBRA/kdutils.py
+      Found README at: Vision/IBRA/readme.md
+      Found code file: Vision/ICE_SNN/autoaugment.py
+      Found code file: Vision/ICE_SNN/dataset.py
+      Found code file: Vision/ICE_SNN/model.py
+      Found README at: Vision/ICE_SNN/readme.md
+      Found README at: Vision/LGTM/README.md
+      Found README at: Vision/MI-TRQR/README.md
+      Found README at: Vision/MSFI/README.md
+      Found code file: Vision/STBP-TSS-SNN-image-classification/main.py
+      Found README at: Vision/mask_rpn/README.md
+      Found code file: Vision/mask_rpn/coco_voc_annotation.py
+      Found code file: Vision/mask_rpn/frcnn.py
+      Found code file: Vision/mask_rpn/get_map.py
+      Found README at: Vision/yolo-ann-snn-batch/README.en.md
+      Found code file: Vision/yolo-ann-snn-batch/ann_to_snn.py
+      Found code file: Vision/yolo-ann-snn-batch/create_labels.py
+      Found code file: Vision/yolo-ann-snn-batch/create_txt.py
+    Content found:
+      - README: Yes
+      - Notebooks: 0
+      - Code files: 82
+      - Directories searched: 28
+    Running AI analysis (content length: 5234 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[46/140]
+  Reprocessing: https://github.com/cmh0728/Brain_ROS2
+    Study: Religious Orders Study (ROS)
+    Searching repository tree (up to 2 levels deep)...
+      Found README at: README.md
+    Content found:
+      - README: Yes
+      - Notebooks: 0
+      - Code files: 0
+      - Directories searched: 1
+    Result: SKIP - Combined content too short (13 chars)
+
+[47/140]
+  Reprocessing: https://github.com/yan-galaxy/brainco_ros
+    Study: Religious Orders Study (ROS)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: sensor_brainco/scripts/stm32data_publisher.py
+      Found code file: sensor_brainco/scripts/stm32data_subscriber.py
+      Found code file: sensor_brainco/src/WzSerialportPlus.cpp
+      Found code file: sensor_brainco/src/brainco_topic_proj.cpp
+      Found code file: sensor_brainco/src/data_sensor_visual.cpp
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 12
+      - Directories searched: 9
+    Result: SKIP - Combined content too short (0 chars)
+
+[48/140]
+  Reprocessing: https://github.com/Amro-Khairi/brainnest-roshambo
+    Study: Religious Orders Study (ROS)
+    Searching repository tree (up to 2 levels deep)...
+      Found README at: README.md
+      Found code file: scripts.js
+    Content found:
+      - README: Yes
+      - Notebooks: 0
+      - Code files: 1
+      - Directories searched: 2
+    Running AI analysis (content length: 544 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[49/140]
+  Reprocessing: https://github.com/alextabac/kaggle_parkinson_predict
+    Study: Accelerating Medicines Partnership - Parkinson's Disease (AMP-PD)
+    Searching repository tree (up to 2 levels deep)...
+      Found notebook: train_model_predict.ipynb
+    Content found:
+      - README: No
+      - Notebooks: 1
+      - Code files: 0
+      - Directories searched: 1
+    Running AI analysis (content length: 1038 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[50/140]
+  Reprocessing: https://github.com/samuUma/tfm_clustering_integration_pd
+    Study: Accelerating Medicines Partnership - Parkinson's Disease (AMP-PD)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: clinical_clustering.R
+      Found code file: clinical_clustering2.R
+      Found code file: clinical_clustering_nemo.R
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 6
+      - Directories searched: 1
+    Running AI analysis (content length: 1611 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[51/140]
+  Reprocessing: https://github.com/ASAP-CRN/asap-crn-learning-lab
+    Study: Aligning Science Across Parkinson's Collaborative Research Network (ASAP-CRN)
+    Searching repository tree (up to 2 levels deep)...
+  GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+  GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+  GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+    Result: SKIP - No content found (searched 0 directories)
+
+[52/140]
+  Reprocessing: https://github.com/pharmamarket/Alzheimer-s-Disease-Whitepaper
+    Study: CamPaIGN Study (CamPaIGN)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 0 directories)
+
+[53/140]
+  Reprocessing: https://github.com/WorkSin/Dementia-Twitter-Machine-Learning
+    Study: CamPaIGN Study (CamPaIGN)
+    Searching repository tree (up to 2 levels deep)...
+      Found notebook: Cross Validation optimisation.ipynb
+      Found notebook: Feature Selection by sklearn.ipynb
+      Found notebook: Model Performance.ipynb
+    Content found:
+      - README: No
+      - Notebooks: 3
+      - Code files: 0
+      - Directories searched: 1
+    Running AI analysis (content length: 3131 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[54/140]
+  Reprocessing: https://github.com/MarkipTheMudkip/in-class-project-2
+    Study: CamPaIGN Study (CamPaIGN)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 4 directories)
+
+[55/140]
+  Reprocessing: https://github.com/landonasato/Function
+    Study: CamPaIGN Study (CamPaIGN)
+    Searching repository tree (up to 2 levels deep)...
+      Found README at: README.md
+    Content found:
+      - README: Yes
+      - Notebooks: 0
+      - Code files: 0
+      - Directories searched: 1
+    Result: SKIP - Combined content too short (11 chars)
+
+[56/140]
+  Reprocessing: https://github.com/Skattermuffin/this-ones-for-you-my-retalyation.-also-haha-arrow-game-lolol
+    Study: CamPaIGN Study (CamPaIGN)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: PRO-C28-Template-main/PRO-C28-Template-main/sketch.js
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 1
+      - Directories searched: 3
+    Result: SKIP - Combined content too short (0 chars)
+
+[57/140]
+  Reprocessing: https://github.com/Skattermuffin/hey-game-pepople-i-know-you-r-ment-to-like-make-these-long-but-come-on-its-fun-but-arrow-game-lol
+    Study: CamPaIGN Study (CamPaIGN)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 0 directories)
+
+[58/140]
+  Reprocessing: https://github.com/99websitedesign/Why-is-99-Website-Design-Agency-the-Right-Choice-for-You-
+    Study: CamPaIGN Study (CamPaIGN)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 0 directories)
+
+[59/140]
+  Reprocessing: https://github.com/Ashar20/BrainX--Drip-campaign
+    Study: CamPaIGN Study (CamPaIGN)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: script.js
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 1
+      - Directories searched: 1
+    Running AI analysis (content length: 523 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[60/140]
+  Reprocessing: https://github.com/vunderkind/BrainJS
+    Study: CamPaIGN Study (CamPaIGN)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 0 directories)
+
+[61/140]
+  Reprocessing: https://github.com/Ani-sha23/Hacksecure_BinaryBrains2025
+    Study: CamPaIGN Study (CamPaIGN)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 0 directories)
+
+[62/140]
+  Reprocessing: https://github.com/fknmiz/ai-marketing-console
+    Study: CamPaIGN Study (CamPaIGN)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 1 directories)
+
+[63/140]
+  Reprocessing: https://github.com/webboostertech/-Give-a-Boost-to-Your-Business-With-a-Bang-
+    Study: CamPaIGN Study (CamPaIGN)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 0 directories)
+
+[64/140]
+  Reprocessing: https://github.com/Prova932/10-facts-about-autism-that-everyone-should-know
+    Study: PREVENT Dementia Programme (PREVENT)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 0 directories)
+
+[65/140]
+  Reprocessing: https://github.com/Fadil369/brainsait-identity-platform
+    Study: Effect of Semagacestat in Alzheimer's Disease (IDENTITY)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 0 directories)
+
+[66/140]
+  Reprocessing: https://github.com/Fadil369/brainsait-identity-services-v2
+    Study: Effect of Semagacestat in Alzheimer's Disease (IDENTITY)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 0 directories)
+
+[67/140]
+  Reprocessing: https://github.com/ahoffrichter/Hass_et_al_2025
+    Study: Effect of Semagacestat in Alzheimer's Disease (IDENTITY)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 4 directories)
+
+[68/140]
+  Reprocessing: https://github.com/karlsprinkle/Viacen
+    Study: Effect of Semagacestat in Alzheimer's Disease (IDENTITY)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 0 directories)
+
+[69/140]
+  Reprocessing: https://github.com/GP2code/LTFinFoxInsight
+    Study: Fox Insight (Fox-Insight)
+    Searching repository tree (up to 2 levels deep)...
+  GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+  GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+  GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+    Result: SKIP - No content found (searched 0 directories)
+
+[70/140]
+  Reprocessing: https://github.com/tonyabracadabra/GSE44772-Alzheimer-Classification
+    Study: Generation Scotland (GS)
+    Searching repository tree (up to 2 levels deep)...
+      Found notebook: Hehe.ipynb
+      Found README at: README.md
+      Found notebook: code/.ipynb_checkpoints/CalcIG-checkpoint.ipynb
+      Found notebook: code/.ipynb_checkpoints/DFS-checkpoint.ipynb
+      Found notebook: code/.ipynb_checkpoints/IG_r-checkpoint.ipynb
+      Found notebook: code/.ipynb_checkpoints/Note-Part2 (Ensemble)-checkpoint.ipynb
+      Found notebook: code/.ipynb_checkpoints/Reprocess-checkpoint.ipynb
+      Found notebook: code/CalcIG.ipynb
+      Found notebook: code/DFS.ipynb
+      Found notebook: code/IG_r.ipynb
+      Found notebook: code/Note-Part2 (Ensemble).ipynb
+      Found notebook: code/Reprocess.ipynb
+      Found code file: code/dfs2.py
+      Found code file: code/helpers.py
+      Found code file: code/nncomponents.py
+      Found notebook: preprocess.ipynb
+    Content found:
+      - README: Yes
+      - Notebooks: 12
+      - Code files: 11
+      - Directories searched: 5
+    Running AI analysis (content length: 11636 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[71/140]
+  Reprocessing: https://github.com/WBowden/BrainZ-GSP240
+    Study: Generation Scotland (GS)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 1 directories)
+
+[72/140]
+  Reprocessing: https://github.com/Mahdi-Si/Brain_GSP
+    Study: Generation Scotland (GS)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: Brain GSP/Brain_GSP.py
+      Found code file: Brain GSP/Brain_GSP2.py
+      Found README at: Brain GSP/pygsp/README.md
+      Found notebook: Brain GSP/pygsp/mini_test.ipynb
+    Content found:
+      - README: Yes
+      - Notebooks: 1
+      - Code files: 2
+      - Directories searched: 3
+    Running AI analysis (content length: 6441 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[73/140]
+  Reprocessing: https://github.com/natekruger/GSS_ANES_brainstorm
+    Study: Generation Scotland (GS)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 0 directories)
+
+[74/140]
+  Reprocessing: https://github.com/Railey-Mikeska/GSE43837
+    Study: Generation Scotland (GS)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 1 directories)
+
+[75/140]
+  Reprocessing: https://github.com/i-vii-vi/gs-brain-micropython-executor
+    Study: Generation Scotland (GS)
+    Searching repository tree (up to 2 levels deep)...
+      Found README at: executor/include/README
+      Found README at: executor/lib/README
+      Found code file: executor/port/embed_util.c
+      Found code file: executor/port/mphalport.c
+      Found code file: executor/src/main.c
+      Found README at: executor/test/README
+      Found code file: scripts/geyser.py
+      Found code file: scripts/ili9341.py
+      Found code file: scripts/main.py
+    Content found:
+      - README: Yes
+      - Notebooks: 0
+      - Code files: 6
+      - Directories searched: 9
+    Running AI analysis (content length: 1386 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[76/140]
+  Reprocessing: https://github.com/nicoProdDev/nicolas-mendez-brainFlix
+    Study: Northern Ireland Cohort for Longitudinal Study of Ageing (NICOLA)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: server/index.js
+      Found code file: server/routes/videos.js
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 2
+      - Directories searched: 5
+    Result: SKIP - Combined content too short (0 chars)
+
+[77/140]
+  Reprocessing: https://github.com/nicoProdDev/nicolas-mendez-capstone-brainstation
+    Study: Northern Ireland Cohort for Longitudinal Study of Ageing (NICOLA)
+    Searching repository tree (up to 2 levels deep)...
+      Found README at: client/README.md
+      Found code file: client/eslint.config.js
+      Found code file: client/vite.config.js
+    Content found:
+      - README: Yes
+      - Notebooks: 0
+      - Code files: 2
+      - Directories searched: 4
+    Running AI analysis (content length: 1255 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[78/140]
+  Reprocessing: https://github.com/lealoliveiraleonardo626-afk/NICOLAS-VAMO-JOGAR-ROUBE-UM-BRAINROT-
+    Study: Northern Ireland Cohort for Longitudinal Study of Ageing (NICOLA)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 1 directories)
+
+[79/140]
+  Reprocessing: https://github.com/emannuelOC/nina-ios
+    Study: PREVENT Dementia Programme (PREVENT)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 16 directories)
+
+[80/140]
+  Reprocessing: https://github.com/degaliang/Alarm
+    Study: PREVENT Dementia Programme (PREVENT)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: TF_Recognition/collect_image.py
+      Found README at: TF_Recognition/protoc/readme.txt
+      Found code file: TF_Recognition/scripts/generate_tfrecord.py
+      Found code file: TF_Recognition/train.py
+      Found code file: cascades/data/__init__.py
+    Content found:
+      - README: Yes
+      - Notebooks: 0
+      - Code files: 6
+      - Directories searched: 27
+    Running AI analysis (content length: 1261 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[81/140]
+  Reprocessing: https://github.com/Anteki1/Alzheimer-Prevention
+    Study: PREVENT Dementia Programme (PREVENT)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 0 directories)
+
+[82/140]
+  Reprocessing: https://github.com/mohistzh/leetcode
+    Study: PREVENT Dementia Programme (PREVENT)
+    Searching repository tree (up to 2 levels deep)...
+      Found README at: README.md
+    Content found:
+      - README: Yes
+      - Notebooks: 0
+      - Code files: 0
+      - Directories searched: 3
+    Result: SKIP - Combined content too short (23 chars)
+
+[83/140]
+  Reprocessing: https://github.com/nirmoy/unrusty
+    Study: PREVENT Dementia Programme (PREVENT)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: linked_list/stack/stack.c
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 1
+      - Directories searched: 3
+    Result: SKIP - Combined content too short (0 chars)
+
+[84/140]
+  Reprocessing: https://github.com/harshbora94/Alzheimer-s-Stage-Detection-and-Suggestion-of-Mitigation-Technique-
+    Study: PREVENT Dementia Programme (PREVENT)
+    Searching repository tree (up to 2 levels deep)...
+      Found notebook: Alzheimer detection.ipynb
+    Content found:
+      - README: No
+      - Notebooks: 1
+      - Code files: 0
+      - Directories searched: 1
+    Running AI analysis (content length: 1038 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[85/140]
+  Reprocessing: https://github.com/apscof98/OCT-IN-DETECTION-OF-ALZEIMER-S-DISEASE
+    Study: PREVENT Dementia Programme (PREVENT)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 0 directories)
+
+[86/140]
+  Reprocessing: https://github.com/douglasssturchio/American-cherry
+    Study: PREVENT Dementia Programme (PREVENT)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 0 directories)
+
+[87/140]
+  Reprocessing: https://github.com/viofocon/The-Role-Of-Hydrogen-Water-Machine-Japan
+    Study: PREVENT Dementia Programme (PREVENT)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 0 directories)
+
+[88/140]
+  Reprocessing: https://github.com/sallymoon10/Parkinsons_freezing_detection
+    Study: PREVENT Dementia Programme (PREVENT)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 1 directories)
+
+[89/140]
+  Reprocessing: https://github.com/tuanaakara/ML-DL-algorithms-with-Parkinson-Dataset
+    Study: PREVENT Dementia Programme (PREVENT)
+    Searching repository tree (up to 2 levels deep)...
+      Found notebook: Parkinson Disease Classification.ipynb
+    Content found:
+      - README: No
+      - Notebooks: 1
+      - Code files: 0
+      - Directories searched: 1
+    Running AI analysis (content length: 51 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[90/140]
+  Reprocessing: https://github.com/jigreg/77theSenior
+    Study: PREVENT Dementia Programme (PREVENT)
+    Searching repository tree (up to 2 levels deep)...
+      Found README at: 77project/README.md
+    Content found:
+      - README: Yes
+      - Notebooks: 0
+      - Code files: 0
+      - Directories searched: 11
+    Running AI analysis (content length: 6531 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[91/140]
+  Reprocessing: https://github.com/8793COMPANY/DementiaPrevention
+    Study: PREVENT Dementia Programme (PREVENT)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 12 directories)
+
+[92/140]
+  Reprocessing: https://github.com/aidenkimswe/Dementia_Prevention
+    Study: PREVENT Dementia Programme (PREVENT)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 5 directories)
+
+[93/140]
+  Reprocessing: https://github.com/ahnsy79513/Dementia-Prevention
+    Study: PREVENT Dementia Programme (PREVENT)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: 2020.05.17/HomeMenu.java
+      Found code file: 2020.05.17/Join.java
+      Found code file: 2020.05.17/Login.java
+      Found code file: 2020.05.31/Account.java
+      Found code file: 2020.05.31/ClientApplication.java
+      Found code file: 2020.05.31/ConfigDatas.java
+      Found code file: 2020.06.14/GameMole.java
+      Found code file: 2020.06.14/GamePicture.java
+      Found code file: 2020.06.28/Account.java
+      Found code file: 2020.06.28/ClientSession.java
+      Found code file: 2020.06.28/DBManager.java
+      Found code file: src/Account.java
+      Found code file: src/ClientApplication.java
+      Found code file: src/ConfigDatas.java
+      Found code file: src_Server/Account.java
+      Found code file: src_Server/ClientSession.java
+      Found code file: src_Server/DBManager.java
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 39
+      - Directories searched: 9
+    Result: SKIP - Combined content too short (0 chars)
+
+[94/140]
+  Reprocessing: https://github.com/liuaze/prevention-dementia
+    Study: PREVENT Dementia Programme (PREVENT)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 6 directories)
+
+[95/140]
+  Reprocessing: https://github.com/kimsungnea/dementia-prevention-game
+    Study: PREVENT Dementia Programme (PREVENT)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 0 directories)
+
+[96/140]
+  Reprocessing: https://github.com/dzhang676/BackOnTrack
+    Study: PREVENT Dementia Programme (PREVENT)
+    Searching repository tree (up to 2 levels deep)...
+      Found README at: README.md
+    Content found:
+      - README: Yes
+      - Notebooks: 0
+      - Code files: 0
+      - Directories searched: 7
+    Result: SKIP - Combined content too short (14 chars)
+
+[97/140]
+  Reprocessing: https://github.com/Ferv0r2/77theSenior
+    Study: PREVENT Dementia Programme (PREVENT)
+    Searching repository tree (up to 2 levels deep)...
+      Found README at: 77project/README.md
+    Content found:
+      - README: Yes
+      - Notebooks: 0
+      - Code files: 0
+      - Directories searched: 11
+    Running AI analysis (content length: 6531 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[98/140]
+  Reprocessing: https://github.com/intellectrip/-D-test
+    Study: PREVENT Dementia Programme (PREVENT)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 1 directories)
+
+[99/140]
+  Reprocessing: https://github.com/priyankaharibabu/Circadian-rythm-Alertness-prediction
+    Study: PREVENT Dementia Programme (PREVENT)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 0 directories)
+
+[100/140]
+  Reprocessing: https://github.com/NeuroForLunch/brain_firewall
+    Study: PREVENT Dementia Programme (PREVENT)
+    Searching repository tree (up to 2 levels deep)...
+      Found README at: README.md
+    Content found:
+      - README: Yes
+      - Notebooks: 0
+      - Code files: 0
+      - Directories searched: 1
+    Result: SKIP - Combined content too short (18 chars)
+
+[101/140]
+  Reprocessing: https://github.com/MohamedHawy14/Brain-Hope
+    Study: PREVENT Dementia Programme (PREVENT)
+    Searching repository tree (up to 2 levels deep)...
+      Found README at: README.md
+    Content found:
+      - README: Yes
+      - Notebooks: 0
+      - Code files: 0
+      - Directories searched: 17
+    Result: SKIP - Combined content too short (12 chars)
+
+[102/140]
+  Reprocessing: https://github.com/dongsik2026/BrainWave
+    Study: PREVENT Dementia Programme (PREVENT)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 0 directories)
+
+[103/140]
+  Reprocessing: https://github.com/hanzellacida/Brain-Aneurysm-Prevention
+    Study: PREVENT Dementia Programme (PREVENT)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 1 directories)
+
+[104/140]
+  Reprocessing: https://github.com/Connie2026/osteoporosis-cognition-AD-ELSA-HRS
+    Study: The English Longitudinal Study of Ageing (ELSA)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 1 directories)
+
+[105/140]
+  Reprocessing: https://github.com/suyashsgaikwad/Dementia-Prediction-Using-ELSA-HCAP-Data
+    Study: The English Longitudinal Study of Ageing (ELSA)
+    Searching repository tree (up to 2 levels deep)...
+      Found notebook: .ipynb_checkpoints/Preprocessing-checkpoint.ipynb
+      Found notebook: .ipynb_checkpoints/Project-checkpoint.ipynb
+      Found notebook: Preprocessing.ipynb
+      Found notebook: Project.ipynb
+    Content found:
+      - README: No
+      - Notebooks: 4
+      - Code files: 0
+      - Directories searched: 2
+    Running AI analysis (content length: 2176 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[106/140]
+  Reprocessing: https://github.com/Nishchaybhuker20/gym_website
+    Study: Amyloid Imaging for Phenotyping Lewy Body Dementia (AMPLE)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 1 directories)
+
+[107/140]
+  Reprocessing: https://github.com/Sachintha45/BrainBattle_SmileAPI
+    Study: Scottish Medical Imaging Research Dataset (SMI)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: Presentation/js/brainbattle.js
+      Found code file: Presentation/js/music.js
+      Found code file: Presentation/js/timer.js
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 3
+      - Directories searched: 9
+    Result: SKIP - Combined content too short (0 chars)
+
+[108/140]
+  Reprocessing: https://github.com/sonjiwoo031105/SmileSmile
+    Study: Scottish Medical Imaging Research Dataset (SMI)
+    Searching repository tree (up to 2 levels deep)...
+      Found README at: README.md
+    Content found:
+      - README: Yes
+      - Notebooks: 0
+      - Code files: 0
+      - Directories searched: 8
+    Result: SKIP - Combined content too short (26 chars)
+
+[109/140]
+  Reprocessing: https://github.com/kubotadaichi/BrainSmile
+    Study: Scottish Medical Imaging Research Dataset (SMI)
+    Searching repository tree (up to 2 levels deep)...
+      Found README at: README.md
+      Found code file: convert.py
+      Found code file: main.py
+      Found code file: table.py
+    Content found:
+      - README: Yes
+      - Notebooks: 0
+      - Code files: 3
+      - Directories searched: 1
+    Running AI analysis (content length: 1262 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[110/140]
+  Reprocessing: https://github.com/ryangutz88/RitaJohnSmithBrain
+    Study: Scottish Medical Imaging Research Dataset (SMI)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 3 directories)
+
+[111/140]
+  Reprocessing: https://github.com/Airo833/HomeWorkGeekBrainsSmirnovD
+    Study: Scottish Medical Imaging Research Dataset (SMI)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 1 directories)
+
+[112/140]
+  Reprocessing: https://github.com/SourovKarmokar/-capstone-project
+    Study: The Caerphilly Prospective Study (CaPS)
+    Searching repository tree (up to 2 levels deep)...
+      Found notebook: Cap_Alzheimer🧠.ipynb
+    Content found:
+      - README: No
+      - Notebooks: 1
+      - Code files: 0
+      - Directories searched: 1
+    Running AI analysis (content length: 1033 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[113/140]
+  Reprocessing: https://github.com/19311team/19311-cap-codes
+    Study: The Caerphilly Prospective Study (CaPS)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: Website Server.py
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 1
+      - Directories searched: 1
+    Running AI analysis (content length: 531 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[114/140]
+  Reprocessing: https://github.com/Lycoris-Rad/Capstone_2-Predicting-the-Progression-of-Parkinson-s-Disease-
+    Study: The Caerphilly Prospective Study (CaPS)
+    Searching repository tree (up to 2 levels deep)...
+      Found README at: README.md
+      Found notebook: capstone-2.ipynb
+    Content found:
+      - README: Yes
+      - Notebooks: 1
+      - Code files: 0
+      - Directories searched: 1
+    Running AI analysis (content length: 1047 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[115/140]
+  Reprocessing: https://github.com/aclindstrom112001/parkinsons-capstone-research
+    Study: The Caerphilly Prospective Study (CaPS)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 1 directories)
+
+[116/140]
+  Reprocessing: https://github.com/Kokoserver/parkinson-desisease-prediction-using-capsule-network
+    Study: The Caerphilly Prospective Study (CaPS)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: cfg.py
+      Found code file: customDatasetMaker.py
+      Found code file: helpers.py
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 7
+      - Directories searched: 4
+    Running AI analysis (content length: 1579 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[117/140]
+  Reprocessing: https://github.com/brianfarrelly/SupervisedLearningCapstone
+    Study: The Caerphilly Prospective Study (CaPS)
+    Searching repository tree (up to 2 levels deep)...
+      Found notebook: combined_proposal_capstone2_park.ipynb
+    Content found:
+      - README: No
+      - Notebooks: 1
+      - Code files: 0
+      - Directories searched: 1
+    Running AI analysis (content length: 51 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[118/140]
+  Reprocessing: https://github.com/shp576/capstone-_classical-model
+    Study: The Caerphilly Prospective Study (CaPS)
+    Searching repository tree (up to 2 levels deep)...
+      Found notebook: capstone_classical model.ipynb
+    Content found:
+      - README: No
+      - Notebooks: 1
+      - Code files: 0
+      - Directories searched: 1
+    Running AI analysis (content length: 1043 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[119/140]
+  Reprocessing: https://github.com/vatsalyasingh57/Capstone-Project-Group-91-Designing-an-appsuite-for-early-detection-of-Parkinsons-disease
+    Study: The Caerphilly Prospective Study (CaPS)
+    Searching repository tree (up to 2 levels deep)...
+      Found notebook: Parkinson's_Disease_Daphnet.ipynb
+      Found notebook: Parkinson's_Disease_Physionet.ipynb
+    Content found:
+      - README: No
+      - Notebooks: 2
+      - Code files: 0
+      - Directories searched: 1
+    Running AI analysis (content length: 2094 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[120/140]
+  Reprocessing: https://github.com/malaycronos/Capstone-Project-Group-91--Designing-an-appsuite-for-early-detection-of-Parkinson-s-disease
+    Study: The Caerphilly Prospective Study (CaPS)
+    Searching repository tree (up to 2 levels deep)...
+      Found notebook: Parkinson's_Disease_Daphnet.ipynb
+      Found notebook: Parkinson's_Disease_Physionet.ipynb
+    Content found:
+      - README: No
+      - Notebooks: 2
+      - Code files: 0
+      - Directories searched: 1
+    Running AI analysis (content length: 2094 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[121/140]
+  Reprocessing: https://github.com/sabrinatg02/g17-capstone-BrainViewAI
+    Study: The Caerphilly Prospective Study (CaPS)
+    Searching repository tree (up to 2 levels deep)...
+      Found README at: README.md
+      Found code file: auth-script.js
+      Found code file: static/js/patientScripts.js
+      Found code file: static/js/settings.js
+      Found notebook: tbi_playground.ipynb
+    Content found:
+      - README: Yes
+      - Notebooks: 1
+      - Code files: 3
+      - Directories searched: 5
+    Running AI analysis (content length: 1587 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[122/140]
+  Reprocessing: https://github.com/fawzanhussain/Use-of-EEGs-to-Analyze-Student-Attention-during-Math-Assessment
+    Study: The Caerphilly Prospective Study (CaPS)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: Measuring_Student_Attention_Program.py
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 1
+      - Directories searched: 1
+    Running AI analysis (content length: 552 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[123/140]
+  Reprocessing: https://github.com/MEHDI1990SA/Brain-Tumor-Segmentation_MEHDI_Samir_MOKRANE_Abdelazize
+    Study: Moorfields Eye Hospital Dementia Dataset (MEHD)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: main.py
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 1
+      - Directories searched: 1
+    Running AI analysis (content length: 521 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[124/140]
+  Reprocessing: https://github.com/quqixun/ADDetection
+    Study: Alzheimer's Disease Neuroimaging Initiative (ADNI)
+    Searching repository tree (up to 2 levels deep)...
+      Found README at: README.md
+      Found code file: src/add.py
+      Found code file: src/add_dataset.py
+      Found code file: src/add_features.py
+    Content found:
+      - README: Yes
+      - Notebooks: 0
+      - Code files: 8
+      - Directories searched: 7
+    Result: SKIP - Combined content too short (32 chars)
+
+[125/140]
+  Reprocessing: https://github.com/DanielaMM2018/Alzheimer-s-detection-using-deep-learning-and-MRI
+    Study: Alzheimer's Disease Neuroimaging Initiative (ADNI)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: CNN con Early Stopping/Inception_Early_Stopping.py
+      Found code file: CNN con Early Stopping/RED1_Early_Stopping.py
+      Found code file: CNN con Early Stopping/RED2_Early_Stopping.py
+      Found code file: CNN/Inception.py
+      Found code file: CNN/RED1.py
+      Found code file: CNN/RED2.py
+      Found code file: CNN_Early _Stopping/Inception_Early_Stopping.py
+      Found code file: CNN_Early _Stopping/RED1_Early_Stopping.py
+      Found code file: CNN_Early _Stopping/RED2_Early_Stopping.py
+      Found code file: data processing/Data_ruta.py
+      Found code file: data processing/Data_ruta3.py
+      Found code file: data processing/Data_ruta5.py
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 21
+      - Directories searched: 5
+    Result: SKIP - Combined content too short (0 chars)
+
+[126/140]
+  Reprocessing: https://github.com/ihausle/Comorbidities-and-Biomarkers-in-ADNI
+    Study: Alzheimer's Disease Neuroimaging Initiative (ADNI)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: comorbidities_data_processing.R
+      Found code file: comorbidities_project_git.R
+      Found code file: comorbidities_utility_functions.R
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 5
+      - Directories searched: 1
+    Running AI analysis (content length: 1633 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[127/140]
+  Reprocessing: https://github.com/cervere/adni-mci-dem
+    Study: Alzheimer's Disease Neuroimaging Initiative (ADNI)
+    Searching repository tree (up to 2 levels deep)...
+      Found notebook: ADNI-Biomarkers-Modeling-Methods.ipynb
+      Found notebook: ADNI-Biomarkers-Modeling.ipynb
+      Found notebook: ADNI-Biomarkers-PreProcess-Methods.ipynb
+      Found notebook: ADNI-Biomarkers-Preprocess.ipynb
+      Found notebook: ADNI-MRI.ipynb
+      Found notebook: ADNIMERGE-Exploration.ipynb
+      Found notebook: DataLoaders.ipynb
+    Content found:
+      - README: No
+      - Notebooks: 7
+      - Code files: 0
+      - Directories searched: 1
+    Running AI analysis (content length: 7289 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[128/140]
+  Reprocessing: https://github.com/mturja-vf-ic-bd/ADNI_processing
+    Study: Alzheimer's Disease Neuroimaging Initiative (ADNI)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: CirclePlot/CirclePlot.R
+      Found code file: CirclePlot/main.R
+      Found code file: EditLabel/CMakeFiles/feature_tests.c
+      Found code file: EditLabel/readJson.cpp
+      Found code file: EditParcellationTable/CMakeFiles/feature_tests.c
+      Found code file: EditParcellationTable/rewriteTable.py
+      Found code file: scripts/findStdDev.py
+      Found code file: scripts/measureChange.py
+      Found code file: scripts/plotMatrix.py
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 10
+      - Directories searched: 8
+    Result: SKIP - Combined content too short (0 chars)
+
+[129/140]
+  Reprocessing: https://github.com/MahsaScript/Python_Brain_Analysis_Alzheimers_Adni
+    Study: Alzheimer's Disease Neuroimaging Initiative (ADNI)
+    Searching repository tree (up to 2 levels deep)...
+      Found notebook: Python_Adni.ipynb
+      Found notebook: Python_Alzheimers_Adni.ipynb
+      Found notebook: Python_brain_analysis.ipynb
+      Found code file: python_adni.py
+      Found code file: python_alzheimers_adni.py
+      Found code file: python_brain_analysis.py
+    Content found:
+      - README: No
+      - Notebooks: 3
+      - Code files: 3
+      - Directories searched: 1
+    Running AI analysis (content length: 3216 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[130/140]
+  Reprocessing: https://github.com/muhamadusman/BRAIN_MR_ADNI
+    Study: Alzheimer's Disease Neuroimaging Initiative (ADNI)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: multimodal.py
+      Found code file: preProcessing.py
+      Found code file: skullstrip.py
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 3
+      - Directories searched: 1
+    Running AI analysis (content length: 1584 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[131/140]
+  Reprocessing: https://github.com/GP2code/GP2-AFR-AAC-metaGWAS
+    Study: Global Parkinson's Genetics Program (GP2)
+    Searching repository tree (up to 2 levels deep)...
+  GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+  GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+  GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+    Result: SKIP - No content found (searched 0 directories)
+
+[132/140]
+  Reprocessing: https://github.com/datatecnica/genotools-server
+    Study: Global Parkinson's Genetics Program (GP2)
+    Searching repository tree (up to 2 levels deep)...
+  GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+  GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+  GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+    Result: SKIP - No content found (searched 0 directories)
+
+[133/140]
+  Reprocessing: https://github.com/GP2code/GP2-mitochondrial-PRS
+    Study: Global Parkinson's Genetics Program (GP2)
+    Searching repository tree (up to 2 levels deep)...
+  GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+  GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+  GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+    Result: SKIP - No content found (searched 0 directories)
+
+[134/140]
+  Reprocessing: https://github.com/dvitale199/gp2_ref_panel_processing
+    Study: Global Parkinson's Genetics Program (GP2)
+    Searching repository tree (up to 2 levels deep)...
+      Found notebook: ref_panel_processing.ipynb
+    Content found:
+      - README: No
+      - Notebooks: 1
+      - Code files: 0
+      - Directories searched: 1
+    Running AI analysis (content length: 1039 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[135/140]
+  Reprocessing: https://github.com/LeonardoHDL/GP2_Bioinformatics_workshop
+    Study: Global Parkinson's Genetics Program (GP2)
+    Searching repository tree (up to 2 levels deep)...
+      Found notebook: GP2_AMPPD_Data_visualization.ipynb
+      Found notebook: GWAS_Parkinsons.ipynb
+      Found notebook: Practical_Examples.ipynb
+      Found README at: README.md
+    Content found:
+      - README: Yes
+      - Notebooks: 3
+      - Code files: 0
+      - Directories searched: 1
+    Running AI analysis (content length: 3148 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[136/140]
+  Reprocessing: https://github.com/GP2code/GP2-global-genetic-variant-landscape
+    Study: Global Parkinson's Genetics Program (GP2)
+    Searching repository tree (up to 2 levels deep)...
+  GitHub API error 403 (attempt 1/3). Waiting 60 seconds...
+  GitHub API error 403 (attempt 2/3). Waiting 120 seconds...
+  GitHub API error 403 (attempt 3/3). Waiting 240 seconds...
+    Result: SKIP - No content found (searched 0 directories)
+
+[137/140]
+  Reprocessing: https://github.com/mvisionai/AdSpike
+    Study: Alzheimer's Disease Sequencing Project (ADSP)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: con_ad.py
+      Found code file: preprocess.py
+      Found code file: preprocessing_pipeline.py
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 5
+      - Directories searched: 1
+    Running AI analysis (content length: 1392 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[138/140]
+  Reprocessing: https://github.com/RitchieLab/athena
+    Study: Alzheimer's Disease Sequencing Project (ADSP)
+    Searching repository tree (up to 2 levels deep)...
+      Found README at: branches/no-bayesian/README
+      Found README at: tags/1.0.0/README
+      Found README at: tags/1.1.0/README
+      Found README at: trunk/README
+    Content found:
+      - README: Yes
+      - Notebooks: 0
+      - Code files: 0
+      - Directories searched: 11
+    Running AI analysis (content length: 133 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[139/140]
+  Reprocessing: https://github.com/NIAGADS/ADSPIntegratedPhenotypes
+    Study: Alzheimer's Disease Sequencing Project (ADSP)
+    Searching repository tree (up to 2 levels deep)...
+      Found code file: ADSPIntegratedPhenotypes_Script_2023.08.08.R
+    Content found:
+      - README: No
+      - Notebooks: 0
+      - Code files: 1
+      - Directories searched: 1
+    Running AI analysis (content length: 558 chars)...
+    Fetching contributors and languages...
+    Result: SUCCESS - Repository processed
+
+[140/140]
+  Reprocessing: https://github.com/rahulmurthy99/Data-Mining-Group-4
+    Study: Alzheimer's Disease Sequencing Project (ADSP)
+    Searching repository tree (up to 2 levels deep)...
+    Result: SKIP - No content found (searched 1 directories)
+
+================================================================================
+STEP 4: SAVING RESULTS
+================================================================================
+
+Output file: /mnt/c/Users/mike1/Projects/CARD_catalog/scrapers/../tables/insufficient_reprocessed_20251202_113816.tsv
+
+================================================================================
+FINAL STATISTICS
+================================================================================
+Total repositories in logs:          140
+Successfully processed:               55
+Still insufficient content:           85
+Errors:                               0
+Processing rate:                      55/140 (39.3%)
+================================================================================
+End time: 2025-12-02 11:38:16
+================================================================================

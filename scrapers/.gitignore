@@ -1,0 +1,28 @@
+# API Keys and sensitive data
+.env
+secrets.toml
+
+# Output files
+*.tsv
+*.csv
+*.tab
+fair_compliance_log_*.tsv
+pubmed_central_*.tsv
+gits_to_reannotate_*.tsv
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

@@ -1,0 +1,8 @@
+[client]
+showSidebarNavigation = true
+
+[runner]
+fastReruns = true
+
+[ui]
+hideTopBar = false
