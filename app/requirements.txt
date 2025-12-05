@@ -13,6 +13,7 @@ plotly>=5.17.0
 
 # Network/Graph analysis
 networkx>=3.1
+scipy>=1.11.0
 
 # LLM integration
 anthropic>=0.18.0
