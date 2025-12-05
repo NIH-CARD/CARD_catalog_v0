@@ -2,14 +2,6 @@
 .env
 secrets.toml
 
-# Output files
-*.tsv
-*.csv
-*.tab
-fair_compliance_log_*.tsv
-pubmed_central_*.tsv
-gits_to_reannotate_*.tsv
-
 # Python
 __pycache__/
 *.py[cod]
