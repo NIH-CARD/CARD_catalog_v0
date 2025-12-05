@@ -18,6 +18,7 @@ plotly==5.18.0
 
 # Network Analysis
 networkx==3.2.1
+scipy>=1.11.0
 
 # AI/LLM
 anthropic==0.57.1
