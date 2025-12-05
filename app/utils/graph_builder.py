@@ -296,6 +296,11 @@ def create_interactive_graph(
                     languages = languages[:47] + "..."
                 hover_text += f"Languages: {languages}<br>"
 
+            # Add FAIR Score if present
+            fair_score = node_attrs.get('FAIR Score', '')
+            if fair_score and str(fair_score).strip():
+                hover_text += f"FAIR Score: {fair_score}/10<br>"
+
             # Add FAIR issues if present
             fair_issues = str(node_attrs.get('FAIR Issues', ''))
             if fair_issues and fair_issues.strip():
@@ -367,8 +372,16 @@ def create_interactive_graph(
             # Color by data completeness (0-100%)
             completeness = node_attrs.get('Data Completeness', 50)  # Default to 50% if not found
             color_value = completeness / 100 * 3  # Scale to 0-3 range
+        elif is_code_repo and 'FAIR Score' in node_attrs:
+            # For code repositories, use numeric FAIR Score (0-10)
+            fair_score = node_attrs.get('FAIR Score', 5)
+            try:
+                fair_score = float(fair_score)
+                color_value = (fair_score / 10) * 3  # Scale 0-10 to 0-3 range
+            except (ValueError, TypeError):
+                color_value = 1.5  # Default if score is invalid
         else:
-            # Color based on FAIR compliance keywords (default)
+            # Color based on FAIR compliance keywords (default for datasets)
             fair_notes = node_attrs.get('FAIR Compliance Notes', '').lower()
             if 'strong' in fair_notes or 'excellent' in fair_notes:
                 color_value = 3  # Dark green
