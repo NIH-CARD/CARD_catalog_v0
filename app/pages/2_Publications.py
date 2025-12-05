@@ -361,7 +361,7 @@ def main():
                     if stats["num_nodes"] > 0 and stats["num_edges"] > 0:
                         # Create and display graph with completeness-based coloring
                         fig = create_interactive_graph(G, title="Publication Network", color_by="completeness")
-                        st.plotly_chart(fig, use_container_width=False)
+                        st.plotly_chart(fig)
 
                         # Edge details in expander
                         with st.expander("View Connection Details"):

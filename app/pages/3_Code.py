@@ -396,7 +396,7 @@ def main():
                         # Create and display graph
                         # Note: Code repos don't have FAIR compliance in same way, so we'll use default coloring
                         fig = create_interactive_graph(G, title="Code Repository Network", color_by="fair_compliance")
-                        st.plotly_chart(fig, use_container_width=False)
+                        st.plotly_chart(fig)
 
                         # Edge details in expander
                         with st.expander("View Connection Details"):

@@ -273,7 +273,7 @@ def main():
                     # Display graph
                     if stats["num_nodes"] > 0:
                         fig = create_interactive_graph(G, title="Dataset Knowledge Graph")
-                        st.plotly_chart(fig, use_container_width=False)
+                        st.plotly_chart(fig)
 
                         # Top connected datasets
                         if stats["top_nodes"]:
