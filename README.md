@@ -1,5 +1,7 @@
 # CARD Catalog v0.1
 
+Thanks for stopping by, before we get into the technical details below, check out the tooling itself, kindly hosted by our collaborators at its permanent home ... [the Alzheimer's Data Hub](Alzheimersdatahub.org).
+
 ## Overview
 
 The **CARD Catalog** (Collaborative Alzheimer's and Related Dementias Data Catalog) is an interactive web application that brings together datasets, publications, code repositories, and cellular models for Alzheimer's Disease and Related Dementias (ADRD) research. Built on Streamlit and powered by Claude Sonnet 4.5, it enables researchers and program staff to discover resources, identify connections, and leverage AI-driven insights to accelerate research and inform funding decisions to cover programmatic gaps.
@@ -412,3 +414,4 @@ See [LICENSE.md](LICENSE.md) for full details.
 CARD Catalog v0.1 | Last Updated: December 3rd, 2025
 
 **Powered by Claude Sonnet 4.5** for AI-driven insights and analysis.
+
