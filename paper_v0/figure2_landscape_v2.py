@@ -144,7 +144,9 @@ def create_figure():
     # Get top languages
     all_languages = []
     for langs in code_df['Languages'].dropna():
-        lang_list = [l.strip() for l in str(langs).split(';')]
+        # Handle both semicolon and comma separators
+        lang_str = str(langs).replace(',', ';')
+        lang_list = [l.strip() for l in lang_str.split(';')]
         all_languages.extend(lang_list)
 
     top_languages = [lang for lang, _ in Counter(all_languages).most_common(8)]
@@ -159,7 +161,9 @@ def create_figure():
 
     for _, row in code_df.iterrows():
         repo_link = row.get('Repository Link', '')
-        langs = str(row.get('Languages', '')).split(';')
+        # Handle both semicolon and comma separators
+        lang_str = str(row.get('Languages', '')).replace(',', ';')
+        langs = lang_str.split(';')
         langs = [l.strip() for l in langs if l.strip() in top_languages]
 
         if not langs:

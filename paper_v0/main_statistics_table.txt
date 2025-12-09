@@ -82,9 +82,9 @@ CODE REPOSITORIES
 Total Repositories: 568
 
 Top Programming Languages:
-  Jupyter Notebook: 171 (30.1%)
-  Python: 123 (21.7%)
-  R: 39 (6.9%)
+  Jupyter Notebook: 172 (30.3%)
+  Python: 124 (21.8%)
+  R: 40 (7.0%)
   JavaScript: 35 (6.2%)
   HTML: 19 (3.3%)
   MATLAB: 17 (3.0%)

@@ -320,7 +320,9 @@ def analyze_code_repos():
     if 'Languages' in df.columns:
         all_languages = []
         for langs in df['Languages'].dropna():
-            lang_list = [l.strip() for l in str(langs).split(';')]
+            # Handle both semicolon and comma separators
+            lang_str = str(langs).replace(',', ';')
+            lang_list = [l.strip() for l in lang_str.split(';')]
             all_languages.extend(lang_list)
         stats['top_languages'] = Counter(all_languages).most_common(10)
 
