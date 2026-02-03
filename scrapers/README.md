@@ -14,7 +14,7 @@ Both scrapers are designed to work with the CARD catalog dataset inventory and p
 ## Requirements
 
 ```bash
-pip install pandas requests anthropic
+pip install pandas requests anthropic python-dotenv
 ```
 
 ### API Keys Setup
@@ -49,6 +49,7 @@ export ANTHROPIC_API_KEY="your_anthropic_key_here"
 **Where to get API keys:**
 - **GitHub Token**: https://github.com/settings/tokens (needs `public_repo` scope)
 - **Anthropic API Key**: https://console.anthropic.com/
+- **NCBI API Key**: https://www.ncbi.nlm.nih.gov/account/settings/ (free, increases rate limits)
 
 **Security Note**: Never commit `.env` or files containing API keys to version control!
 
@@ -71,13 +72,20 @@ python3 scrape_publications.py
 python3 scrape_publications.py \
   --input ../CARD_catalogue_beta-main/CARD_catalogue_beta-main/dataset-inventory-June_20_2025.tab \
   --output publications_output.tsv \
-  --max-results 150
+  --max-results 150 \
+  --ncbi-api-key "your_api_key_here" \
+  --verbose \
+  --log-file pubmed_scrape.log
 ```
 
 **Arguments:**
 - `--input, -i` - Input TSV file with study inventory (default: dataset-inventory-June_20_2025.tab)
 - `--output, -o` - Output TSV file (default: pubmed_central_{timestamp}.tsv)
 - `--max-results, -m` - Maximum results per study (default: 100)
+- `--ncbi-api-key` - NCBI API key for higher rate limits (default: from NCBI_API_KEY env var)
+- `--verbose, -v` - Enable verbose (DEBUG) logging
+- `--quiet, -q` - Show only warnings and errors
+- `--log-file` - Log file path (default: publications_{timestamp}.log)
 
 **Output format:**
 ```
@@ -110,6 +118,8 @@ python3 scrape_github.py \
 - `--output, -o` - Output TSV file (default: gits_to_reannotate_completed_{timestamp}.tsv)
 - `--github-token, -g` - GitHub API token (default: from GITHUB_TOKEN env var)
 - `--anthropic-key, -a` - Anthropic API key (default: from ANTHROPIC_API_KEY env var)
+- `--start, -s` - Start index for batch processing (default: 0)
+- `--end, -e` - End index for batch processing (default: all)
 
 **Output format:**
 ```
@@ -123,6 +133,7 @@ Study Name | Abbreviation | Diseases Included | Repository Link | Owner | Contri
 ✓ **Exponential backoff retry logic** - Handles API rate limits gracefully
 ✓ **Batch fetching** - Fetches 20 articles at a time for efficiency
 ✓ **Enhanced error handling** - Robust XML parsing with fallbacks
+✓ **Better query construction** - Improved disease keyword matching
 ✓ **Better query construction** - Improved disease keyword matching
 ✓ **Progress indicators** - Shows [X/99] progress for each study
 ✓ **Detailed logging** - All logs go to stderr, doesn't interfere with output
