@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 import time
 import re
 import sys
+import os
 from typing import List, Dict, Optional
 import argparse
 
@@ -174,14 +175,14 @@ def build_search_query(study_name: str, abbreviation: str, diseases: str, data_m
 
     return " AND ".join(query_parts)
 
-def search_pubmed(study_name: str, abbreviation: str, diseases: str, data_modalities: str, max_results: int = 100) -> List[Dict]:
+def search_pubmed(study_name: str, abbreviation: str, diseases: str, data_modalities: str, max_results: int = 100, ncbi_api_key_suffix: str = "") -> List[Dict]:
     """Search PubMed for articles related to the study"""
     # Build search query
     query = build_search_query(study_name, abbreviation, diseases, data_modalities)
 
     # Search PubMed
     base_url = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi'
-    search_url = f'{base_url}?db=pubmed&term={query}&retmax={max_results}&retmode=json'
+    search_url = f'{base_url}?db=pubmed&term={query}&retmax={max_results}&retmode=json{ncbi_api_key_suffix}'
 
     print(f"  Query: {query[:100]}..." if len(query) > 100 else f"  Query: {query}", file=sys.stderr)
 
@@ -206,7 +207,7 @@ def search_pubmed(study_name: str, abbreviation: str, diseases: str, data_modali
             batch_ids = pubmed_ids[i:i+batch_size]
             ids_str = ",".join(batch_ids)
 
-            fetch_url = f'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id={ids_str}&retmode=xml'
+            fetch_url = f'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id={ids_str}&retmode=xml{ncbi_api_key_suffix}'
             fetch_response = search_pubmed_with_retry(fetch_url)
 
             if not fetch_response:
@@ -248,8 +249,18 @@ def main():
                        help='Output TSV file (default: pubmed_central_{timestamp}.tsv)')
     parser.add_argument('--max-results', '-m', type=int, default=100,
                        help='Maximum results per study (default: 100)')
+    parser.add_argument('--ncbi-api-key', default=None,
+                       help='NCBI API key for higher rate limits (default: from NCBI_API_KEY env var)')
 
     args = parser.parse_args()
+
+    # Check for optional environment variable
+    ncbi_api_key = args.ncbi_api_key or os.getenv('NCBI_API_KEY')
+    if not ncbi_api_key:
+        print("Warning: NCBI_API_KEY environment variable not set. You may encounter lower rate limits when accessing the NCBI Entrez Utilities API.", file=sys.stderr)
+        ncbi_api_key_suffix = ""
+    else:
+        ncbi_api_key_suffix = f"&api_key={ncbi_api_key}"
 
     # Read the dataset inventory
     try:
@@ -270,7 +281,7 @@ def main():
         data_modalities = row.get("Data Modalities", "")
 
         print(f"\n[{idx+1}/{len(studies_df)}] Searching for publications related to {study_name} ({abbreviation})...", file=sys.stderr)
-        results = search_pubmed(study_name, abbreviation, diseases, data_modalities, args.max_results)
+        results = search_pubmed(study_name, abbreviation, diseases, data_modalities, args.max_results, ncbi_api_key_suffix)
         all_results.extend(results)
 
     # Create and save results dataframe
