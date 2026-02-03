@@ -63,6 +63,11 @@ def search_pubmed_with_retry(url: str, max_retries: int = 3, base_delay: int = 6
 def extract_article_details(article_xml: ET.Element) -> Optional[Dict]:
     """Extract article details from PubMed XML"""
     try:
+        # Get PMID for tracking
+        pmid_elem = article_xml.find('.//PMID')
+        pmid = pmid_elem.text if pmid_elem is not None else ""
+        logger.debug(f"Extracting details for PMID: {pmid}")
+
         # Get title
         title = article_xml.find('.//ArticleTitle')
         title_text = clean_text(title.text if title is not None and title.text else "")
@@ -121,12 +126,15 @@ def extract_article_details(article_xml: ET.Element) -> Optional[Dict]:
         for article_id in article_ids:
             if article_id.get('IdType') == 'pmc':
                 pmc_id = article_id.text
+                pmc_id = re.sub(r"PMC", "", pmc_id)  # Remove PMC prefix
+                logger.debug(f"Found PMC ID: {pmc_id}")
                 break
 
-        # Create PMC link if available
+        # Create PMC link if available by adding prefix
         pmc_link = f"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC{pmc_id}/" if pmc_id else ""
 
         return {
+            "PMID": pmid,
             "Title": title_text,
             "Abstract": abstract,
             "Authors": "; ".join(authors),
@@ -218,6 +226,7 @@ def search_pubmed(study_name: str, abbreviation: str, diseases: str, data_modali
     logger.info(f"Query: {query[:100]}..." if len(query) > 100 else f"Query: {query}")
     logger.debug(f"API key in URL: {'YES' if ncbi_api_key_suffix else 'NO'}")
     
+    logger.debug(f"Max results requested: {max_results}")
 
     response = search_pubmed_with_retry(search_url)
     if not response:
