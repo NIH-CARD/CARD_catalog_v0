@@ -70,16 +70,15 @@ python3 scrape_publications.py
 **With options:**
 ```bash
 python3 scrape_publications.py \
-  --input ../CARD_catalogue_beta-main/CARD_catalogue_beta-main/dataset-inventory-June_20_2025.tab \
+  --input ../tables/dataset-inventory-Dec_02_2025.tab \
   --output publications_output.tsv \
   --max-results 150 \
-  --ncbi-api-key "your_api_key_here" \
   --verbose \
   --log-file pubmed_scrape.log
 ```
 
 **Arguments:**
-- `--input, -i` - Input TSV file with study inventory (default: dataset-inventory-June_20_2025.tab)
+- `--input, -i` - Input TSV file with study inventory (default: dataset-inventory-Dec_02_2025.tab)
 - `--output, -o` - Output TSV file (default: pubmed_central_{timestamp}.tsv)
 - `--max-results, -m` - Maximum results per study (default: 100)
 - `--ncbi-api-key` - NCBI API key for higher rate limits (default: from NCBI_API_KEY env var)
@@ -107,14 +106,14 @@ python3 scrape_github.py
 **With options:**
 ```bash
 python3 scrape_github.py \
-  --input ../CARD_catalogue_beta-main/CARD_catalogue_beta-main/dataset-inventory-June_20_2025.tab \
+  --input ../tables/dataset-inventory-Dec_02_2025.tab \
   --output github_repos_output.tsv \
   --github-token YOUR_TOKEN \
   --anthropic-key YOUR_KEY
 ```
 
 **Arguments:**
-- `--input, -i` - Input TSV file with study inventory (default: dataset-inventory-June_20_2025.tab)
+- `--input, -i` - Input TSV file with study inventory (default: dataset-inventory-Dec_02_2025.tab)
 - `--output, -o` - Output TSV file (default: gits_to_reannotate_completed_{timestamp}.tsv)
 - `--github-token, -g` - GitHub API token (default: from GITHUB_TOKEN env var)
 - `--anthropic-key, -a` - Anthropic API key (default: from ANTHROPIC_API_KEY env var)
