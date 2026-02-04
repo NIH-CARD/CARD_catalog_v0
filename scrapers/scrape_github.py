@@ -18,6 +18,12 @@ import base64
 import argparse
 import logging
 from logging_config import setup_logger, get_default_log_file
+from dotenv import load_dotenv
+
+try:
+    load_dotenv()
+except ImportError:
+    pass
 
 # Module-level logger - will be configured in main()
 logger = logging.getLogger(__name__)
@@ -109,12 +115,14 @@ class FAIRComplianceLogger:
 
 def clean_text(text: str) -> str:
     """Remove newlines and extra whitespace from text"""
+    logger.debug(f"Cleaning text: {len(text) if text else 0} chars")
     if text is None:
         return ""
     return re.sub(r'\s+', ' ', text.strip())
 
 def get_anthropic_client():
     """Initialize Anthropic client"""
+    logger.debug("Initializing Anthropic client")
     try:
         api_key = os.getenv('ANTHROPIC_API_KEY')
         if api_key:
@@ -129,6 +137,7 @@ def get_anthropic_client():
 
 def github_request_with_retry(url: str, headers: Dict, params: Dict = None, max_retries: int = 3, base_delay: int = 60) -> Optional[requests.Response]:
     """Make a GitHub API request with exponential backoff retry logic"""
+    logger.debug(f"GitHub API request: url={url}, params={params}, max_retries={max_retries}")
     for attempt in range(max_retries):
         try:
             time.sleep(5)  # Rate limiting: minimum 5 seconds between all GitHub API requests
@@ -380,6 +389,7 @@ def check_fair_compliance(owner: str, repo_name: str, headers: Dict, fair_logger
 
 def get_repo_content(owner: str, repo_name: str, headers: Dict, fair_logger: FAIRComplianceLogger = None, repo_url: str = "", study_name: str = "") -> str:
     """Get repository content (README and optionally source files)"""
+    logger.debug(f"Fetching content for repository: {owner}/{repo_name}")
     content_parts = []
 
     # Try to get README
@@ -447,6 +457,7 @@ def search_github(study_name: str, abbreviation: str, diseases: str, github_toke
 
 def search_github_with_query(query: str, study_name: str, abbreviation: str, diseases: str, headers: Dict, seen_repos: set, fair_logger: FAIRComplianceLogger, rate_limiter: SearchRateLimiter) -> List[Dict]:
     """Perform a single GitHub search with a specific query"""
+    logger.debug(f"Executing GitHub search: query='{query}', study={study_name}, abbreviation={abbreviation}")
     # Enforce rate limit before making search request
     rate_limiter.wait_if_needed()
 
@@ -545,6 +556,7 @@ def search_github_with_query(query: str, study_name: str, abbreviation: str, dis
         return []
 
 def main():
+    logger.debug("Starting main function")
     parser = argparse.ArgumentParser(description='Scrape GitHub for code repositories related to neurodegenerative disease studies')
     parser.add_argument('--input', '-i', default='../tables/dataset-inventory-June_20_2025.tab',
                        help='Input TSV file with study inventory (default: ../tables/dataset-inventory-June_20_2025.tab)')
