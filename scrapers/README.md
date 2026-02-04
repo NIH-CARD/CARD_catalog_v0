@@ -14,7 +14,7 @@ Both scrapers are designed to work with the CARD catalog dataset inventory and p
 ## Requirements
 
 ```bash
-pip install pandas requests anthropic
+pip install pandas requests anthropic python-dotenv
 ```
 
 ### API Keys Setup
@@ -49,6 +49,7 @@ export ANTHROPIC_API_KEY="your_anthropic_key_here"
 **Where to get API keys:**
 - **GitHub Token**: https://github.com/settings/tokens (needs `public_repo` scope)
 - **Anthropic API Key**: https://console.anthropic.com/
+- **NCBI API Key**: https://www.ncbi.nlm.nih.gov/account/settings/ (free, increases rate limits)
 
 **Security Note**: Never commit `.env` or files containing API keys to version control!
 
@@ -69,15 +70,21 @@ python3 scrape_publications.py
 **With options:**
 ```bash
 python3 scrape_publications.py \
-  --input ../CARD_catalogue_beta-main/CARD_catalogue_beta-main/dataset-inventory-June_20_2025.tab \
+  --input ../tables/dataset-inventory-Dec_02_2025.tab \
   --output publications_output.tsv \
-  --max-results 150
+  --max-results 150 \
+  --verbose \
+  --log-file pubmed_scrape.log
 ```
 
 **Arguments:**
-- `--input, -i` - Input TSV file with study inventory (default: dataset-inventory-June_20_2025.tab)
+- `--input, -i` - Input TSV file with study inventory (default: dataset-inventory-Dec_02_2025.tab)
 - `--output, -o` - Output TSV file (default: pubmed_central_{timestamp}.tsv)
 - `--max-results, -m` - Maximum results per study (default: 100)
+- `--ncbi-api-key` - NCBI API key for higher rate limits (default: from NCBI_API_KEY env var)
+- `--verbose, -v` - Enable verbose (DEBUG) logging
+- `--quiet, -q` - Show only warnings and errors
+- `--log-file` - Log file path (default: publications_{timestamp}.log)
 
 **Output format:**
 ```
@@ -99,17 +106,24 @@ python3 scrape_github.py
 **With options:**
 ```bash
 python3 scrape_github.py \
-  --input ../CARD_catalogue_beta-main/CARD_catalogue_beta-main/dataset-inventory-June_20_2025.tab \
+  --input ../tables/dataset-inventory-Dec_02_2025.tab \
   --output github_repos_output.tsv \
   --github-token YOUR_TOKEN \
-  --anthropic-key YOUR_KEY
+  --anthropic-key YOUR_KEY \
+  --verbose \
+  --log-file github_scrape.log
 ```
 
 **Arguments:**
-- `--input, -i` - Input TSV file with study inventory (default: dataset-inventory-June_20_2025.tab)
+- `--input, -i` - Input TSV file with study inventory (default: dataset-inventory-Dec_02_2025.tab)
 - `--output, -o` - Output TSV file (default: gits_to_reannotate_completed_{timestamp}.tsv)
 - `--github-token, -g` - GitHub API token (default: from GITHUB_TOKEN env var)
 - `--anthropic-key, -a` - Anthropic API key (default: from ANTHROPIC_API_KEY env var)
+- `--start, -s` - Start index for batch processing (default: 0)
+- `--end, -e` - End index for batch processing (default: all)
+- `--verbose, -v` - Enable verbose (DEBUG) logging
+- `--quiet, -q` - Show only warnings and errors
+- `--log-file` - Log file path (default: github_scraper_{timestamp}.log)
 
 **Output format:**
 ```
@@ -186,6 +200,73 @@ Both scrapers expect a TSV file with the following columns:
 Study Name	Abbreviation	Data Modalities	Diseases Included
 Alzheimer's Disease Neuroimaging Initiative	ADNI	[clinical, imaging] MRI; PET; CSF	Alzheimer's Disease; MCI
 ```
+
+## Logging
+
+Both scrapers support configurable logging with three verbosity levels:
+
+### Logging Levels
+
+- **INFO (default)**: Shows progress, results, and important status messages
+- **DEBUG (--verbose)**: Adds detailed diagnostic information including:
+  - API request/response details
+  - Query construction steps
+  - Parsing and extraction details
+  - Batch processing information
+- **WARNING (--quiet)**: Shows only warnings and errors
+
+### Log Output
+
+Logs are written to **both console (stderr) and a log file**:
+
+- **Console**: Real-time progress monitoring
+- **Log file**: Permanent record with timestamp (e.g., `publications_20251202_143022.log`)
+
+### Examples
+
+```bash
+# Verbose logging for debugging
+python3 scrape_publications.py --verbose
+
+# Quiet mode (only warnings/errors)
+python3 scrape_github.py --quiet
+
+# Custom log file
+python3 scrape_publications.py --log-file my_scrape.log
+
+# Combine options
+python3 scrape_github.py --verbose --log-file debug.log
+```
+
+### What Gets Logged
+
+**DEBUG level includes:**
+- NCBI API key status
+- Query construction details (disease terms, modalities, search strings)
+- HTTP request URLs and parameters
+- Batch processing ranges (e.g., "Fetching articles 0-20")
+- Article parsing details (PMID, author count, keyword count)
+- AI analysis input/output details
+- Repository content fetching details
+- FAIR compliance checking steps
+
+**INFO level includes:**
+- Studies loaded and processing ranges
+- Search progress ([X/99] study names)
+- Results found per study
+- Success messages with output filenames
+- FAIR compliance summary statistics
+
+**WARNING level includes:**
+- Rate limit notifications and wait times
+- Retry attempts for failed requests
+- Content parsing errors (non-fatal)
+
+**ERROR level includes:**
+- Missing required API keys
+- File read/write failures
+- Failed API requests after all retries
+- Critical parsing errors
 
 ## Rate Limiting
 

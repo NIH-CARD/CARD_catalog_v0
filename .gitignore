@@ -50,3 +50,5 @@ htmlcov/
 
 # mypy
 .mypy_cache/
+scrapers/pubmed_scrape.log
+*.log
