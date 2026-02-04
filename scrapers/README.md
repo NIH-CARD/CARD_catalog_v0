@@ -109,7 +109,9 @@ python3 scrape_github.py \
   --input ../tables/dataset-inventory-Dec_02_2025.tab \
   --output github_repos_output.tsv \
   --github-token YOUR_TOKEN \
-  --anthropic-key YOUR_KEY
+  --anthropic-key YOUR_KEY \
+  --verbose \
+  --log-file github_scrape.log
 ```
 
 **Arguments:**
@@ -119,6 +121,9 @@ python3 scrape_github.py \
 - `--anthropic-key, -a` - Anthropic API key (default: from ANTHROPIC_API_KEY env var)
 - `--start, -s` - Start index for batch processing (default: 0)
 - `--end, -e` - End index for batch processing (default: all)
+- `--verbose, -v` - Enable verbose (DEBUG) logging
+- `--quiet, -q` - Show only warnings and errors
+- `--log-file` - Log file path (default: github_scraper_{timestamp}.log)
 
 **Output format:**
 ```
@@ -132,7 +137,6 @@ Study Name | Abbreviation | Diseases Included | Repository Link | Owner | Contri
 ✓ **Exponential backoff retry logic** - Handles API rate limits gracefully
 ✓ **Batch fetching** - Fetches 20 articles at a time for efficiency
 ✓ **Enhanced error handling** - Robust XML parsing with fallbacks
-✓ **Better query construction** - Improved disease keyword matching
 ✓ **Better query construction** - Improved disease keyword matching
 ✓ **Progress indicators** - Shows [X/99] progress for each study
 ✓ **Detailed logging** - All logs go to stderr, doesn't interfere with output
@@ -196,6 +200,73 @@ Both scrapers expect a TSV file with the following columns:
 Study Name	Abbreviation	Data Modalities	Diseases Included
 Alzheimer's Disease Neuroimaging Initiative	ADNI	[clinical, imaging] MRI; PET; CSF	Alzheimer's Disease; MCI
 ```
+
+## Logging
+
+Both scrapers support configurable logging with three verbosity levels:
+
+### Logging Levels
+
+- **INFO (default)**: Shows progress, results, and important status messages
+- **DEBUG (--verbose)**: Adds detailed diagnostic information including:
+  - API request/response details
+  - Query construction steps
+  - Parsing and extraction details
+  - Batch processing information
+- **WARNING (--quiet)**: Shows only warnings and errors
+
+### Log Output
+
+Logs are written to **both console (stderr) and a log file**:
+
+- **Console**: Real-time progress monitoring
+- **Log file**: Permanent record with timestamp (e.g., `publications_20251202_143022.log`)
+
+### Examples
+
+```bash
+# Verbose logging for debugging
+python3 scrape_publications.py --verbose
+
+# Quiet mode (only warnings/errors)
+python3 scrape_github.py --quiet
+
+# Custom log file
+python3 scrape_publications.py --log-file my_scrape.log
+
+# Combine options
+python3 scrape_github.py --verbose --log-file debug.log
+```
+
+### What Gets Logged
+
+**DEBUG level includes:**
+- NCBI API key status
+- Query construction details (disease terms, modalities, search strings)
+- HTTP request URLs and parameters
+- Batch processing ranges (e.g., "Fetching articles 0-20")
+- Article parsing details (PMID, author count, keyword count)
+- AI analysis input/output details
+- Repository content fetching details
+- FAIR compliance checking steps
+
+**INFO level includes:**
+- Studies loaded and processing ranges
+- Search progress ([X/99] study names)
+- Results found per study
+- Success messages with output filenames
+- FAIR compliance summary statistics
+
+**WARNING level includes:**
+- Rate limit notifications and wait times
+- Retry attempts for failed requests
+- Content parsing errors (non-fatal)
+
+**ERROR level includes:**
+- Missing required API keys
+- File read/write failures
+- Failed API requests after all retries
+- Critical parsing errors
 
 ## Rate Limiting
 

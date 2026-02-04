@@ -16,6 +16,11 @@ from anthropic import Anthropic
 from datetime import datetime
 import base64
 import argparse
+import logging
+from logging_config import setup_logger, get_default_log_file
+
+# Module-level logger - will be configured in main()
+logger = logging.getLogger(__name__)
 
 class SearchRateLimiter:
     """Rate limiter for GitHub search API - enforces 25 searches per minute"""
@@ -34,7 +39,7 @@ class SearchRateLimiter:
             oldest_request = self.request_times[0]
             wait_time = 60 - (now - oldest_request) + 1  # +1 second buffer
             if wait_time > 0:
-                print(f"Search rate limit: {len(self.request_times)}/25 in last minute. Waiting {int(wait_time)} seconds...", file=sys.stderr)
+                logger.warning(f"Search rate limit: {len(self.request_times)}/25 in last minute. Waiting {int(wait_time)} seconds...")
                 time.sleep(wait_time)
                 # Clean up old requests again after waiting
                 now = time.time()
@@ -81,26 +86,26 @@ class FAIRComplianceLogger:
         if self.issues:
             df = pd.DataFrame(self.issues)
             df.to_csv(self.output_file, sep='\t', index=False)
-            print(f"\nFAIR compliance log saved to {self.output_file}", file=sys.stderr)
+            logger.info(f"FAIR compliance log saved to {self.output_file}")
 
     def print_summary(self):
         """Print a summary of FAIR compliance statistics"""
-        print(f"\n{'='*60}", file=sys.stderr)
-        print("FAIR COMPLIANCE SUMMARY", file=sys.stderr)
-        print(f"{'='*60}", file=sys.stderr)
-        print(f"Total repositories analyzed: {self.stats['total_repos']}", file=sys.stderr)
-        print(f"\nIssues Found:", file=sys.stderr)
-        print(f"  No README: {self.stats['no_readme']} ({self.stats['no_readme']/max(self.stats['total_repos'],1)*100:.1f}%)", file=sys.stderr)
-        print(f"  Insufficient content: {self.stats['insufficient_content']} ({self.stats['insufficient_content']/max(self.stats['total_repos'],1)*100:.1f}%)", file=sys.stderr)
-        print(f"  No dependency info: {self.stats['no_dependencies']} ({self.stats['no_dependencies']/max(self.stats['total_repos'],1)*100:.1f}%)", file=sys.stderr)
-        print(f"  No version info: {self.stats['no_version_info']} ({self.stats['no_version_info']/max(self.stats['total_repos'],1)*100:.1f}%)", file=sys.stderr)
-        print(f"  No environment info: {self.stats['no_environment_info']} ({self.stats['no_environment_info']/max(self.stats['total_repos'],1)*100:.1f}%)", file=sys.stderr)
-        print(f"  No container: {self.stats['no_container']} ({self.stats['no_container']/max(self.stats['total_repos'],1)*100:.1f}%)", file=sys.stderr)
-        print(f"\nFAIR Best Practices:", file=sys.stderr)
-        print(f"  Has container (Docker/etc): {self.stats['has_container']} ({self.stats['has_container']/max(self.stats['total_repos'],1)*100:.1f}%)", file=sys.stderr)
-        print(f"  Has version info: {self.stats['has_version_info']} ({self.stats['has_version_info']/max(self.stats['total_repos'],1)*100:.1f}%)", file=sys.stderr)
-        print(f"  Has dependencies: {self.stats['has_dependencies']} ({self.stats['has_dependencies']/max(self.stats['total_repos'],1)*100:.1f}%)", file=sys.stderr)
-        print(f"{'='*60}", file=sys.stderr)
+        logger.info(f"{'='*60}")
+        logger.info("FAIR COMPLIANCE SUMMARY")
+        logger.info(f"{'='*60}")
+        logger.info(f"Total repositories analyzed: {self.stats['total_repos']}")
+        logger.info("Issues Found:")
+        logger.info(f"  No README: {self.stats['no_readme']} ({self.stats['no_readme']/max(self.stats['total_repos'],1)*100:.1f}%)")
+        logger.info(f"  Insufficient content: {self.stats['insufficient_content']} ({self.stats['insufficient_content']/max(self.stats['total_repos'],1)*100:.1f}%)")
+        logger.info(f"  No dependency info: {self.stats['no_dependencies']} ({self.stats['no_dependencies']/max(self.stats['total_repos'],1)*100:.1f}%)")
+        logger.info(f"  No version info: {self.stats['no_version_info']} ({self.stats['no_version_info']/max(self.stats['total_repos'],1)*100:.1f}%)")
+        logger.info(f"  No environment info: {self.stats['no_environment_info']} ({self.stats['no_environment_info']/max(self.stats['total_repos'],1)*100:.1f}%)")
+        logger.info(f"  No container: {self.stats['no_container']} ({self.stats['no_container']/max(self.stats['total_repos'],1)*100:.1f}%)")
+        logger.info("FAIR Best Practices:")
+        logger.info(f"  Has container (Docker/etc): {self.stats['has_container']} ({self.stats['has_container']/max(self.stats['total_repos'],1)*100:.1f}%)")
+        logger.info(f"  Has version info: {self.stats['has_version_info']} ({self.stats['has_version_info']/max(self.stats['total_repos'],1)*100:.1f}%)")
+        logger.info(f"  Has dependencies: {self.stats['has_dependencies']} ({self.stats['has_dependencies']/max(self.stats['total_repos'],1)*100:.1f}%)")
+        logger.info(f"{'='*60}")
 
 def clean_text(text: str) -> str:
     """Remove newlines and extra whitespace from text"""
@@ -116,10 +121,10 @@ def get_anthropic_client():
             client = Anthropic(api_key=api_key)
             return client
         else:
-            print("ANTHROPIC_API_KEY environment variable not set", file=sys.stderr)
+            logger.error("ANTHROPIC_API_KEY environment variable not set")
             return None
     except Exception as e:
-        print(f"Failed to initialize Anthropic client: {e}", file=sys.stderr)
+        logger.error(f"Failed to initialize Anthropic client: {e}")
         return None
 
 def github_request_with_retry(url: str, headers: Dict, params: Dict = None, max_retries: int = 3, base_delay: int = 60) -> Optional[requests.Response]:
@@ -138,12 +143,12 @@ def github_request_with_retry(url: str, headers: Dict, params: Dict = None, max_
                     if remaining == 0:
                         reset_time = int(response.headers.get('X-RateLimit-Reset', 0))
                         wait_time = max(reset_time - time.time(), base_delay)
-                        print(f"Rate limit exceeded. Waiting {int(wait_time)} seconds...", file=sys.stderr)
+                        logger.warning(f"Rate limit exceeded. Waiting {int(wait_time)} seconds...")
                         time.sleep(wait_time)
                         continue
 
                 delay = base_delay * (2 ** attempt)
-                print(f"GitHub API error 403 (attempt {attempt + 1}/{max_retries}). Waiting {delay} seconds...", file=sys.stderr)
+                logger.warning(f"GitHub API error 403 (attempt {attempt + 1}/{max_retries}). Waiting {delay} seconds...")
                 time.sleep(delay)
             elif response.status_code == 404:
                 # Not found is a valid response, return it
@@ -153,15 +158,16 @@ def github_request_with_retry(url: str, headers: Dict, params: Dict = None, max_
         except requests.exceptions.RequestException as e:
             if attempt < max_retries - 1:
                 delay = base_delay * (2 ** attempt)
-                print(f"Request failed (attempt {attempt + 1}/{max_retries}): {str(e)}. Retrying in {delay} seconds...", file=sys.stderr)
+                logger.warning(f"Request failed (attempt {attempt + 1}/{max_retries}): {str(e)}. Retrying in {delay} seconds...")
                 time.sleep(delay)
             else:
-                print(f"Request failed after {max_retries} attempts: {str(e)}", file=sys.stderr)
+                logger.error(f"Request failed after {max_retries} attempts: {str(e)}")
                 return None
     return None
 
 def get_ai_analysis(content: str, repo_name: str) -> Dict:
     """Use Claude to analyze repository content and extract biomedical relevance, summary, data types, and tools"""
+    logger.debug(f"Starting AI analysis for repository: {repo_name}, content length: {len(content) if content else 0} chars")
     if not content or not content.strip():
         return {
             "biomedical_relevance": "UNKNOWN - No content available for analysis",
@@ -216,6 +222,7 @@ TOOLING:
 [Your tools list]"""
 
         # Make the API call
+        logger.debug(f"Sending {len(prompt)} chars to Claude API for analysis")
         response = client.messages.create(
             model="claude-sonnet-4-20250514",
             max_tokens=2000,
@@ -227,6 +234,7 @@ TOOLING:
                 }
             ]
         )
+        logger.debug(f"Received AI response, parsing sections...")
 
         # Extract the response content
         content_text = response.content[0].text.strip()
@@ -277,10 +285,11 @@ TOOLING:
         for key in sections:
             sections[key] = clean_text(sections[key]) if sections[key] else ""
 
+        logger.debug(f"AI analysis complete - Biomedical relevance: {sections['biomedical_relevance'][:50]}...")
         return sections
 
     except Exception as e:
-        print(f"Error in AI analysis: {str(e)}", file=sys.stderr)
+        logger.error(f"Error in AI analysis: {str(e)}")
         return {
             "biomedical_relevance": f"ERROR - {str(e)}",
             "summary": "",
@@ -290,6 +299,7 @@ TOOLING:
 
 def check_fair_compliance(owner: str, repo_name: str, headers: Dict, fair_logger: FAIRComplianceLogger, repo_url: str, study_name: str) -> Dict:
     """Check repository for FAIR compliance indicators"""
+    logger.debug(f"Checking FAIR compliance for {owner}/{repo_name}")
     compliance_info = {
         'has_readme': False,
         'has_dependencies': False,
@@ -382,9 +392,10 @@ def get_repo_content(owner: str, repo_name: str, headers: Dict, fair_logger: FAI
             if readme_data and 'content' in readme_data:
                 # Decode base64 content
                 readme_content = base64.b64decode(readme_data['content']).decode('utf-8', errors='ignore')
+                logger.debug(f"README fetched: {len(readme_content)} chars")
                 content_parts.append(f"README:\n{readme_content}")
         except Exception as e:
-            print(f"  Error parsing README: {str(e)}", file=sys.stderr)
+            logger.warning(f"  Error parsing README: {str(e)}")
 
     # If README is too short or missing, try to get package.json, setup.py, or requirements.txt
     if len(content_parts) == 0 or len(content_parts[0]) < 200:
@@ -406,6 +417,7 @@ def get_repo_content(owner: str, repo_name: str, headers: Dict, fair_logger: FAI
 
 def search_github(study_name: str, abbreviation: str, diseases: str, github_token: str, fair_logger: FAIRComplianceLogger, rate_limiter: SearchRateLimiter) -> List[Dict]:
     """Search GitHub for repositories related to the study"""
+    logger.debug(f"Starting GitHub search for study: {study_name} ({abbreviation})")
     disease_keywords = ["alzheimer", "parkinson", "dementia", "brain"]
 
     all_results = []
@@ -420,13 +432,14 @@ def search_github(study_name: str, abbreviation: str, diseases: str, github_toke
     # Solution: Use abbreviations only (no quotes) for more reliable searches
 
     if not abbreviation or not abbreviation.strip():
-        print(f"  No abbreviation available - skipping GitHub search", file=sys.stderr)
+        logger.info("  No abbreviation available - skipping GitHub search")
         return all_results
 
     # Search combinations: abbreviation + each disease keyword (no quotes)
     for disease_term in disease_keywords:
         query = f'{abbreviation} {disease_term}'  # No quotes = more flexible
-        print(f"  Searching: {query}", file=sys.stderr)
+        logger.debug(f"Constructed search query: {query}")
+        logger.info(f"  Searching: {query}")
         results = search_github_with_query(query, study_name, abbreviation, diseases, headers, seen_repos, fair_logger, rate_limiter)
         all_results.extend(results)
 
@@ -454,10 +467,10 @@ def search_github_with_query(query: str, study_name: str, abbreviation: str, dis
         items = data.get('items', [])
 
         if not items:
-            print(f"  No repositories found", file=sys.stderr)
+            logger.info("  No repositories found")
             return []
 
-        print(f"  Found {len(items)} repositories", file=sys.stderr)
+        logger.info(f"  Found {len(items)} repositories")
 
         results = []
         for idx, repo in enumerate(items):
@@ -489,10 +502,10 @@ def search_github_with_query(query: str, study_name: str, abbreviation: str, dis
                         if contributors_data:
                             contributors = [c['login'] for c in contributors_data[:10] if isinstance(c, dict) and 'login' in c]
                     except Exception as e:
-                        print(f"  Error parsing contributors: {str(e)}", file=sys.stderr)
+                        logger.warning(f"  Error parsing contributors: {str(e)}")
 
                 # Get repository content
-                print(f"  Analyzing: {repo_url}", file=sys.stderr)
+                logger.info(f"  Analyzing: {repo_url}")
                 repo_content = get_repo_content(owner, repo_name, headers, fair_logger, repo_url, study_name)
 
                 # Get AI analysis
@@ -500,7 +513,7 @@ def search_github_with_query(query: str, study_name: str, abbreviation: str, dis
 
                 # Skip if no content could be analyzed
                 if not repo_content or len(repo_content) < 50:
-                    print(f"  Skipping {repo_url} - insufficient content", file=sys.stderr)
+                    logger.info(f"  Skipping {repo_url} - insufficient content")
                     fair_logger.increment_stat('insufficient_content')
                     fair_logger.log_issue(repo_url, study_name, 'Insufficient Content',
                                          f'Repository content too short (<50 chars), may be incomplete or non-functional')
@@ -521,14 +534,14 @@ def search_github_with_query(query: str, study_name: str, abbreviation: str, dis
                 })
 
             except Exception as e:
-                print(f"  Error processing repository: {str(e)}", file=sys.stderr)
+                logger.error(f"  Error processing repository: {str(e)}")
                 continue
 
-        print(f"  Successfully processed {len(results)} repositories", file=sys.stderr)
+        logger.info(f"  Successfully processed {len(results)} repositories")
         return results
 
     except Exception as e:
-        print(f"  Error searching GitHub: {str(e)}", file=sys.stderr)
+        logger.error(f"  Error searching GitHub: {str(e)}")
         return []
 
 def main():
@@ -545,19 +558,32 @@ def main():
                        help='GitHub API token (default: from GITHUB_TOKEN env var)')
     parser.add_argument('--anthropic-key', '-a', default=None,
                        help='Anthropic API key (default: from ANTHROPIC_API_KEY env var)')
+    parser.add_argument('--verbose', '-v', action='store_true',
+                       help='Enable verbose (DEBUG) logging')
+    parser.add_argument('--quiet', '-q', action='store_true',
+                       help='Suppress INFO logs, show only WARNING and ERROR')
+    parser.add_argument('--log-file', '-l', default=None,
+                       help='Log file path (default: github_scraper_{timestamp}.log)')
 
     args = parser.parse_args()
+
+    # Setup logger
+    log_level = logging.DEBUG if args.verbose else (logging.WARNING if args.quiet else logging.INFO)
+    log_file = args.log_file or get_default_log_file('github_scraper')
+    setup_logger(__name__, log_file, log_level)
 
     # Check for required environment variables
     github_token = args.github_token or os.getenv('GITHUB_TOKEN')
     anthropic_key = args.anthropic_key or os.getenv('ANTHROPIC_API_KEY')
+    logger.debug(f"GitHub token present: {'YES' if github_token else 'NO'}")
+    logger.debug(f"Anthropic key present: {'YES' if anthropic_key else 'NO'}")
 
     if not github_token:
-        print("Error: GitHub token required. Set GITHUB_TOKEN env var or use --github-token", file=sys.stderr)
+        logger.error("Error: GitHub token required. Set GITHUB_TOKEN env var or use --github-token")
         sys.exit(1)
 
     if not anthropic_key:
-        print("Error: Anthropic API key required. Set ANTHROPIC_API_KEY env var or use --anthropic-key", file=sys.stderr)
+        logger.error("Error: Anthropic API key required. Set ANTHROPIC_API_KEY env var or use --anthropic-key")
         sys.exit(1)
 
     # Set environment variable for get_anthropic_client()
@@ -573,15 +599,16 @@ def main():
     # Read the dataset inventory
     try:
         studies_df = pd.read_csv(args.input, sep="\t")
-        print(f"Loaded {len(studies_df)} studies from {args.input}", file=sys.stderr)
+        logger.info(f"Loaded {len(studies_df)} studies from {args.input}")
     except Exception as e:
-        print(f"Error reading dataset inventory: {str(e)}", file=sys.stderr)
+        logger.error(f"Error reading dataset inventory: {str(e)}")
         sys.exit(1)
 
     # Apply batch slicing
     end_idx = args.end if args.end is not None else len(studies_df)
     studies_df = studies_df.iloc[args.start:end_idx]
-    print(f"Processing studies {args.start} to {end_idx-1} ({len(studies_df)} studies in this batch)", file=sys.stderr)
+    logger.info(f"Processing studies {args.start} to {end_idx-1} ({len(studies_df)} studies in this batch)")
+    logger.debug(f"Batch slice: start={args.start}, end={end_idx}, total_studies={len(studies_df)}")
 
     # Initialize results list
     all_results = []
@@ -592,12 +619,13 @@ def main():
         abbreviation = row.get("Abbreviation", "")
         diseases = row.get("Diseases Included", "")
 
-        print(f"\n[{idx+1}/{len(studies_df)}] Searching GitHub for repositories related to {study_name} ({abbreviation})...", file=sys.stderr)
+        logger.info(f"[{idx+1}/{len(studies_df)}] Searching GitHub for repositories related to {study_name} ({abbreviation})...")
         results = search_github(study_name, abbreviation, diseases, github_token, fair_logger, rate_limiter)
         all_results.extend(results)
 
     # Remove duplicates
-    print("\nRemoving duplicate repositories...", file=sys.stderr)
+    logger.info("Removing duplicate repositories...")
+    logger.debug(f"Total results before deduplication: {len(all_results)}")
     seen_combinations = set()
     deduplicated_results = []
 
@@ -646,17 +674,17 @@ def main():
 
         results_df.to_csv(output_filename, sep="\t", index=False)
 
-        print(f"\n{'='*60}", file=sys.stderr)
-        print(f"SUCCESS: Results saved to {output_filename}", file=sys.stderr)
-        print(f"Total repositories found: {len(deduplicated_results)}", file=sys.stderr)
-        print(f"Duplicates removed: {len(all_results) - len(deduplicated_results)}", file=sys.stderr)
-        print(f"{'='*60}", file=sys.stderr)
+        logger.info(f"{'='*60}")
+        logger.info(f"SUCCESS: Results saved to {output_filename}")
+        logger.info(f"Total repositories found: {len(deduplicated_results)}")
+        logger.info(f"Duplicates removed: {len(all_results) - len(deduplicated_results)}")
+        logger.info(f"{'='*60}")
 
         # Save and print FAIR compliance log
         fair_logger.save_log()
         fair_logger.print_summary()
     else:
-        print("\nNo results found", file=sys.stderr)
+        logger.info("No results found")
         fair_logger.save_log()
         fair_logger.print_summary()
         sys.exit(1)
