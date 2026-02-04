@@ -361,6 +361,7 @@ def main():
         logger.debug(f"Creating dataframe from {len(all_results)} total results")
         # Reorder columns to match previous format exactly
         columns_order = [
+            "PMID",
             "Study Name",
             "Abbreviation",
             "Diseases Included",
