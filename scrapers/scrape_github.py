@@ -328,7 +328,7 @@ def get_repo_tree(owner: str, repo_name: str, default_branch: str, headers: Dict
         tree_response = github_request_with_retry(tree_url, headers, params={'recursive': '1'})
         
         if not tree_response or tree_response.status_code != 200:
-            logger.debug("Tree API request failed")
+            logger.warning("Tree API request failed")
             return None
         
         tree_data = tree_response.json()
@@ -345,7 +345,7 @@ def get_repo_tree(owner: str, repo_name: str, default_branch: str, headers: Dict
         return file_paths
         
     except Exception as e:
-        logger.debug(f"Error fetching git tree: {str(e)}")
+        logger.warning(f"Error fetching git tree: {str(e)}")
         return None
 
 def check_fair_compliance(owner: str, repo_name: str, default_branch: str, headers: Dict, fair_logger: FAIRComplianceLogger, repo_url: str, study_name: str) -> Dict:
