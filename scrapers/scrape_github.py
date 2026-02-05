@@ -140,7 +140,7 @@ def github_request_with_retry(url: str, headers: Dict, params: Dict = None, max_
     logger.debug(f"GitHub API request: url={url}, params={params}, max_retries={max_retries}")
     for attempt in range(max_retries):
         try:
-            time.sleep(5)  # Rate limiting: minimum 5 seconds between all GitHub API requests
+            time.sleep(3)  # Rate limiting: minimum 3 seconds between all GitHub API requests
             response = requests.get(url, headers=headers, params=params, timeout=30)
 
             if response.status_code == 200:
@@ -306,8 +306,50 @@ TOOLING:
             "tools": ""
         }
 
-def check_fair_compliance(owner: str, repo_name: str, headers: Dict, fair_logger: FAIRComplianceLogger, repo_url: str, study_name: str) -> Dict:
-    """Check repository for FAIR compliance indicators"""
+def get_repo_tree(owner: str, repo_name: str, default_branch: str, headers: Dict) -> Optional[set]:
+    """Fetch repository file tree using Git Trees API (single request)"""
+    logger.debug(f"Fetching git tree for {owner}/{repo_name} (branch: {default_branch})")
+    
+    try:
+        # First, get the branch to find the tree SHA
+        branch_url = f"https://api.github.com/repos/{owner}/{repo_name}/branches/{default_branch}"
+        branch_response = github_request_with_retry(branch_url, headers)
+        
+        if not branch_response or branch_response.status_code != 200:
+            logger.debug(f"Could not fetch branch {default_branch}, tree fetch failed")
+            return None
+        
+        branch_data = branch_response.json()
+        tree_sha = branch_data['commit']['commit']['tree']['sha']
+        logger.debug(f"Tree SHA: {tree_sha}")
+        
+        # Fetch the recursive tree
+        tree_url = f"https://api.github.com/repos/{owner}/{repo_name}/git/trees/{tree_sha}"
+        tree_response = github_request_with_retry(tree_url, headers, params={'recursive': '1'})
+        
+        if not tree_response or tree_response.status_code != 200:
+            logger.debug("Tree API request failed")
+            return None
+        
+        tree_data = tree_response.json()
+        
+        # Check if tree was truncated (>100k files)
+        if tree_data.get('truncated', False):
+            logger.warning(f"  Tree truncated for {owner}/{repo_name}, falling back to individual checks")
+            return None
+        
+        # Extract all file paths into a set for O(1) lookup
+        file_paths = {item['path'].lower() for item in tree_data.get('tree', []) if item['type'] == 'blob'}
+        logger.debug(f"Fetched {len(file_paths)} file paths from tree")
+        
+        return file_paths
+        
+    except Exception as e:
+        logger.debug(f"Error fetching git tree: {str(e)}")
+        return None
+
+def check_fair_compliance(owner: str, repo_name: str, default_branch: str, headers: Dict, fair_logger: FAIRComplianceLogger, repo_url: str, study_name: str) -> Dict:
+    """Check repository for FAIR compliance indicators using Git Trees API"""
     logger.debug(f"Checking FAIR compliance for {owner}/{repo_name}")
     compliance_info = {
         'has_readme': False,
@@ -318,51 +360,87 @@ def check_fair_compliance(owner: str, repo_name: str, headers: Dict, fair_logger
         'content_length': 0
     }
 
-    # Check for README
-    readme_url = f"https://api.github.com/repos/{owner}/{repo_name}/readme"
-    readme_response = github_request_with_retry(readme_url, headers)
-    if readme_response and readme_response.status_code == 200:
-        compliance_info['has_readme'] = True
-        fair_logger.increment_stat('has_dependencies')  # Will be corrected below if false
-
-    # Check for dependency files
-    dependency_files = ['requirements.txt', 'package.json', 'setup.py', 'Cargo.toml', 'go.mod', 'pom.xml', 'build.gradle']
-    for dep_file in dependency_files:
-        file_url = f"https://api.github.com/repos/{owner}/{repo_name}/contents/{dep_file}"
-        response = github_request_with_retry(file_url, headers)
-        if response and response.status_code == 200:
-            compliance_info['has_dependencies'] = True
+    # Try to get file tree (optimized approach - 2 API requests instead of ~22)
+    file_paths = get_repo_tree(owner, repo_name, default_branch, headers)
+    
+    if file_paths:
+        # Use tree-based checking (O(1) lookups)
+        logger.debug("Using tree-based FAIR compliance checking")
+        
+        # Check for README (case-insensitive)
+        readme_files = ['readme.md', 'readme.rst', 'readme.txt', 'readme']
+        compliance_info['has_readme'] = any(f in file_paths for f in readme_files)
+        
+        # Check for dependency files
+        dependency_files = ['requirements.txt', 'package.json', 'setup.py', 'cargo.toml', 'go.mod', 'pom.xml', 'build.gradle']
+        compliance_info['has_dependencies'] = any(f in file_paths for f in dependency_files)
+        if compliance_info['has_dependencies']:
             fair_logger.increment_stat('has_dependencies')
-            break
-
-    # Check for version/environment files
-    version_files = ['.python-version', '.nvmrc', 'runtime.txt', '.tool-versions']
-    for ver_file in version_files:
-        file_url = f"https://api.github.com/repos/{owner}/{repo_name}/contents/{ver_file}"
-        response = github_request_with_retry(file_url, headers)
-        if response and response.status_code == 200:
-            compliance_info['has_version_info'] = True
+        
+        # Check for version/environment files
+        version_files = ['.python-version', '.nvmrc', 'runtime.txt', '.tool-versions']
+        compliance_info['has_version_info'] = any(f in file_paths for f in version_files)
+        if compliance_info['has_version_info']:
             fair_logger.increment_stat('has_version_info')
-            break
-
-    # Check for container files
-    container_files = ['Dockerfile', 'docker-compose.yml', 'docker-compose.yaml', '.dockerignore', 'Containerfile']
-    for cont_file in container_files:
-        file_url = f"https://api.github.com/repos/{owner}/{repo_name}/contents/{cont_file}"
-        response = github_request_with_retry(file_url, headers)
-        if response and response.status_code == 200:
-            compliance_info['has_container'] = True
+        
+        # Check for container files
+        container_files = ['dockerfile', 'docker-compose.yml', 'docker-compose.yaml', '.dockerignore', 'containerfile']
+        compliance_info['has_container'] = any(f in file_paths for f in container_files)
+        if compliance_info['has_container']:
             fair_logger.increment_stat('has_container')
-            break
-
-    # Check for environment specification
-    env_files = ['environment.yml', 'environment.yaml', 'conda.yml', 'Pipfile', 'poetry.lock']
-    for env_file in env_files:
-        file_url = f"https://api.github.com/repos/{owner}/{repo_name}/contents/{env_file}"
-        response = github_request_with_retry(file_url, headers)
-        if response and response.status_code == 200:
-            compliance_info['has_environment'] = True
-            break
+        
+        # Check for environment specification
+        env_files = ['environment.yml', 'environment.yaml', 'conda.yml', 'pipfile', 'poetry.lock']
+        compliance_info['has_environment'] = any(f in file_paths for f in env_files)
+    
+    else:
+        # Fallback to individual file checks if tree not available
+        logger.debug("Falling back to individual file checks")
+        
+        # Check for README
+        readme_url = f"https://api.github.com/repos/{owner}/{repo_name}/readme"
+        readme_response = github_request_with_retry(readme_url, headers)
+        if readme_response and readme_response.status_code == 200:
+            compliance_info['has_readme'] = True
+        
+        # Check for dependency files
+        dependency_files = ['requirements.txt', 'package.json', 'setup.py', 'Cargo.toml', 'go.mod', 'pom.xml', 'build.gradle']
+        for dep_file in dependency_files:
+            file_url = f"https://api.github.com/repos/{owner}/{repo_name}/contents/{dep_file}"
+            response = github_request_with_retry(file_url, headers)
+            if response and response.status_code == 200:
+                compliance_info['has_dependencies'] = True
+                fair_logger.increment_stat('has_dependencies')
+                break
+        
+        # Check for version/environment files
+        version_files = ['.python-version', '.nvmrc', 'runtime.txt', '.tool-versions']
+        for ver_file in version_files:
+            file_url = f"https://api.github.com/repos/{owner}/{repo_name}/contents/{ver_file}"
+            response = github_request_with_retry(file_url, headers)
+            if response and response.status_code == 200:
+                compliance_info['has_version_info'] = True
+                fair_logger.increment_stat('has_version_info')
+                break
+        
+        # Check for container files
+        container_files = ['Dockerfile', 'docker-compose.yml', 'docker-compose.yaml', '.dockerignore', 'Containerfile']
+        for cont_file in container_files:
+            file_url = f"https://api.github.com/repos/{owner}/{repo_name}/contents/{cont_file}"
+            response = github_request_with_retry(file_url, headers)
+            if response and response.status_code == 200:
+                compliance_info['has_container'] = True
+                fair_logger.increment_stat('has_container')
+                break
+        
+        # Check for environment specification
+        env_files = ['environment.yml', 'environment.yaml', 'conda.yml', 'Pipfile', 'poetry.lock']
+        for env_file in env_files:
+            file_url = f"https://api.github.com/repos/{owner}/{repo_name}/contents/{env_file}"
+            response = github_request_with_retry(file_url, headers)
+            if response and response.status_code == 200:
+                compliance_info['has_environment'] = True
+                break
 
     # Log FAIR compliance issues
     if not compliance_info['has_readme']:
@@ -498,9 +576,10 @@ def search_github_with_query(query: str, study_name: str, abbreviation: str, dis
                 owner = repo['owner']['login']
                 repo_name = repo['name']
                 languages = repo.get('language', '')
+                default_branch = repo.get('default_branch', 'main')
 
                 # Check FAIR compliance
-                compliance_info = check_fair_compliance(owner, repo_name, headers, fair_logger, repo_url, study_name)
+                compliance_info = check_fair_compliance(owner, repo_name, default_branch, headers, fair_logger, repo_url, study_name)
 
                 # Get contributors
                 contributors = []
