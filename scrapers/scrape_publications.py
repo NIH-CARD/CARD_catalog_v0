@@ -306,6 +306,8 @@ def main():
                        help='Show only warnings and errors')
     parser.add_argument('--log-file', default=None,
                        help='Log file path (default: publications_{timestamp}.log)')
+    parser.add_argument('--clear-log', action='store_true',
+                       help='Clear log file before writing (default: append)')
 
     args = parser.parse_args()
 
@@ -318,7 +320,7 @@ def main():
         level = logging.INFO
     
     log_file = args.log_file or get_default_log_file("publications")
-    setup_logger(__name__, log_file=log_file, level=level)
+    setup_logger(__name__, log_file=log_file, level=level, clear=args.clear_log)
     logger.info(f"Logging initialized. Log file: {log_file}")
 
     # Check for optional environment variable

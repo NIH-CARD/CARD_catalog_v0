@@ -6,7 +6,7 @@ import sys
 from datetime import datetime
 
 
-def setup_logger(name: str, log_file: str = None, level: int = logging.INFO) -> logging.Logger:
+def setup_logger(name: str, log_file: str = None, level: int = logging.INFO, clear: bool = False) -> logging.Logger:
     """
     Set up a logger with both file and console handlers
     
@@ -14,6 +14,7 @@ def setup_logger(name: str, log_file: str = None, level: int = logging.INFO) -> 
         name: Name of the logger (usually __name__)
         log_file: Optional log file path. If None, uses scraper_{timestamp}.log
         level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+        clear: If True and log_file is specified, clears the existing log file before logging
     
     Returns:
         Configured logger instance
@@ -39,7 +40,8 @@ def setup_logger(name: str, log_file: str = None, level: int = logging.INFO) -> 
     
     # File handler (optional)
     if log_file:
-        file_handler = logging.FileHandler(log_file, mode='a', encoding='utf-8')
+        mode = 'w' if clear else 'a'
+        file_handler = logging.FileHandler(log_file, mode=mode, encoding='utf-8')
         file_handler.setLevel(logging.DEBUG)  # Always log everything to file
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)

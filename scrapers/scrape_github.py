@@ -655,13 +655,15 @@ def main():
                        help='Suppress INFO logs, show only WARNING and ERROR')
     parser.add_argument('--log-file', '-l', default=None,
                        help='Log file path (default: github_scraper_{timestamp}.log)')
+    parser.add_argument('--clear-log', action='store_true',
+                       help='Clear log file before writing (default: append)')
 
     args = parser.parse_args()
 
     # Setup logger
     log_level = logging.DEBUG if args.verbose else (logging.WARNING if args.quiet else logging.INFO)
     log_file = args.log_file or get_default_log_file('github_scraper')
-    setup_logger(__name__, log_file, log_level)
+    setup_logger(__name__, log_file, log_level, clear=args.clear_log)
 
     # Check for required environment variables
     github_token = args.github_token or os.getenv('GITHUB_TOKEN')
