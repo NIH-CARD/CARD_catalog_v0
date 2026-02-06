@@ -71,14 +71,16 @@ python3 scrape_publications.py
 ```bash
 python3 scrape_publications.py \
   --input ../tables/dataset-inventory-Dec_02_2025.tab \
+  --query-method v2 \
   --output publications_output.tsv \
   --max-results 150 \
   --verbose \
-  --log-file pubmed_scrape.log
+  --log-file pubmed_scrape.log \
 ```
 
 **Arguments:**
 - `--input, -i` - Input TSV file with study inventory (default: dataset-inventory-Dec_02_2025.tab)
+- `--query-method` - Optional query method (default: original)
 - `--output, -o` - Output TSV file (default: pubmed_central_{timestamp}.tsv)
 - `--max-results, -m` - Maximum results per study (default: 100)
 - `--ncbi-api-key` - NCBI API key for higher rate limits (default: from NCBI_API_KEY env var)

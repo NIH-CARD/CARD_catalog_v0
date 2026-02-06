@@ -11,6 +11,7 @@ import time
 import re
 import sys
 import os
+import urllib.parse
 from typing import List, Dict, Optional
 import argparse
 import logging
@@ -33,7 +34,8 @@ def clean_text(text):
 
 def search_pubmed_with_retry(url: str, max_retries: int = 3, base_delay: int = 60) -> Optional[requests.Response]:
     """Make a request to PubMed API with exponential backoff retry logic"""
-    logger.info(f"Fetching URL: {url}")
+    logged_url = re.sub(r'api_key=[^&]+', 'api_key=***', url)
+    logger.info(f"Fetching URL: {logged_url}")
     for attempt in range(max_retries):
         try:
             logger.debug(f"Attempt {attempt + 1}/{max_retries}, sleeping 1 second for rate limiting")
@@ -214,14 +216,84 @@ def build_search_query(study_name: str, abbreviation: str, diseases: str, data_m
     logger.debug(f"Final query constructed: {final_query}")
     return final_query
 
-def search_pubmed(study_name: str, abbreviation: str, diseases: str, data_modalities: str, max_results: int = 100, ncbi_api_key_suffix: str = "") -> List[Dict]:
+# Common English words and biomedical terms that cause false-positive explosions
+# when searched as abbreviations in [tiab]. Observed during v2 testing and extended
+# with obvious common words. Extend this set as needed based on query results.
+_NOISY_ABBREVIATIONS = frozenset({
+    # Observed false-positive explosions in v2 testing (Feb 2026)
+    "leads", "prevent", "identity", "map", "ros", "codes", "mars",
+    "campaign", "adams", "insight", "beam", "ample", "expedition",
+    "caps", "elsa", "haas", "rosiglitazone",
+    # Common biomedical abbreviations with dominant non-study meanings
+    "gs",       # Glutamine Synthetase, Gram Stain
+    "lbp",      # Low Back Pain
+    "smi",      # Serious Mental Illness
+    "nph",      # Normal Pressure Hydrocephalus
+    "adcp",     # Antibody-Dependent Cellular Phagocytosis
+    "hbs",      # Hepatitis B Surface antigen
+    "lcc",      # Left Common Carotid, Large Cell Carcinoma
+    "twas",     # Generic method name (Transcriptome-Wide Association Study)
+    "a4",       # Paper size, complement component
+    "adcs",     # Multiple biomedical meanings beyond the AD study
+    # Common English words plausibly used as study abbreviations
+    "accord", "impact", "sprint", "promise", "compass", "focus",
+    "vital", "spark", "echo", "grace", "hope", "care", "gait",
+    "engage", "epic", "gain", "idea", "mind", "plan", "race",
+    "safe", "team", "view", "act", "age", "aim", "cell", "core",
+    "cure", "fast", "gene", "seed", "target", "track", "trend",
+    "match", "predict", "select", "prime", "origin", "snap",
+})
+
+def build_search_query_v2(study_name: str, abbreviation: str, diseases: str, data_modalities: str, years: int = 3) -> str:
+    """Build informationist-informed PubMed search query.
+
+    - Uses [tiab] (Title/Abstract) to avoid false positives from references/affiliations
+    - Omits data modality terms (catalog metadata, not PubMed vocabulary)
+    - Omits disease terms (were over-restricting results)
+    - Skips abbreviations that are common English words (checked against _NOISY_ABBREVIATIONS)
+    """
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=365*years)
+    date_range = f"{start_date.strftime('%Y/%m/%d')}:{end_date.strftime('%Y/%m/%d')}"
+
+    logger.debug(f"Building v2 query for study: {study_name}, abbreviation: {abbreviation}")
+
+    # Always include full study name in [tiab] — this is the most precise signal
+    study_terms = []
+    if study_name and pd.notna(study_name):
+        clean_name = re.sub(r'\s*\([^)]*\)\s*$', '', str(study_name)).strip()
+        if clean_name:
+            study_terms.append(f'"{clean_name}"[tiab]')
+
+    # Only include abbreviation if it's not a common word
+    abbrev_str = str(abbreviation).strip() if pd.notna(abbreviation) else ""
+    if abbrev_str and abbrev_str != str(study_name) and abbrev_str.lower() not in _NOISY_ABBREVIATIONS:
+        study_terms.append(f'"{abbrev_str}"[tiab]')
+    elif abbrev_str and abbrev_str.lower() in _NOISY_ABBREVIATIONS:
+        logger.info(f"Skipping noisy abbreviation '{abbrev_str}' (common word)")
+
+    query_parts = []
+    if study_terms:
+        query_parts.append(f'({" OR ".join(study_terms)})')
+
+    query_parts.append(f'({date_range}[Date - Publication])')
+
+    final_query = " AND ".join(query_parts)
+    logger.debug(f"Final v2 query: {final_query}")
+    return final_query
+
+def search_pubmed(study_name: str, abbreviation: str, diseases: str, data_modalities: str, max_results: int = 100, ncbi_api_key_suffix: str = "", query_method: str = "original") -> List[Dict]:
     """Search PubMed for articles related to the study"""
     # Build search query
-    query = build_search_query(study_name, abbreviation, diseases, data_modalities)
+    if query_method == "v2":
+        query = build_search_query_v2(study_name, abbreviation, diseases, data_modalities)
+    else:
+        query = build_search_query(study_name, abbreviation, diseases, data_modalities)
 
-    # Search PubMed
+    # Search PubMed (URL-encode the query to handle &, parentheses, etc.)
     base_url = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi'
-    search_url = f'{base_url}?db=pubmed&term={query}&retmax={max_results}&retmode=json{ncbi_api_key_suffix}'
+    encoded_query = urllib.parse.quote(query, safe='')
+    search_url = f'{base_url}?db=pubmed&term={encoded_query}&retmax={max_results}&retmode=json{ncbi_api_key_suffix}'
 
     logger.info(f"Query: {query[:100]}..." if len(query) > 100 else f"Query: {query}")
     logger.debug(f"API key in URL: {'YES' if ncbi_api_key_suffix else 'NO'}")
@@ -308,6 +380,10 @@ def main():
                        help='Log file path (default: publications_{timestamp}.log)')
     parser.add_argument('--clear-log', action='store_true',
                        help='Clear log file before writing (default: append)')
+    parser.add_argument('--query-method', choices=['original', 'v2'], default='original',
+                       help='Query construction method: "original" uses [All Fields] with disease+modality '
+                            'terms; "v2" uses [tiab] with no modality terms and proper URL encoding '
+                            '(informationist-informed) (default: original)')
 
     args = parser.parse_args()
 
@@ -334,6 +410,7 @@ def main():
         logger.debug(f"API key suffix constructed successfully")
 
     # Args debug info
+    logger.info(f"Query method: {args.query_method}")
     logger.debug(f"Input file: {args.input}")
 
     # Read the dataset inventory
@@ -355,7 +432,7 @@ def main():
         data_modalities = row.get("Data Modalities", "")
 
         logger.info(f"[{idx+1}/{len(studies_df)}] Searching for publications: {study_name} ({abbreviation})")
-        results = search_pubmed(study_name, abbreviation, diseases, data_modalities, args.max_results, ncbi_api_key_suffix)
+        results = search_pubmed(study_name, abbreviation, diseases, data_modalities, args.max_results, ncbi_api_key_suffix, args.query_method)
         all_results.extend(results)
 
     # Create and save results dataframe
