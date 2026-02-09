@@ -252,12 +252,15 @@ def analyze_publications():
     return stats
 
 
-def analyze_code_repos():
+def analyze_code_repos(git_scrape_output_path=None):
     """Analyze code repositories and return statistics."""
     print("Analyzing Code Repositories...")
 
     # Load all git batch files
-    git_files = list(TABLES_DIR.glob("gits_batch*.tsv")) + list(TABLES_DIR.glob("gits_to_reannotate*.tsv"))
+    if git_scrape_output_path is None:
+        git_files = list(TABLES_DIR.glob("gits_batch*.tsv")) + list(TABLES_DIR.glob("gits_to_reannotate*.tsv"))
+    else:
+        git_files = [git_scrape_output_path] if isinstance(git_scrape_output_path, str) else []
 
     if not git_files:
         print("No git repository files found")
@@ -592,7 +595,7 @@ def main():
     # Run all analyses
     datasets_stats = analyze_datasets()
     pubs_stats = analyze_publications()
-    code_stats = analyze_code_repos()
+    code_stats = analyze_code_repos(git_scrape_output_path='../scrapers/github_repos_output.tsv')
     cell_stats = analyze_cell_models()
 
     # Format output
