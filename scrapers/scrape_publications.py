@@ -32,9 +32,13 @@ def clean_text(text):
         return ""
     return re.sub(r'\s+', ' ', text.strip())
 
+def mask_api_key(text: str) -> str:
+    """Mask API keys in any text (URLs, error messages, etc.)"""
+    return re.sub(r'api_key=[^&\s]+', 'api_key=***', text)
+
 def search_pubmed_with_retry(url: str, max_retries: int = 3, base_delay: int = 60) -> Optional[requests.Response]:
     """Make a request to PubMed API with exponential backoff retry logic"""
-    logged_url = re.sub(r'api_key=[^&]+', 'api_key=***', url)
+    logged_url = mask_api_key(url)
     logger.info(f"Fetching URL: {logged_url}")
     for attempt in range(max_retries):
         try:
@@ -53,12 +57,13 @@ def search_pubmed_with_retry(url: str, max_retries: int = 3, base_delay: int = 6
             else:
                 response.raise_for_status()
         except requests.exceptions.RequestException as e:
+            masked_error = mask_api_key(str(e))
             if attempt < max_retries - 1:
                 delay = base_delay * (2 ** attempt)
-                logger.warning(f"Request failed (attempt {attempt + 1}/{max_retries}): {str(e)}. Retrying in {delay} seconds...")
+                logger.warning(f"Request failed (attempt {attempt + 1}/{max_retries}): {masked_error}. Retrying in {delay} seconds...")
                 time.sleep(delay)
             else:
-                logger.error(f"Request failed after {max_retries} attempts: {str(e)}")
+                logger.error(f"Request failed after {max_retries} attempts: {masked_error}")
                 return None
     return None
 

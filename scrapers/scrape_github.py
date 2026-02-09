@@ -99,7 +99,7 @@ class FAIRComplianceLogger:
         logger.info(f"{'='*60}")
         logger.info("FAIR COMPLIANCE SUMMARY")
         logger.info(f"{'='*60}")
-        logger.info(f"Total repositories analyzed: {self.stats['total_repos']}")
+        logger.info(f"Total repositories discovered: {self.stats['total_repos']}")
         logger.info("Issues Found:")
         logger.info(f"  No README: {self.stats['no_readme']} ({self.stats['no_readme']/max(self.stats['total_repos'],1)*100:.1f}%)")
         logger.info(f"  Insufficient content: {self.stats['insufficient_content']} ({self.stats['insufficient_content']/max(self.stats['total_repos'],1)*100:.1f}%)")
@@ -769,7 +769,8 @@ def main():
 
         logger.info(f"{'='*60}")
         logger.info(f"SUCCESS: Results saved to {output_filename}")
-        logger.info(f"Total repositories found: {len(deduplicated_results)}")
+        logger.info(f"Total repositories with sufficient content: {len(deduplicated_results)}")
+        logger.info(f"Repositories skipped (insufficient content): {fair_logger.stats['insufficient_content']}")
         logger.info(f"Duplicates removed: {len(all_results) - len(deduplicated_results)}")
         logger.info(f"{'='*60}")
 
