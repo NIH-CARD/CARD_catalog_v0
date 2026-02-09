@@ -519,7 +519,7 @@ def search_github(study_name: str, abbreviation: str, diseases: str, github_toke
     # GitHub search has issues with long quoted phrases causing 422 errors
     # Solution: Use abbreviations only (no quotes) for more reliable searches
 
-    if not abbreviation or not abbreviation.strip():
+    if not isinstance(abbreviation, str) or not abbreviation.strip():
         logger.info("  No abbreviation available - skipping GitHub search")
         return all_results
 
