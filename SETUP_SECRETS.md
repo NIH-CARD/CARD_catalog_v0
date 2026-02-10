@@ -179,7 +179,7 @@ You can safely edit these files without risk of accidentally committing them.
 **Anthropic API:**
 - Monitor usage at: https://console.anthropic.com/settings/usage
 - Set budget limits to avoid unexpected charges
-- Claude Sonnet 4 pricing: ~$3 per million input tokens
+- Claude Sonnet 4.5 pricing: ~$3 per million input tokens
 
 **GitHub API:**
 - Free tier: 5,000 requests/hour (authenticated)
