@@ -27,7 +27,7 @@ def create_wide_csv():
     print("Generating statistics...")
     datasets_stats = analyze_datasets()
     pubs_stats = analyze_publications()
-    code_stats = analyze_code_repos(git_scrape_output_path='../scrapers/github_repos_output.tsv')
+    code_stats = analyze_code_repos(git_scrape_output_path='../tables/gits_to_reannotate_completed_20260209_224209.tsv')
     cell_stats = analyze_cell_models()
 
     # Create list to hold all rows

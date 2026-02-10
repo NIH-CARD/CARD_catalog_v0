@@ -28,11 +28,15 @@ except ImportError:
 # Module-level logger - will be configured in main()
 logger = logging.getLogger(__name__)
 
+# Global rate limiting configuration
+GITHUB_REQUEST_DELAY = 1.2  # Will be set from command-line args
+
 class SearchRateLimiter:
-    """Rate limiter for GitHub search API - enforces 25 searches per minute"""
-    def __init__(self, max_requests_per_minute: int = 25):
+    """Rate limiter for GitHub search API - enforces searches per minute limit"""
+    def __init__(self, max_requests_per_minute: int = 50):
         self.max_requests = max_requests_per_minute
         self.request_times = []
+        logger.debug(f"SearchRateLimiter initialized with {max_requests_per_minute} requests/minute")
 
     def wait_if_needed(self):
         """Wait if we've exceeded the rate limit"""
@@ -45,7 +49,7 @@ class SearchRateLimiter:
             oldest_request = self.request_times[0]
             wait_time = 60 - (now - oldest_request) + 1  # +1 second buffer
             if wait_time > 0:
-                logger.warning(f"Search rate limit: {len(self.request_times)}/25 in last minute. Waiting {int(wait_time)} seconds...")
+                logger.warning(f"Search rate limit: {len(self.request_times)}/{self.max_requests} in last minute. Waiting {int(wait_time)} seconds...")
                 time.sleep(wait_time)
                 # Clean up old requests again after waiting
                 now = time.time()
@@ -135,12 +139,15 @@ def get_anthropic_client():
         logger.error(f"Failed to initialize Anthropic client: {e}")
         return None
 
-def github_request_with_retry(url: str, headers: Dict, params: Dict = None, max_retries: int = 3, base_delay: int = 60) -> Optional[requests.Response]:
+def github_request_with_retry(url: str, headers: Dict, params: Dict = None, max_retries: int = 3, base_delay: int = 60, request_delay: float = None) -> Optional[requests.Response]:
     """Make a GitHub API request with exponential backoff retry logic"""
+    global GITHUB_REQUEST_DELAY
+    if request_delay is None:
+        request_delay = GITHUB_REQUEST_DELAY
     logger.debug(f"GitHub API request: url={url}, params={params}, max_retries={max_retries}")
     for attempt in range(max_retries):
         try:
-            time.sleep(3)  # Rate limiting: minimum 3 seconds between all GitHub API requests
+            time.sleep(request_delay)  # Rate limiting: minimum delay between all GitHub API requests
             response = requests.get(url, headers=headers, params=params, timeout=30)
 
             if response.status_code == 200:
@@ -503,7 +510,7 @@ def get_repo_content(owner: str, repo_name: str, headers: Dict, fair_logger: FAI
 
     return "\n\n".join(content_parts)
 
-def search_github(study_name: str, abbreviation: str, diseases: str, github_token: str, fair_logger: FAIRComplianceLogger, rate_limiter: SearchRateLimiter) -> List[Dict]:
+def search_github(study_name: str, abbreviation: str, diseases: str, github_token: str, fair_logger: FAIRComplianceLogger, rate_limiter: SearchRateLimiter, batch_mode: bool = False) -> List[Dict]:
     """Search GitHub for repositories related to the study"""
     logger.debug(f"Starting GitHub search for study: {study_name} ({abbreviation})")
     disease_keywords = ["alzheimer", "parkinson", "dementia", "brain"]
@@ -528,14 +535,14 @@ def search_github(study_name: str, abbreviation: str, diseases: str, github_toke
         query = f'{abbreviation} {disease_term}'  # No quotes = more flexible
         logger.debug(f"Constructed search query: {query}")
         logger.info(f"  Searching: {query}")
-        results = search_github_with_query(query, study_name, abbreviation, diseases, headers, seen_repos, fair_logger, rate_limiter)
+        results = search_github_with_query(query, study_name, abbreviation, diseases, headers, seen_repos, fair_logger, rate_limiter, batch_mode)
         all_results.extend(results)
 
     return all_results
 
-def search_github_with_query(query: str, study_name: str, abbreviation: str, diseases: str, headers: Dict, seen_repos: set, fair_logger: FAIRComplianceLogger, rate_limiter: SearchRateLimiter) -> List[Dict]:
+def search_github_with_query(query: str, study_name: str, abbreviation: str, diseases: str, headers: Dict, seen_repos: set, fair_logger: FAIRComplianceLogger, rate_limiter: SearchRateLimiter, batch_mode: bool = False) -> List[Dict]:
     """Perform a single GitHub search with a specific query"""
-    logger.debug(f"Executing GitHub search: query='{query}', study={study_name}, abbreviation={abbreviation}")
+    logger.debug(f"Executing GitHub search: query='{query}', study={study_name}, abbreviation={abbreviation}, batch_mode={batch_mode}")
     # Enforce rate limit before making search request
     rate_limiter.wait_if_needed()
 
@@ -598,9 +605,6 @@ def search_github_with_query(query: str, study_name: str, abbreviation: str, dis
                 logger.info(f"  Analyzing: {repo_url}")
                 repo_content = get_repo_content(owner, repo_name, headers, fair_logger, repo_url, study_name)
 
-                # Get AI analysis
-                ai_analysis = get_ai_analysis(repo_content, repo_name)
-
                 # Skip if no content could be analyzed
                 if not repo_content or len(repo_content) < 50:
                     logger.info(f"  Skipping {repo_url} - insufficient content")
@@ -608,6 +612,18 @@ def search_github_with_query(query: str, study_name: str, abbreviation: str, dis
                     fair_logger.log_issue(repo_url, study_name, 'Insufficient Content',
                                          f'Repository content too short (<50 chars), may be incomplete or non-functional')
                     continue
+
+                # Get AI analysis (or skip if in batch mode)
+                if batch_mode:
+                    logger.info(f"  Batch mode: Saving content for later AI analysis")
+                    ai_analysis = {
+                        "biomedical_relevance": "",
+                        "summary": "",
+                        "data_types": "",
+                        "tools": ""
+                    }
+                else:
+                    ai_analysis = get_ai_analysis(repo_content, repo_name)
 
                 results.append({
                     "Study Name": study_name,
@@ -617,6 +633,7 @@ def search_github_with_query(query: str, study_name: str, abbreviation: str, dis
                     "Owner": owner,
                     "Contributors": "; ".join(contributors),
                     "Languages": languages,
+                    "Content_For_Analysis": repo_content if batch_mode else "",
                     "Biomedical Relevance": ai_analysis["biomedical_relevance"],
                     "Code Summary": ai_analysis["summary"],
                     "Data Types": ai_analysis["data_types"],
@@ -657,6 +674,12 @@ def main():
                        help='Log file path (default: github_scraper_{timestamp}.log)')
     parser.add_argument('--clear-log', action='store_true',
                        help='Clear log file before writing (default: append)')
+    parser.add_argument('--batch-call-ai', action='store_true',
+                       help='Skip immediate AI analysis and save content for batch processing (use with batch_ai_analysis.py)')
+    parser.add_argument('--search-rate-limit', type=int, default=25,
+                       help='Maximum search API requests per minute (default: 25 for standard GitHub API)')
+    parser.add_argument('--request-delay', type=float, default=3.0,
+                       help='Delay in seconds between GitHub API requests (default: 3.0, set to 0.72 for 5000/hour limit)')
 
     args = parser.parse_args()
 
@@ -683,11 +706,23 @@ def main():
     if args.anthropic_key:
         os.environ['ANTHROPIC_API_KEY'] = args.anthropic_key
 
+    # Configure rate limiting
+    global GITHUB_REQUEST_DELAY
+    GITHUB_REQUEST_DELAY = args.request_delay
+    logger.info(f"GitHub API rate limiting: {args.search_rate_limit} searches/min, {args.request_delay}s delay between requests")
+    logger.info(f"Estimated throughput: ~{3600/args.request_delay:.0f} REST API requests/hour")
+
+    # Log batch mode status
+    if args.batch_call_ai:
+        logger.info("BATCH MODE: AI analysis will be skipped. Use batch_ai_analysis.py to process results.")
+    else:
+        logger.info("STANDARD MODE: AI analysis will be performed inline for each repository.")
+
     # Initialize FAIR compliance logger
     fair_logger = FAIRComplianceLogger()
 
-    # Initialize rate limiter for search API (25 requests per minute)
-    rate_limiter = SearchRateLimiter(max_requests_per_minute=25)
+    # Initialize rate limiter for search API
+    rate_limiter = SearchRateLimiter(max_requests_per_minute=args.search_rate_limit)
 
     # Read the dataset inventory
     try:
@@ -713,7 +748,7 @@ def main():
         diseases = row.get("Diseases Included", "")
 
         logger.info(f"[{idx+1}/{len(studies_df)}] Searching GitHub for repositories related to {study_name} ({abbreviation})...")
-        results = search_github(study_name, abbreviation, diseases, github_token, fair_logger, rate_limiter)
+        results = search_github(study_name, abbreviation, diseases, github_token, fair_logger, rate_limiter, args.batch_call_ai)
         all_results.extend(results)
 
     # Remove duplicates
@@ -742,6 +777,7 @@ def main():
             "Owner",
             "Contributors",
             "Languages",
+            "Content_For_Analysis",
             "Biomedical Relevance",
             "Code Summary",
             "Data Types",
