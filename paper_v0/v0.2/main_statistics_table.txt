@@ -137,6 +137,11 @@ FAIR Component Completeness (% with component):
   Environment Spec: 1.8%
   Version Info: 1.1%
 
+Mean FAIR Score by Language (0-10 scale):
+  Python: 6.44/10 (n=193 repos)
+  Jupyter Notebook: 6.21/10 (n=233 repos)
+  R: 5.96/10 (n=51 repos)
+
 
 HUMAN CELLULAR MODELS
 --------------------------------------------------------------------------------

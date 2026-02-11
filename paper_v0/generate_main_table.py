@@ -293,15 +293,17 @@ def analyze_code_repos(git_scrape_output_path=None):
         if fair_dfs:
             fair_df = pd.concat(fair_dfs, ignore_index=True)
 
+            # Deduplicate: same repo may have same issue in multiple log files
+            fair_df = fair_df.drop_duplicates(subset=['Repository', 'Issue Type'])
+
             # Group FAIR issues by repository
             fair_summary = fair_df.groupby('Repository').agg({
-                'Issue Type': lambda x: '; '.join(x.unique()),
-                'Details': 'count'
+                'Issue Type': [lambda x: '; '.join(x.unique()), lambda x: len(x.unique())]
             }).reset_index()
 
             fair_summary.columns = ['Repository Link', 'FAIR Issues', 'FAIR Issue Count']
 
-            # Calculate FAIR score (10 - issue count, min 0)
+            # Calculate FAIR score (10 - unique issue count, min 0)
             fair_summary['FAIR Score'] = fair_summary['FAIR Issue Count'].apply(
                 lambda x: max(0, 10 - x)
             )
@@ -370,6 +372,22 @@ def analyze_code_repos(git_scrape_output_path=None):
 
         stats['fair_completeness'] = {k: (v/total_repos*100) if total_repos > 0 else 0
                                       for k, v in fair_components.items()}
+
+    # Mean FAIR Score by Language (for Python, Jupyter Notebook, R)
+    if 'Languages' in df.columns and 'FAIR Score' in df.columns:
+        target_languages = ['Python', 'Jupyter Notebook', 'R']
+        fair_by_lang = {}
+
+        for lang in target_languages:
+            lang_repos = df[df['Languages'] == lang]
+            if len(lang_repos) > 0:
+                mean_score = lang_repos['FAIR Score'].mean()
+                fair_by_lang[lang] = {
+                    'count': len(lang_repos),
+                    'mean_score': mean_score
+                }
+
+        stats['fair_by_language'] = fair_by_lang
 
     return stats
 
@@ -548,6 +566,12 @@ def format_output(datasets_stats, pubs_stats, code_stats, cell_stats):
         output.append("FAIR Component Completeness (% with component):")
         for component, pct in sorted(code_stats['fair_completeness'].items(), key=lambda x: x[1], reverse=True):
             output.append(f"  {component}: {pct:.1f}%")
+        output.append("")
+
+    if 'fair_by_language' in code_stats:
+        output.append("Mean FAIR Score by Language (0-10 scale):")
+        for lang, data in code_stats['fair_by_language'].items():
+            output.append(f"  {lang}: {data['mean_score']:.2f}/10 (n={data['count']} repos)")
         output.append("")
 
     output.append("")

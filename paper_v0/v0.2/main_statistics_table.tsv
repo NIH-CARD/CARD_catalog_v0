@@ -129,6 +129,11 @@ Container			3.0%
 Environment Spec			1.8%
 Version Info			1.1%
 			
+Mean FAIR Score by Language (0-10 scale)			
+Python	6.44/10	n=193	
+Jupyter Notebook	6.21/10	n=233	
+R	5.96/10	n=51	
+			
 HUMAN CELLULAR MODELS			
 Total Cell Models	626		
 			

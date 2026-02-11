@@ -154,6 +154,13 @@ def create_wide_csv():
             rows.append([component, '', '', f"{pct:.1f}%"])
     rows.append(['', '', '', ''])
 
+    # FAIR Score by Language
+    rows.append(['Mean FAIR Score by Language (0-10 scale)', '', '', ''])
+    if 'fair_by_language' in code_stats:
+        for lang, data in code_stats['fair_by_language'].items():
+            rows.append([lang, f"{data['mean_score']:.2f}/10", f"n={data['count']}", ''])
+    rows.append(['', '', '', ''])
+
     # HUMAN CELLULAR MODELS SECTION
     rows.append(['HUMAN CELLULAR MODELS', '', '', ''])
     rows.append(['Total Cell Models', cell_stats.get('n_cell_models', ''), '', ''])
