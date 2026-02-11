@@ -127,7 +127,7 @@ def create_figure():
     ax1.set_yticks(range(len(sorted_datatypes)))
     ax1.set_yticklabels(sorted_datatypes, fontsize=11, rotation=15, ha='right')
     ax1.set_xlabel('Number of Datasets', fontsize=12, fontweight='bold')
-    ax1.set_title('A. Data Modalities by FAIR Compliance\n(n=99 datasets)',
+    ax1.set_title('A. Data Modalities by FAIR Compliance\n(n=248 datasets)',
                   fontsize=13, fontweight='bold', pad=10)
     ax1.legend(title='FAIR Level', loc='upper right', fontsize=10)
     ax1.grid(axis='x', alpha=0.3)
@@ -235,9 +235,68 @@ def create_figure():
         for dtype in coarse_types:
             datatype_samples[dtype].append(sample_size)
 
-    # Plot density curves for top data types
-    top_datatypes_for_density = sorted(datatype_samples.keys(),
-                                       key=lambda x: len(datatype_samples[x]), reverse=True)[:5]
+    # Plot density curves for top data types (by dataset count from Panel A)
+    # Use the same datatype_totals from Panel A to ensure consistency
+    top_datatypes_for_density = [dt for dt in sorted_datatypes[:5] if dt in datatype_samples and len(datatype_samples[dt]) >= 3]
+
+    # DIAGNOSTIC: Print actual counts
+    print("\n" + "="*70)
+    print("PANEL C - SAMPLE SIZE DATA DIAGNOSTIC")
+    print("="*70)
+    print("\nTop 5 Modalities from Panel A (by total dataset count):")
+    for i, dtype in enumerate(sorted_datatypes[:5], 1):
+        total_count = datatype_totals[dtype]
+        with_samples = len(datatype_samples.get(dtype, []))
+        missing = total_count - with_samples
+        pct_coverage = (with_samples / total_count * 100) if total_count > 0 else 0
+        print(f"  {i}. {dtype:20} | Total: {total_count:3} | With Samples: {with_samples:3} | Missing: {missing:2} ({pct_coverage:5.1f}% coverage)")
+
+    print(f"\nModalities actually plotted in Panel C: {top_datatypes_for_density}")
+
+    # DETAILED DIAGNOSTIC: Show which specific datasets are missing sample sizes
+    print("\n" + "="*70)
+    print("MISSING SAMPLE SIZE DATA - ROOT CAUSE ANALYSIS")
+    print("="*70)
+
+    # Track which datasets have sample sizes vs which don't
+    datasets_with_samples = defaultdict(set)
+    for _, row in datasets_df.iterrows():
+        size_str = str(row.get('Sample Size', ''))
+        match = re.search(r'([\d,]+)', size_str)
+        if match:
+            try:
+                sample_size = float(match.group(1).replace(',', ''))
+                if sample_size >= 1:
+                    study_name = row.get('Study Name', 'Unknown')
+                    coarse_types = extract_coarse_types(row.get('Data Modalities', ''))
+                    for dtype in coarse_types:
+                        datasets_with_samples[dtype].add(study_name)
+            except ValueError:
+                pass
+
+    # Find datasets with each modality but NO sample size
+    for dtype in sorted_datatypes[:5]:
+        print(f"\n{dtype.upper()}:")
+        all_datasets_with_modality = set()
+        for _, row in datasets_df.iterrows():
+            coarse_types = extract_coarse_types(row.get('Data Modalities', ''))
+            if dtype in coarse_types:
+                all_datasets_with_modality.add(row.get('Study Name', 'Unknown'))
+
+        missing_datasets = all_datasets_with_modality - datasets_with_samples.get(dtype, set())
+
+        if missing_datasets:
+            print(f"  {len(missing_datasets)} dataset(s) missing sample size data:")
+            for study in sorted(missing_datasets):
+                # Find the row and show what's in Sample Size field
+                row = datasets_df[datasets_df['Study Name'] == study].iloc[0]
+                size_field = row.get('Sample Size', '')
+                print(f"    - {study}")
+                print(f"      Sample Size field: '{size_field}'")
+        else:
+            print(f"  ✓ All {len(all_datasets_with_modality)} datasets have sample size data")
+
+    print("="*70 + "\n")
 
     colors_density = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd']
 

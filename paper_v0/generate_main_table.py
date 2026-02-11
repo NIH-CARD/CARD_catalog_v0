@@ -45,6 +45,7 @@ def load_latest_file(pattern):
     if not files:
         raise FileNotFoundError(f"No files found matching {pattern}")
     latest = max(files, key=lambda p: p.stat().st_mtime)
+    print(f"Loading file: {latest}")
     return pd.read_csv(latest, sep='\t', low_memory=False)
 
 

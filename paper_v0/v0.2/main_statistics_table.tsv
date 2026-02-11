@@ -5,17 +5,14 @@ Multi-study Datasets	49	49	19.8%
 Biosample Datasets	33	33	13.3%
 			
 Coarse Data Types			
-clinical		195	31.7%
+clinical		195	31.8%
 genetics		94	15.3%
-transcriptomics		88	14.3%
-longitudinal		84	13.6%
-imaging		60	9.7%
+transcriptomics		88	14.4%
+longitudinal		84	13.7%
+imaging		60	9.8%
 proteomics		51	8.3%
 metabolomics		22	3.6%
 epigenomics		19	3.1%
-cognitive		1	0.2%
-immunological		1	0.2%
-omics		1	0.2%
 			
 Sample Size Statistics			
 Mean	14959		
