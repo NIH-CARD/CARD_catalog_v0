@@ -52,3 +52,4 @@ htmlcov/
 .mypy_cache/
 scrapers/pubmed_scrape.log
 *.log
+scripts/CARD_report.ipynb

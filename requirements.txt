@@ -29,6 +29,9 @@ requests==2.32.4
 # Environment Variables
 python-dotenv==1.0.0
 
+# Data Gatherer
+git+https://github.com/VIDA-NYU/data-gatherer.git@devel
+
 # ============================
 # System Requirements
 # ============================
