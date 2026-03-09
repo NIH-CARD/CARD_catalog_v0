@@ -287,13 +287,13 @@ def build_search_query_v2(study_name: str, abbreviation: str, diseases: str, dat
     logger.debug(f"Final v2 query: {final_query}")
     return final_query
 
-def search_pubmed(study_name: str, abbreviation: str, diseases: str, data_modalities: str, max_results: int = 100, ncbi_api_key_suffix: str = "", query_method: str = "original") -> List[Dict]:
+def search_pubmed(study_name: str, abbreviation: str, diseases: str, search_data_modalities: str, max_results: int = 100, ncbi_api_key_suffix: str = "", query_method: str = "original") -> List[Dict]:
     """Search PubMed for articles related to the study"""
     # Build search query
     if query_method == "v2":
-        query = build_search_query_v2(study_name, abbreviation, diseases, data_modalities)
+        query = build_search_query_v2(study_name, abbreviation, diseases, search_data_modalities)
     else:
-        query = build_search_query(study_name, abbreviation, diseases, data_modalities)
+        query = build_search_query(study_name, abbreviation, diseases, search_data_modalities)
 
     # Search PubMed (URL-encode the query to handle &, parentheses, etc.)
     base_url = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi'
@@ -301,6 +301,7 @@ def search_pubmed(study_name: str, abbreviation: str, diseases: str, data_modali
     search_url = f'{base_url}?db=pubmed&term={encoded_query}&retmax={max_results}&retmode=json{ncbi_api_key_suffix}'
 
     logger.info(f"Query: {query[:100]}..." if len(query) > 100 else f"Query: {query}")
+    logger.debug(f"Query: {query}...")
     logger.debug(f"API key in URL: {'YES' if ncbi_api_key_suffix else 'NO'}")
     
     logger.debug(f"Max results requested: {max_results}")
@@ -352,7 +353,7 @@ def search_pubmed(study_name: str, abbreviation: str, diseases: str, data_modali
                             "Study Name": study_name,
                             "Abbreviation": abbreviation,
                             "Diseases Included": diseases,
-                            "Data Modalities": data_modalities
+                            "Data Modalities": search_data_modalities
                         })
                         results.append(article_data)
 
@@ -434,10 +435,10 @@ def main():
         study_name = row.get("Study Name", "")
         abbreviation = row.get("Abbreviation", "")
         diseases = row.get("Diseases Included", "")
-        data_modalities = row.get("Data Modalities", "")
+        search_data_modalities = row.get("Coarse Data Modality", "").split().extend(row.get("Granular Data Modalities", "").split())
 
         logger.info(f"[{idx+1}/{len(studies_df)}] Searching for publications: {study_name} ({abbreviation})")
-        results = search_pubmed(study_name, abbreviation, diseases, data_modalities, args.max_results, ncbi_api_key_suffix, args.query_method)
+        results = search_pubmed(study_name, abbreviation, diseases, search_data_modalities, args.max_results, ncbi_api_key_suffix, args.query_method)
         all_results.extend(results)
 
     # Create and save results dataframe
@@ -449,7 +450,7 @@ def main():
             "Study Name",
             "Abbreviation",
             "Diseases Included",
-            "Data Modalities",
+            "Coarse Data Modality",
             "PubMed Central Link",
             "Authors",
             "Affiliations",
@@ -476,7 +477,7 @@ def main():
             output_filename = args.output
         else:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            output_filename = f"../tables/pubmed_central_{timestamp}.tsv"
+            output_filename = os.path.join(os.path.dirname(__file__), "../tables", f"pubmed_central_{timestamp}.tsv")
 
         results_df.to_csv(output_filename, sep="\t", index=False)
 

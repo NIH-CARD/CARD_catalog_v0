@@ -111,23 +111,25 @@ def analyze_datasets():
     print("Analyzing Datasets...")
     df = load_latest_file("dataset-inventory-*.tab")
 
+    print(f"Loaded {len(df)} datasets for analysis, columns: {df.columns.tolist()}")
+
     stats = {}
 
     # N studies total
     stats['n_datasets'] = len(df)
 
-    # Dataset types (multi-study and biosample)
-    if 'Dataset Type' in df.columns:
-        dataset_types = df['Dataset Type'].fillna('').str.lower()
+    # Resource types (multi-study and biosample)
+    if 'Resource Type' in df.columns:
+        dataset_types = df['Resource Type'].fillna('').str.lower()
         stats['n_multi_study'] = dataset_types.str.contains('multi-study').sum()
         stats['pct_multi_study'] = (stats['n_multi_study'] / len(df) * 100)
         stats['n_biosample'] = dataset_types.str.contains('biosample').sum()
         stats['pct_biosample'] = (stats['n_biosample'] / len(df) * 100)
 
     # Data modalities - extract coarse types from brackets [coarse] granular format
-    if 'Data Modalities' in df.columns:
+    if 'Coarse Data Modality' in df.columns:
         coarse_types = []
-        for modality in df['Data Modalities'].dropna():
+        for modality in df['Coarse Data Modality'].dropna():
             modality_str = str(modality).strip()
             # Extract text within brackets using regex
             bracket_match = re.match(r'^\[(.*?)\]', modality_str)
@@ -138,6 +140,16 @@ def analyze_datasets():
                 coarse_types.extend(types)
 
         stats['coarse_data_types'] = Counter(coarse_types).most_common()
+    
+    # granular data types - extract from "Granular Data Modality" column, split by semicolon, clean whitespace
+    if 'Granular Data Modality' in df.columns:
+        granular_types = []
+        for modality in df['Granular Data Modality'].dropna():
+            modality_str = str(modality).strip()
+            types = [t.strip() for t in modality_str.split(';')]
+            granular_types.extend(types)
+        
+        stats['granular_data_types'] = Counter(granular_types).most_common()
 
     # Sample size statistics - extract numbers from strings like "856 participants"
     if 'Sample Size' in df.columns:
@@ -446,7 +458,7 @@ def format_output(datasets_stats, pubs_stats, code_stats, cell_stats):
     # DATASETS
     output.append("DATASETS")
     output.append("-" * 80)
-    output.append(f"Total Datasets: {datasets_stats.get('n_datasets', 'N/A')}")
+    output.append(f"Total Number of Datasets: {datasets_stats.get('n_datasets', 'N/A')}")
     output.append("")
 
     if 'n_multi_study' in datasets_stats:
@@ -484,6 +496,8 @@ def format_output(datasets_stats, pubs_stats, code_stats, cell_stats):
     # PUBLICATIONS
     output.append("PUBLICATIONS")
     output.append("-" * 80)
+    output.append(f"Total Publications: {pubs_stats.get('n_pubs')}") if 'n_pubs' in pubs_stats else ""
+    output.append("")
 
     if 'top_studies' in pubs_stats:
         output.append("Five Most Prolific Studies:")

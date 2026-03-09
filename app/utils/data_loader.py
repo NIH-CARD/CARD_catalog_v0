@@ -72,19 +72,19 @@ def load_datasets() -> pd.DataFrame:
         df['Diseases Included'] = df['Diseases Included'].apply(normalize_list_field)
 
         # Split data modalities into coarse and granular
-        if 'Data Modalities' in df.columns:
-            split_results = df['Data Modalities'].apply(split_data_modalities)
+        if 'Coarse Data Modality' in df.columns:
+            split_results = df['Coarse Data Modality'].apply(split_data_modalities)
             df['Coarse Data Types'] = [result[0] for result in split_results]
             df['Granular Data Types'] = [result[1] for result in split_results]
 
-            # Reorder columns to put new columns after Data Modalities
+            # Reorder columns to put new columns after Coarse Data Modality
             cols = list(df.columns)
-            if 'Data Modalities' in cols:
-                data_mod_idx = cols.index('Data Modalities')
+            if 'Coarse Data Modality' in cols:
+                data_mod_idx = cols.index('Coarse Data Modality')
                 # Remove the new columns from their current positions
                 cols.remove('Coarse Data Types')
                 cols.remove('Granular Data Types')
-                # Insert them after Data Modalities
+                # Insert them after Coarse Data Modality
                 cols.insert(data_mod_idx + 1, 'Coarse Data Types')
                 cols.insert(data_mod_idx + 2, 'Granular Data Types')
                 df = df[cols]
@@ -204,19 +204,19 @@ def load_publications() -> pd.DataFrame:
         df['Data Completeness'] = df.apply(calculate_publication_completeness, axis=1)
 
         # Split data modalities into coarse and granular
-        if 'Data Modalities' in df.columns:
-            split_results = df['Data Modalities'].apply(split_data_modalities)
+        if 'Coarse Data Modality' in df.columns:
+            split_results = df['Coarse Data Modality'].apply(split_data_modalities)
             df['Coarse Data Types'] = [result[0] for result in split_results]
             df['Granular Data Types'] = [result[1] for result in split_results]
 
-            # Reorder columns to put new columns after Data Modalities
+            # Reorder columns to put new columns after Coarse Data Modality
             cols = list(df.columns)
-            if 'Data Modalities' in cols:
-                data_mod_idx = cols.index('Data Modalities')
+            if 'Coarse Data Modality' in cols:
+                data_mod_idx = cols.index('Coarse Data Modality')
                 # Remove the new columns from their current positions
                 cols.remove('Coarse Data Types')
                 cols.remove('Granular Data Types')
-                # Insert them after Data Modalities
+                # Insert them after Coarse Data Modality
                 cols.insert(data_mod_idx + 1, 'Coarse Data Types')
                 cols.insert(data_mod_idx + 2, 'Granular Data Types')
                 df = df[cols]

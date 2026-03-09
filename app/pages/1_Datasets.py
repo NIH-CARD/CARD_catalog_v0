@@ -118,10 +118,10 @@ def main():
         help="Filter by specific data modalities"
     )
 
-    # Dataset type filter
-    dataset_types = df["Dataset Type"].unique().tolist() if "Dataset Type" in df.columns else []
+    # Resource type filter
+    dataset_types = df["Resource Type"].unique().tolist() if "Resource Type" in df.columns else []
     selected_types = st.sidebar.multiselect(
-        "Dataset Type",
+        "Resource Type",
         options=dataset_types,
         help="Filter by dataset type (Human, Model, etc.)"
     )
@@ -144,7 +144,7 @@ def main():
     if selected_granular:
         filters["Granular Data Types"] = selected_granular
     if selected_types:
-        filters["Dataset Type"] = selected_types
+        filters["Resource Type"] = selected_types
 
     if filters:
         filtered_df = filter_dataframe(filtered_df, filters)
@@ -192,11 +192,11 @@ def main():
 
                     with col1:
                         st.markdown(f"**Diseases:** {row.get('Diseases Included', 'N/A')}")
-                        st.markdown(f"**Data Modalities:** {row.get('Data Modalities', 'N/A')}")
+                        st.markdown(f"**Coarse Data Modality:** {row.get('Coarse Data Modality', 'N/A')}")
                         st.markdown(f"**Sample Size:** {row.get('Sample Size', 'N/A')}")
 
                     with col2:
-                        st.markdown(f"**Dataset Type:** {row.get('Dataset Type', 'N/A')}")
+                        st.markdown(f"**Resource Type:** {row.get('Resource Type', 'N/A')}")
                         if row.get('Access URL'):
                             st.markdown(f"**Access:** [{row.get('Access URL')}]({row.get('Access URL')})")
                         st.markdown(f"**FAIR Notes:** {row.get('FAIR Compliance Notes', 'N/A')}")

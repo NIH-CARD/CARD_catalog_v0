@@ -472,7 +472,7 @@ def prepare_dataset_summary(df: pd.DataFrame, max_items: int = 50) -> str:
         name = row.get('Study Name', 'Unknown')
         abbrev = row.get('Abbreviation', '')
         diseases = row.get('Diseases Included', '')
-        modalities = row.get('Data Modalities', '')
+        modalities = row.get('Coarse Data Modality', '')
         sample_size = row.get('Sample Size', '')
 
         summary = f"{name}"

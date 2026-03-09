@@ -32,7 +32,7 @@ def load_latest_file(pattern, directory=TABLES_DIR):
 
 
 def extract_coarse_types(data_modalities_str):
-    """Extract coarse data types from Data Modalities string."""
+    """Extract coarse data types from Coarse Data Modality string."""
     if pd.isna(data_modalities_str) or not str(data_modalities_str).strip():
         return []
 
@@ -75,11 +75,16 @@ def create_figure():
 
     # Load FAIR compliance logs
     fair_files = list(SCRAPERS_DIR.glob("fair_compliance_log_*.tsv"))
+    print(f"Found {len(fair_files)} FAIR compliance log file(s):")
+    for f in fair_files:
+        print(f"  {f.name}")
     fair_issues_by_repo = {}
     if fair_files:
         print("Loading FAIR compliance logs...")
         for fair_file in fair_files:
             fair_df_temp = pd.read_csv(fair_file, sep='\t', low_memory=False)
+            repos_in_file = fair_df_temp['Repository'].dropna().nunique()
+            print(f"  {fair_file.name}: {len(fair_df_temp)} rows, {repos_in_file} unique repos")
             for _, row in fair_df_temp.iterrows():
                 repo = row.get('Repository', '')
                 issue_type = row.get('Issue Type', '')
@@ -87,6 +92,7 @@ def create_figure():
                     if repo not in fair_issues_by_repo:
                         fair_issues_by_repo[repo] = set()
                     fair_issues_by_repo[repo].add(issue_type)
+    print(f"Total unique repos with FAIR data: {len(fair_issues_by_repo)}")
 
     # Create figure - panel C as wide as A and B combined
     fig = plt.figure(figsize=(24, 9))
@@ -101,7 +107,7 @@ def create_figure():
     datatype_fair_counts = defaultdict(lambda: {'Excellent': 0, 'Strong': 0, 'Good': 0})
 
     for _, row in datasets_df.iterrows():
-        coarse_types = extract_coarse_types(row.get('Data Modalities', ''))
+        coarse_types = extract_coarse_types(row.get('Coarse Data Modality', ''))
         fair_level = get_fair_level(row.get('FAIR Compliance Notes', ''))
 
         for dtype in coarse_types:
@@ -127,7 +133,7 @@ def create_figure():
     ax1.set_yticks(range(len(sorted_datatypes)))
     ax1.set_yticklabels(sorted_datatypes, fontsize=11, rotation=15, ha='right')
     ax1.set_xlabel('Number of Datasets', fontsize=12, fontweight='bold')
-    ax1.set_title('A. Data Modalities by FAIR Compliance\n(n=248 datasets)',
+    ax1.set_title('A. Coarse Data Modality by FAIR Compliance\n(n=236 datasets)',
                   fontsize=13, fontweight='bold', pad=10)
     ax1.legend(title='FAIR Level', loc='upper right', fontsize=10)
     ax1.grid(axis='x', alpha=0.3)
@@ -231,7 +237,7 @@ def create_figure():
             continue
 
         # Get coarse types
-        coarse_types = extract_coarse_types(row.get('Data Modalities', ''))
+        coarse_types = extract_coarse_types(row.get('Coarse Data Modality', ''))
         for dtype in coarse_types:
             datatype_samples[dtype].append(sample_size)
 
@@ -268,7 +274,7 @@ def create_figure():
                 sample_size = float(match.group(1).replace(',', ''))
                 if sample_size >= 1:
                     study_name = row.get('Study Name', 'Unknown')
-                    coarse_types = extract_coarse_types(row.get('Data Modalities', ''))
+                    coarse_types = extract_coarse_types(row.get('Coarse Data Modality', ''))
                     for dtype in coarse_types:
                         datasets_with_samples[dtype].add(study_name)
             except ValueError:
@@ -279,7 +285,7 @@ def create_figure():
         print(f"\n{dtype.upper()}:")
         all_datasets_with_modality = set()
         for _, row in datasets_df.iterrows():
-            coarse_types = extract_coarse_types(row.get('Data Modalities', ''))
+            coarse_types = extract_coarse_types(row.get('Coarse Data Modality', ''))
             if dtype in coarse_types:
                 all_datasets_with_modality.add(row.get('Study Name', 'Unknown'))
 
@@ -327,7 +333,7 @@ def create_figure():
     ax3.grid(True, alpha=0.3, which='both')
 
     # Overall title - positioned well above panel titles
-    fig.suptitle('CARD Catalog Landscape: Data Modalities, Code Quality, and Sample Distributions',
+    fig.suptitle('CARD Catalog Landscape: Coarse Data Modality, Code Quality, and Sample Distributions',
                 fontsize=15, fontweight='bold', y=0.93)
 
     output_file = OUTPUT_DIR / "figure2_landscape_v2.png"

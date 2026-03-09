@@ -269,8 +269,8 @@ def main():
                         st.markdown(f"**Diseases:** {diseases_str}")
 
                         # Data modalities
-                        modalities = row.get('Data Modalities', 'N/A')
-                        st.markdown(f"**Data Modalities:** {modalities}")
+                        modalities = row.get('Coarse Data Modality', 'N/A')
+                        st.markdown(f"**Coarse Data Modality:** {modalities}")
 
                     with col2:
                         # Keywords

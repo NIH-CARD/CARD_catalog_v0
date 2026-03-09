@@ -229,12 +229,12 @@ Be specific with gene names, disease mechanisms, and pathway details. Use exact 
 DATASET_COLUMNS = {
     "Study Name": "study_name",
     "Abbreviation": "abbreviation",
-    "Data Modalities": "data_modalities",
+    "Coarse Data Modality": "data_modalities",
     "Diseases Included": "diseases",
     "Sample Size": "sample_size",
     "Access URL": "access_url",
     "FAIR Compliance Notes": "fair_notes",
-    "Dataset Type": "dataset_type",
+    "Resource Type": "resource_type",
 }
 
 CODE_COLUMNS = {
@@ -255,7 +255,7 @@ PUBLICATION_COLUMNS = {
     "Study Name": "study_name",
     "Abbreviation": "abbreviation",
     "Diseases Included": "diseases",
-    "Data Modalities": "data_modalities",
+    "Coarse Data Modality": "data_modalities",
     "PubMed Central Link": "pmc_link",
     "Authors": "authors",
     "Affiliations": "affiliations",

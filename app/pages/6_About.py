@@ -345,7 +345,7 @@ def main():
         2. **Edge Creation**: Connections created when datasets share:
            - Diseases studied
            - Data modalities
-           - Dataset type
+           - Resource type
            - Other selected features
         3. **Layout Calculation**: Spring layout algorithm for optimal positioning
         4. **Filtering**: Optional minimum connection threshold to reduce clutter

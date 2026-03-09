@@ -346,7 +346,7 @@ def create_interactive_graph(
         else:
             # Dataset hover info (original behavior)
             hover_text = f"<b>{node}</b><br>"
-            for key in ['Abbreviation', 'Diseases Included', 'Data Modalities', 'FAIR Compliance Notes']:
+            for key in ['Abbreviation', 'Diseases Included', 'Coarse Data Modality', 'FAIR Compliance Notes']:
                 if key in node_attrs and node_attrs[key]:
                     value = str(node_attrs[key])
                     # Truncate long values
