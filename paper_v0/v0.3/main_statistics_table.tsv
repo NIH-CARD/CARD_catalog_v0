@@ -1,0 +1,183 @@
+DATASETS			
+Total Datasets	236		
+			
+Coarse Data Types			
+clinical		183	31.9%
+genetics		86	15.0%
+transcriptomics		86	15.0%
+longitudinal		75	13.1%
+imaging		50	8.7%
+proteomics		50	8.7%
+metabolomics		23	4.0%
+epigenomics		21	3.7%
+			
+Sample Size Statistics			
+Mean	65454		
+Median	770		
+Min	1		
+Max	5897780		
+Std Dev	487717		
+			
+FAIR Compliance Levels			
+Excellent		123	52.1%
+Strong		58	24.6%
+Good		55	23.3%
+			
+PUBLICATIONS			
+			
+Five Most Prolific Studies			
+Alzheimer's Disease Neuroimaging Initiative		150	
+National Alzheimer's Coordinating Center		150	
+Cognitive Function and Ageing Study		150	
+Memory and Aging Project		149	
+Mayo Clinic Study of Aging		149	
+			
+Five Most Occurring Authors			
+Ferrucci Luigi		179	
+Hansson Oskar		167	
+Bennett David A		158	
+Stomrud Erik		140	
+Palmqvist Sebastian		124	
+			
+Five Most Occurring Affiliations			
+Rush Alzheimer's Disease Center, Rush University Medical Center, Chicago, Illinois, USA.		83	
+Department of Neurology, Mayo Clinic, Rochester, Minnesota, USA.		62	
+Department of Radiology, Mayo Clinic, Rochester, Minnesota, USA.		60	
+Clinical Memory Research Unit, Department of Clinical Sciences Malmö, Lund University, Lund, Sweden.		52	
+Department of Quantitative Health Sciences, Mayo Clinic, Rochester, Minnesota, USA.		38	
+			
+Top 10 Keywords			
+disease		1084	4.0%
+cognitive		442	1.6%
+dementia		377	1.4%
+amyloid		223	0.8%
+biomarkers		206	0.8%
+impairment		197	0.7%
+aging		195	0.7%
+learning		192	0.7%
+analysis		175	0.6%
+brain		155	0.6%
+			
+Data Completeness Distribution from PubMed API			
+Mean	88.8%		
+Median	100.0%		
+Std Dev	14.2%		
+Distribution			
+0-25%		8	
+26-50%		59	
+51-75%		234	
+76-100%		3328	
+			
+CODE REPOSITORIES			
+Total Repositories	812		
+			
+Top Programming Languages			
+Jupyter Notebook		233	28.7%
+Python		193	23.8%
+R		51	6.3%
+JavaScript		42	5.2%
+MATLAB		34	4.2%
+HTML		31	3.8%
+TypeScript		18	2.2%
+C++		16	2.0%
+Java		13	1.6%
+CSS		8	1.0%
+			
+Top 10 Keywords from Tooling		% Repositories	
+python		288	35.5%
+data		138	17.0%
+learning		113	13.9%
+numpy		97	11.9%
+jupyter		87	10.7%
+networks		71	8.7%
+machine		81	10.0%
+neural		75	9.2%
+pytorch		76	9.4%
+specific		77	9.5%
+			
+Top 10 Keywords from Data Types		% Repositories	
+data		505	62.2%
+brain		223	27.5%
+mri		179	22.0%
+clinical		182	22.4%
+imaging		131	16.1%
+neuroimaging		111	13.7%
+images		88	10.8%
+dataset		92	11.3%
+disease		78	9.6%
+scores		64	7.9%
+			
+Top 10 Keywords from Code Summary		% Repositories	
+brain		320	39.4%
+code		395	48.6%
+data		320	39.4%
+disease		292	36.0%
+project		293	36.1%
+learning		262	32.3%
+system		158	19.5%
+machine		174	21.4%
+models		150	18.5%
+uses		156	19.2%
+			
+FAIR Component Completeness		% with component	
+README			98.8%
+Dependencies			40.0%
+Container			24.0%
+Environment Spec			23.2%
+Version Info			22.4%
+			
+Mean FAIR Score by Language (0-10 scale)			
+Python	6.99/10	n=193	
+Jupyter Notebook	7.01/10	n=233	
+R	6.71/10	n=51	
+			
+HUMAN CELLULAR MODELS			
+Total Cell Models	626		
+			
+Cell Models per Condition (Top 10)			
+Parkinson's disease		60	9.6%
+Alzheimer's disease		55	8.8%
+Frontotemporal dementia		21	3.4%
+Alzheimer's disease, late onset		12	1.9%
+Frontotemporal dementia with parkinsonism		11	1.8%
+Spastic paraplegia		9	1.4%
+Parkinson's disease, early onset		9	1.4%
+Leukoencephalopathy with vanishing white matter		9	1.4%
+Inclusion body myopathy with Paget disease and frontotemporal dementia (IBMPFD)		8	1.3%
+Alzheimer's disease, early onset		8	1.3%
+			
+Most Common Genes			
+LRRK2		24	
+MAPT		21	
+APP		20	
+FUS		17	
+SNCA		17	
+APOE		17	
+TREM2		17	
+CHMP2B		14	
+PRKN		12	
+PSEN1		11	
+			
+Top Themes from Gene Descriptions		% Cell Models	
+mutations		539	86.1%
+protein		486	77.6%
+neurodegenerative		582	93.0%
+function		472	75.4%
+dysfunction		472	75.4%
+therapeutic		549	87.7%
+neuronal		361	57.7%
+onset		344	55.0%
+neurodegeneration		360	57.5%
+diseases		332	53.0%
+			
+Top Themes from Variant Descriptions		% Cell Models	
+risk		245	56.1%
+apoe		159	36.4%
+nucleotide		335	76.7%
+mutation		171	39.1%
+protein		226	51.7%
+functional		207	47.4%
+pathogenic		182	41.6%
+lipid		148	33.9%
+increased		171	39.1%
+clinical		192	43.9%

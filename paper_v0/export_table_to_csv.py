@@ -18,7 +18,7 @@ from generate_main_table import (
     analyze_code_repos, analyze_cell_models
 )
 
-OUTPUT_DIR = Path(__file__).parent
+OUTPUT_DIR = Path(__file__).parent / "v0.3"
 
 
 def create_wide_csv():
@@ -35,10 +35,7 @@ def create_wide_csv():
 
     # DATASETS SECTION
     rows.append(['DATASETS', '', '', ''])
-    rows.append(['Metric', 'Value', 'Count', 'Percentage'])
     rows.append(['Total Datasets', datasets_stats.get('n_datasets', ''), '', ''])
-    rows.append(['Multi-study Datasets', datasets_stats.get('n_multi_study', ''), datasets_stats.get('n_multi_study', ''), f"{datasets_stats.get('pct_multi_study', 0):.1f}%"])
-    rows.append(['Biosample Datasets', datasets_stats.get('n_biosample', ''), datasets_stats.get('n_biosample', ''), f"{datasets_stats.get('pct_biosample', 0):.1f}%"])
     rows.append(['', '', '', ''])
 
     # Coarse data types

@@ -19,7 +19,7 @@ from scipy.stats import gaussian_kde
 # Paths
 TABLES_DIR = Path(__file__).parent.parent / "tables"
 SCRAPERS_DIR = Path(__file__).parent.parent / "scrapers"
-OUTPUT_DIR = Path(__file__).parent
+OUTPUT_DIR = Path(__file__).parent / "v0.3"
 
 
 def load_latest_file(pattern, directory=TABLES_DIR):
@@ -37,13 +37,8 @@ def extract_coarse_types(data_modalities_str):
         return []
 
     modality_str = str(data_modalities_str).strip()
-    bracket_match = re.match(r'^\[(.*?)\]', modality_str)
-    if bracket_match:
-        coarse_part = bracket_match.group(1)
-        types = [t.strip() for t in coarse_part.split(',')]
-        return types
-    return []
-
+    types = [t.strip() for t in modality_str.split(',')]
+    return types
 
 def get_fair_level(fair_note):
     """Get FAIR level from compliance note."""

@@ -14,7 +14,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 # Paths
 TABLES_DIR = Path(__file__).parent.parent / "tables"
-OUTPUT_DIR = Path(__file__).parent
+OUTPUT_DIR = Path(__file__).parent / "v0.3"
 
 # Common stopwords to exclude
 STOPWORDS = {
@@ -46,7 +46,10 @@ def load_latest_file(pattern):
         raise FileNotFoundError(f"No files found matching {pattern}")
     latest = max(files, key=lambda p: p.stat().st_mtime)
     print(f"Loading file: {latest}")
-    return pd.read_csv(latest, sep='\t', low_memory=False)
+    ret = pd.read_csv(latest, sep='\t', low_memory=False)
+    #print(f"Dataframe shape: {ret.shape}")
+    #print(f"Dataframe head: {ret.head()}")
+    return ret
 
 
 def extract_keywords(text_series, top_n=10, min_length=3, custom_stopwords=None, return_repo_pct=False):
@@ -121,23 +124,15 @@ def analyze_datasets():
     # Resource types (multi-study and biosample)
     if 'Resource Type' in df.columns:
         dataset_types = df['Resource Type'].fillna('').str.lower()
-        stats['n_multi_study'] = dataset_types.str.contains('multi-study').sum()
-        stats['pct_multi_study'] = (stats['n_multi_study'] / len(df) * 100)
-        stats['n_biosample'] = dataset_types.str.contains('biosample').sum()
-        stats['pct_biosample'] = (stats['n_biosample'] / len(df) * 100)
+        stats['resource_types'] = Counter(dataset_types).most_common()
 
     # Data modalities - extract coarse types from brackets [coarse] granular format
     if 'Coarse Data Modality' in df.columns:
         coarse_types = []
         for modality in df['Coarse Data Modality'].dropna():
             modality_str = str(modality).strip()
-            # Extract text within brackets using regex
-            bracket_match = re.match(r'^\[(.*?)\]', modality_str)
-            if bracket_match:
-                coarse_part = bracket_match.group(1)
-                # Split by comma and clean
-                types = [t.strip() for t in coarse_part.split(',')]
-                coarse_types.extend(types)
+            types = [t.strip() for t in modality_str.split(',')]
+            coarse_types.extend(types)
 
         stats['coarse_data_types'] = Counter(coarse_types).most_common()
     
@@ -229,13 +224,6 @@ def analyze_publications():
             normalized_affiliations.append(aff)
 
         stats['top_affiliations'] = Counter(normalized_affiliations).most_common(5)
-
-    # Coarse data types
-    if 'Coarse Data Types' in df.columns:
-        data_types = []
-        for dt in df['Coarse Data Types'].dropna():
-            data_types.extend([x.strip() for x in str(dt).split(';')])
-        stats['coarse_data_types'] = Counter(data_types).most_common()
 
     # Top keywords
     if 'Keywords' in df.columns:
@@ -461,19 +449,18 @@ def format_output(datasets_stats, pubs_stats, code_stats, cell_stats):
     output.append(f"Total Number of Datasets: {datasets_stats.get('n_datasets', 'N/A')}")
     output.append("")
 
-    if 'n_multi_study' in datasets_stats:
-        output.append(f"Multi-study Datasets: {datasets_stats['n_multi_study']} ({datasets_stats['pct_multi_study']:.1f}%)")
-    if 'n_biosample' in datasets_stats:
-        output.append(f"Biosample Datasets: {datasets_stats['n_biosample']} ({datasets_stats['pct_biosample']:.1f}%)")
-    output.append("")
-
     if 'coarse_data_types' in datasets_stats:
         output.append("Coarse Data Types:")
+        print(f"dataset_stats: {datasets_stats.columns if isinstance(datasets_stats, pd.DataFrame) else datasets_stats.keys()}")
+        print(f"dataset_stats['coarse_data_types']: {datasets_stats['coarse_data_types']}")
         total_types = sum(count for _, count in datasets_stats['coarse_data_types'])
+        print(f"Total coarse data type entries: {total_types}")
         for dtype, count in datasets_stats['coarse_data_types']:
             pct = (count / total_types * 100) if total_types > 0 else 0
             output.append(f"  {dtype}: {count} ({pct:.1f}%)")
         output.append("")
+    else:
+        raise Exception("Coarse Data Types statistics missing from datasets_stats")
 
     if 'sample_size_mean' in datasets_stats:
         output.append("Sample Size Statistics:")
