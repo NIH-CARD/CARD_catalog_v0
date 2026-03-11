@@ -123,8 +123,13 @@ def analyze_datasets():
 
     # Resource types (multi-study and biosample)
     if 'Resource Type' in df.columns:
-        dataset_types = df['Resource Type'].fillna('').str.lower()
-        stats['resource_types'] = Counter(dataset_types).most_common()
+        resource_counter = Counter()
+        for val in df['Resource Type'].fillna(''):
+            for rtype in val.split(','):
+                rtype = rtype.strip().lower()
+                if rtype:
+                    resource_counter[rtype] += 1
+        stats['resource_types'] = resource_counter.most_common()
 
     # Data modalities - extract coarse types from brackets [coarse] granular format
     if 'Coarse Data Modality' in df.columns:
@@ -442,6 +447,13 @@ def format_output(datasets_stats, pubs_stats, code_stats, cell_stats):
     output.append("CARD CATALOG - MAIN DESCRIPTIVE STATISTICS TABLE")
     output.append("=" * 80)
     output.append("")
+
+    if 'resource_types' in datasets_stats:
+        output.append("Resource Types Distribution:")
+        for rtype, count in datasets_stats['resource_types']:
+            pct = (count / datasets_stats['n_datasets'] * 100) if datasets_stats['n_datasets'] > 0 else 0
+            output.append(f"  {rtype}: {count} ({pct:.1f}%)")
+        output.append("")
 
     # DATASETS
     output.append("DATASETS")

@@ -2,6 +2,12 @@
 CARD CATALOG - MAIN DESCRIPTIVE STATISTICS TABLE
 ================================================================================
 
+Resource Types Distribution:
+  study: 192 (81.4%)
+  data repository: 39 (16.5%)
+  biorepository: 16 (6.8%)
+  data catalog: 4 (1.7%)
+
 DATASETS
 --------------------------------------------------------------------------------
 Total Number of Datasets: 236
