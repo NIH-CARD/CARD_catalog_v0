@@ -198,6 +198,8 @@ def analyze_publications():
 
     stats = {}
 
+    stats['n_pubs'] = len(df)
+
     # Five most prolific studies
     if 'Study Name' in df.columns:
         stats['top_studies'] = df['Study Name'].value_counts().head(5).to_dict()
@@ -633,7 +635,7 @@ def main():
     # Run all analyses
     datasets_stats = analyze_datasets()
     pubs_stats = analyze_publications()
-    code_stats = analyze_code_repos(git_scrape_output_path='../tables/gits_to_reannotate_completed_20260209_224209.tsv')
+    code_stats = analyze_code_repos(git_scrape_output_path='../tables/gits_to_reannotate_completed_20260312_015100.tsv')
     cell_stats = analyze_cell_models()
 
     # Format output

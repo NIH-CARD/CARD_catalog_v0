@@ -184,12 +184,11 @@ def build_search_query(study_name: str, abbreviation: str, diseases: str, data_m
     # Extract data modalities
     modalities = []
     if pd.notna(data_modalities) and isinstance(data_modalities, str):
-        # Handle both semicolon-separated and bracket-enclosed formats
-        clean_modalities = data_modalities.strip('[]')
-        modalities = [m.strip() for m in clean_modalities.split(';') if m.strip()]
-    
+        modalities = [m.strip() for m in data_modalities.split(',') if m.strip()]
+
     logger.debug(f"Extracted modalities: {modalities}")
 
+    study_names_matching_false_positives = ['NICOLA', 'ADAMS', 'CODES']
     # Build query terms
     study_terms = []
     if study_name and pd.notna(study_name):
@@ -287,11 +286,73 @@ def build_search_query_v2(study_name: str, abbreviation: str, diseases: str, dat
     logger.debug(f"Final v2 query: {final_query}")
     return final_query
 
+def build_search_query_v3(study_name: str, abbreviation: str, diseases: str, data_modalities: str, years: int = 3) -> str:
+    """Build PubMed search query: v2 (tiab, noisy abbrev filter) + disease terms + modality terms.
+
+    - Uses [tiab] like v2 to reduce false positives from references/affiliations
+    - Skips noisy abbreviations like v2
+    - Adds disease terms AND modality terms like the original query for precision
+    """
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=365*years)
+    date_range = f"{start_date.strftime('%Y/%m/%d')}:{end_date.strftime('%Y/%m/%d')}"
+
+    logger.debug(f"Building v3 query for study: {study_name}, abbreviation: {abbreviation}")
+
+    # Study terms: [tiab] + noisy abbreviation filter (from v2)
+    study_terms = []
+    if study_name and pd.notna(study_name):
+        clean_name = re.sub(r'\s*\([^)]*\)\s*$', '', str(study_name)).strip()
+        if clean_name:
+            study_terms.append(f'"{clean_name}"[tiab]')
+
+    abbrev_str = str(abbreviation).strip() if pd.notna(abbreviation) else ""
+    if abbrev_str and abbrev_str != str(study_name) and abbrev_str.lower() not in _NOISY_ABBREVIATIONS:
+        study_terms.append(f'"{abbrev_str}"[tiab]')
+    elif abbrev_str and abbrev_str.lower() in _NOISY_ABBREVIATIONS:
+        logger.info(f"Skipping noisy abbreviation '{abbrev_str}' (common word)")
+
+    # Disease terms (from original)
+    disease_keywords = ["alzheimer", "parkinson", "dementia", "brain", "neurodegenerative",
+                       "neurodegeneration", "tremor", "amyotrophic", "als", "cognitive impairment",
+                       "mild cognitive impairment", "mci", "lewy body"]
+    disease_terms = []
+    if pd.notna(diseases) and isinstance(diseases, str):
+        disease_terms = [d.strip().lower() for d in diseases.split(";")
+                        if any(kw in d.lower() for kw in disease_keywords)]
+    if not disease_terms:
+        disease_terms = disease_keywords[:5]
+
+    # Modality terms (from original)
+    modalities = []
+    if pd.notna(data_modalities) and isinstance(data_modalities, str):
+        modalities = [m.strip() for m in data_modalities.split(',') if m.strip()]
+
+    query_parts = []
+    if study_terms:
+        query_parts.append(f'({" OR ".join(study_terms)})')
+
+    disease_query = " OR ".join([f'"{term}"[All Fields]' for term in disease_terms])
+    query_parts.append(f'({disease_query})')
+
+    query_parts.append(f'({date_range}[Date - Publication])')
+
+    if modalities:
+        modality_terms = [f'"{m}"[All Fields]' for m in modalities[:5]]
+        query_parts.append(f'({" OR ".join(modality_terms)})')
+
+    final_query = " AND ".join(query_parts)
+    logger.debug(f"Final v3 query: {final_query}")
+    return final_query
+
+
 def search_pubmed(study_name: str, abbreviation: str, diseases: str, search_data_modalities: str, max_results: int = 100, ncbi_api_key_suffix: str = "", query_method: str = "original") -> List[Dict]:
     """Search PubMed for articles related to the study"""
     # Build search query
     if query_method == "v2":
         query = build_search_query_v2(study_name, abbreviation, diseases, search_data_modalities)
+    elif query_method == "v3":
+        query = build_search_query_v3(study_name, abbreviation, diseases, search_data_modalities)
     else:
         query = build_search_query(study_name, abbreviation, diseases, search_data_modalities)
 
@@ -386,10 +447,11 @@ def main():
                        help='Log file path (default: publications_{timestamp}.log)')
     parser.add_argument('--clear-log', action='store_true',
                        help='Clear log file before writing (default: append)')
-    parser.add_argument('--query-method', choices=['original', 'v2'], default='original',
+    parser.add_argument('--query-method', choices=['original', 'v2', 'v3'], default='original',
                        help='Query construction method: "original" uses [All Fields] with disease+modality '
-                            'terms; "v2" uses [tiab] with no modality terms and proper URL encoding '
-                            '(informationist-informed) (default: original)')
+                            'terms; "v2" uses [tiab] with no disease/modality terms; '
+                            '"v3" uses [tiab] + disease + modality terms (v2 precision + original recall) '
+                            '(default: original)')
 
     args = parser.parse_args()
 
@@ -435,7 +497,9 @@ def main():
         study_name = row.get("Study Name", "")
         abbreviation = row.get("Abbreviation", "")
         diseases = row.get("Diseases Included", "")
-        search_data_modalities = row.get("Coarse Data Modality", "").split().extend(row.get("Granular Data Modalities", "").split())
+        coarse = [m.strip() for m in str(row.get("Coarse Data Modality", "") or "").split(",") if m.strip()]
+        granular = [m.strip() for m in str(row.get("Granular Data Modality", "") or "").split(";") if m.strip()]
+        search_data_modalities = ", ".join(coarse + granular)
 
         logger.info(f"[{idx+1}/{len(studies_df)}] Searching for publications: {study_name} ({abbreviation})")
         results = search_pubmed(study_name, abbreviation, diseases, search_data_modalities, args.max_results, ncbi_api_key_suffix, args.query_method)
