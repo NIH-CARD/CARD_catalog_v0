@@ -64,29 +64,21 @@ def create_figure():
     datasets_df = load_latest_file("dataset-inventory-*.tab")
 
     # Load code repos
-    git_files = list(TABLES_DIR.glob("gits_batch*.tsv")) + list(TABLES_DIR.glob("gits_to_reannotate*.tsv"))
-    code_dfs = [pd.read_csv(f, sep='\t', low_memory=False) for f in git_files]
-    code_df = pd.concat(code_dfs, ignore_index=True).drop_duplicates(subset=['Repository Link'], keep='first')
+    code_df = load_latest_file("gits_to_reannotate_completed_*.tsv")
 
-    # Load FAIR compliance logs
-    fair_files = list(SCRAPERS_DIR.glob("fair_compliance_log_*.tsv"))
-    print(f"Found {len(fair_files)} FAIR compliance log file(s):")
-    for f in fair_files:
-        print(f"  {f.name}")
+    # Load FAIR compliance log (single authoritative file)
+    fair_file = max(SCRAPERS_DIR.glob("fair_compliance_log_*.tsv"), key=lambda p: p.stat().st_mtime)
+    print(f"Loading FAIR compliance log: {fair_file.name}")
+    fair_df = pd.read_csv(fair_file, sep='\t', low_memory=False)
+    print(f"  {len(fair_df)} rows, {fair_df['Repository'].nunique()} unique repos")
     fair_issues_by_repo = {}
-    if fair_files:
-        print("Loading FAIR compliance logs...")
-        for fair_file in fair_files:
-            fair_df_temp = pd.read_csv(fair_file, sep='\t', low_memory=False)
-            repos_in_file = fair_df_temp['Repository'].dropna().nunique()
-            print(f"  {fair_file.name}: {len(fair_df_temp)} rows, {repos_in_file} unique repos")
-            for _, row in fair_df_temp.iterrows():
-                repo = row.get('Repository', '')
-                issue_type = row.get('Issue Type', '')
-                if repo and issue_type:
-                    if repo not in fair_issues_by_repo:
-                        fair_issues_by_repo[repo] = set()
-                    fair_issues_by_repo[repo].add(issue_type)
+    for _, row in fair_df.iterrows():
+        repo = row.get('Repository', '')
+        issue_type = row.get('Issue Type', '')
+        if repo and issue_type:
+            if repo not in fair_issues_by_repo:
+                fair_issues_by_repo[repo] = set()
+            fair_issues_by_repo[repo].add(issue_type)
     print(f"Total unique repos with FAIR data: {len(fair_issues_by_repo)}")
 
     # Create figure - panel C as wide as A and B combined
@@ -134,6 +126,8 @@ def create_figure():
     ax1.grid(axis='x', alpha=0.3)
 
     # Add total counts at end of bars
+    max_total = max(datatype_totals.values())
+    ax1.set_xlim(0, max_total * 1.12)
     for i, dtype in enumerate(sorted_datatypes):
         total = datatype_totals[dtype]
         ax1.text(total + 1, i, str(total), va='center', fontsize=9, fontweight='bold')
@@ -170,6 +164,10 @@ def create_figure():
         if not langs:
             continue
 
+        # Skip repos not assessed by FAIR scraper
+        if repo_link not in fair_issues_by_repo:
+            continue
+
         # Get issues for this repo
         repo_issues = fair_issues_by_repo.get(repo_link, set())
 
@@ -203,10 +201,9 @@ def create_figure():
     for i in range(len(top_languages)):
         for j in range(len(issue_types)):
             value = lang_issue_matrix[i, j]
-            if value > 0:
-                text_color = 'white' if value > 50 else 'black'
-                ax2.text(j, i, f'{value:.0f}%', ha='center', va='center',
-                        color=text_color, fontsize=8, fontweight='bold')
+            text_color = 'white' if value > 50 else 'black'
+            ax2.text(j, i, f'{value:.0f}%', ha='center', va='center',
+                    color=text_color, fontsize=8, fontweight='bold')
 
     plt.colorbar(im, ax=ax2, label='% Missing')
 

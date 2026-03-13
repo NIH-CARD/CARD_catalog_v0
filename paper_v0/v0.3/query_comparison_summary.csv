@@ -1,0 +1,23 @@
+0,1,2
+Q1 Capped 150,Q2 Capped 150,Q3 Capped 150
+All Fields + disease terms + modality terms,"tiab only — no disease/modality, skips noisy abbrevs",tiab + disease terms + modality terms
+"(""Honolulu-Asia Aging Study""[All Fields] OR ""HAAS""[All Fields]) AND (""alzheimer's disease""[All Fields] OR ""dementia""[All Fields] OR ""parkinson's disease""[All Fields] OR ""normal aging, vascular dementia""[All Fields]) AND (2023/03/13:2026/03/12[Date - Publication])","(""Honolulu-Asia Aging Study""[tiab]) AND (2023/03/13:2026/03/12[Date - Publication])","(""Honolulu-Asia Aging Study""[tiab]) AND (""alzheimer's disease""[All Fields] OR ""dementia""[All Fields] OR ""parkinson's disease""[All Fields] OR ""normal aging, vascular dementia""[All Fields]) AND (2023/03/13:2026/03/12[Date - Publication])"
+1717,3631,1574
+64,82,60
+150,371,150
+9.0,15.0,8.0
+CODES (150),MCSA (371),NACC (150)
+ADNI (146),BLSA (305),ADNI (150)
+NACC (140),NACC (150),PPMI (149)
+PPMI (135),CFAS (150),MAP (120)
+MAP (118),ADNI (150),ROS (89)
+ADAMS (99),MAP (149),PREVENT-dementia (79)
+ROS (82),PPMI (149),AIBL (75)
+PREVENT-dementia (74),PREVENT-dementia (148),MCSA (74)
+BioFINDER (73),GP2 (147),BioFINDER (72)
+ADSP (52),BDR (141),ADSP (64)
+Hansson Oskar (161),Ferrucci Luigi (179),Hansson Oskar (157)
+Bennett David A (133),Hansson Oskar (167),Bennett David A (134)
+Stomrud Erik (129),Bennett David A (157),Stomrud Erik (129)
+Zetterberg Henrik (121),Stomrud Erik (140),Palmqvist Sebastian (115)
+Palmqvist Sebastian (121),Palmqvist Sebastian (124),Janelidze Shorena (109)
