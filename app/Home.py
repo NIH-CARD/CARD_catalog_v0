@@ -107,11 +107,11 @@ def main():
 
         #### Features:
 
-        - **📊 Datasets**: Browse 99 neuroscience research datasets with interactive
+        - **📊 Datasets**: Browse 236 neuroscience research datasets with interactive
           knowledge graphs, coarse and granular data type filtering, and AI-powered analysis
-        - **📚 Publications**: Search 860 scientific publications from PubMed Central
+        - **📚 Publications**: Search 1285 scientific publications from PubMed Central
           (within 3 years of dataset updates) with normalized author names and fixed PMC links
-        - **💻 Code**: Discover 568 GitHub repositories with AI-powered quality scoring
+        - **💻 Code**: Discover 674 GitHub repositories with AI-powered quality scoring
           (cleanliness, completeness, runnability) and FAIR compliance tracking
         - **🧬 Human Cellular Models**: Browse 626 iNDI iPSC cell lines for neurodegenerative
           disease research with detailed genotype and procurement information
@@ -124,7 +124,6 @@ def main():
           samples across 23 cohorts and 250+ million protein measurements
         - 📊 **Table Views**: Interactive data tables with sorting and search on all main pages
         - 🔍 **Coarse & Granular Data Types**: Filter by high-level categories or detailed modalities
-        - 🏷️ **Multi-Study Datasets**: 18 datasets now tagged as Multi-study for easier filtering
         - 🤖 **Claude Sonnet 4.5**: Upgraded AI model for better analysis and insights
 
         #### Getting Started:
