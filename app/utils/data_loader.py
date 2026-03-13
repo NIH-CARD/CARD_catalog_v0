@@ -6,43 +6,32 @@ Handles loading all data files with proper caching and normalization.
 import pandas as pd
 import streamlit as st
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 import glob
 import re
+import logging
 
 import sys
 sys.path.append(str(Path(__file__).parent.parent))
-from config import TABLES_DIR, SCRAPERS_DIR, DATA_FILES, FAIR_LOG_PATTERN
+from config import TABLES_DIR, SCRAPERS_DIR, DATA_FILES_PTRS, FAIR_LOG_PATTERN
 
+logger = logging.getLogger(__name__)
 
-def split_data_modalities(data_modalities_str: str) -> Tuple[str, str]:
-    """
-    Split data modalities string into coarse and granular parts.
+current_dir = Path.cwd()
 
-    Format: [coarse_level] granular_details
-    Example: [clinical, genetics, imaging] Clinical assessments; MRI; PET
-
-    Args:
-        data_modalities_str: String containing data modalities
-
-    Returns:
-        Tuple of (coarse_data_types, granular_data_types)
-    """
-    if pd.isna(data_modalities_str) or not str(data_modalities_str).strip():
-        return "", ""
-
-    text = str(data_modalities_str).strip()
-
-    # Check if there's a bracket pattern [coarse] granular
-    bracket_match = re.match(r'^\[(.*?)\]\s*(.*)$', text)
-
-    if bracket_match:
-        coarse_part = bracket_match.group(1).strip()
-        granular_part = bracket_match.group(2).strip()
-        return coarse_part, granular_part
-    else:
-        # If no brackets, treat the whole thing as granular
-        return "", text
+def get_latest_file(pattern, directory=''):
+    """Load the most recent file matching pattern."""
+    logger.info(f"Looking for files in {directory} matching {pattern}")
+    search_path = Path(directory) / pattern
+    logger.info(f"Searching for files with pattern: {search_path}")
+    files = glob.glob(str(search_path))
+    logger.info(f"Found {len(files)} files matching pattern")
+    if not files:
+        raise FileNotFoundError(f"No files found matching pattern: {search_path}")
+    latest_file = max(files, key=lambda x: Path(x).stat().st_mtime)
+    logger.info(f"Latest file found: {latest_file}")
+    assert str(latest_file).endswith(".tsv") or str(latest_file).endswith(".tab"), f"Expected a .tsv / .tab file, got: {latest_file}"
+    return Path(latest_file)
 
 
 @st.cache_data(ttl=3600)
@@ -53,9 +42,11 @@ def load_datasets() -> pd.DataFrame:
     Returns:
         DataFrame with dataset information
     """
-    file_path = TABLES_DIR / DATA_FILES["datasets"]
+    logger.info("Loading datasets...")
+    file_path = get_latest_file(DATA_FILES_PTRS["datasets"], TABLES_DIR)
 
     if not file_path.exists():
+        logger.error(f"Dataset file not found: {file_path}")
         st.error(f"Dataset file not found: {file_path}")
         return pd.DataFrame()
 
@@ -68,29 +59,17 @@ def load_datasets() -> pd.DataFrame:
         # Handle missing values
         df = df.fillna("")
 
-        # Normalize disease names
-        df['Diseases Included'] = df['Diseases Included'].apply(normalize_list_field)
+        # Normalize disease names (split on both ";" and "," to handle inconsistent source data)
+        df['Diseases Included'] = df['Diseases Included'].apply(
+            lambda x: normalize_list_field(x, delimiter=";", split_delimiters=[";", ","])
+        )
 
-        # Split data modalities into coarse and granular
-        if 'Coarse Data Modality' in df.columns:
-            split_results = df['Coarse Data Modality'].apply(split_data_modalities)
-            df['Coarse Data Types'] = [result[0] for result in split_results]
-            df['Granular Data Types'] = [result[1] for result in split_results]
+        df = df.drop(columns=[c for c in ["Notes", "Remove"] if c in df.columns])
 
-            # Reorder columns to put new columns after Coarse Data Modality
-            cols = list(df.columns)
-            if 'Coarse Data Modality' in cols:
-                data_mod_idx = cols.index('Coarse Data Modality')
-                # Remove the new columns from their current positions
-                cols.remove('Coarse Data Types')
-                cols.remove('Granular Data Types')
-                # Insert them after Coarse Data Modality
-                cols.insert(data_mod_idx + 1, 'Coarse Data Types')
-                cols.insert(data_mod_idx + 2, 'Granular Data Types')
-                df = df[cols]
-
+        logger.info(f"Datasets loaded: {len(df)} rows, {len(df.columns)} columns")
         return df
     except Exception as e:
+        logger.error(f"Error loading datasets: {e}", exc_info=True)
         st.error(f"Error loading datasets: {e}")
         return pd.DataFrame()
 
@@ -103,9 +82,11 @@ def load_code_repos() -> pd.DataFrame:
     Returns:
         DataFrame with code repository information
     """
-    file_path = TABLES_DIR / DATA_FILES["code_repos"]
+    logger.info("Loading code repositories...")
+    file_path = get_latest_file(DATA_FILES_PTRS["code_repos"], TABLES_DIR)
 
     if not file_path.exists():
+        logger.error(f"Code repos file not found: {file_path}")
         st.error(f"Code repos file not found: {file_path}")
         return pd.DataFrame()
 
@@ -132,8 +113,10 @@ def load_code_repos() -> pd.DataFrame:
         if 'Languages' in df.columns:
             df['Languages'] = df['Languages'].apply(normalize_list_field)
 
+        logger.info(f"Code repos loaded: {len(df)} rows, {len(df.columns)} columns")
         return df
     except Exception as e:
+        logger.error(f"Error loading code repos: {e}", exc_info=True)
         st.error(f"Error loading code repos: {e}")
         return pd.DataFrame()
 
@@ -169,9 +152,11 @@ def load_publications() -> pd.DataFrame:
     Returns:
         DataFrame with publication information
     """
-    file_path = TABLES_DIR / DATA_FILES["publications"]
+    logger.info("Loading publications...")
+    file_path = get_latest_file(DATA_FILES_PTRS["publications"], TABLES_DIR)
 
     if not file_path.exists():
+        logger.error(f"Publications file not found: {file_path}")
         st.error(f"Publications file not found: {file_path}")
         return pd.DataFrame()
 
@@ -192,9 +177,11 @@ def load_publications() -> pd.DataFrame:
         if 'Authors' in df.columns:
             df['Authors'] = df['Authors'].apply(normalize_author_names)
 
-        # Normalize diseases
+        # Normalize diseases (split on both ";" and "," to handle inconsistent source data)
         if 'Diseases Included' in df.columns:
-            df['Diseases Included'] = df['Diseases Included'].apply(normalize_list_field)
+            df['Diseases Included'] = df['Diseases Included'].apply(
+                lambda x: normalize_list_field(x, delimiter=";", split_delimiters=[";", ","])
+            )
 
         # Normalize keywords to fix duplicates
         if 'Keywords' in df.columns:
@@ -203,26 +190,10 @@ def load_publications() -> pd.DataFrame:
         # Calculate data completeness score
         df['Data Completeness'] = df.apply(calculate_publication_completeness, axis=1)
 
-        # Split data modalities into coarse and granular
-        if 'Coarse Data Modality' in df.columns:
-            split_results = df['Coarse Data Modality'].apply(split_data_modalities)
-            df['Coarse Data Types'] = [result[0] for result in split_results]
-            df['Granular Data Types'] = [result[1] for result in split_results]
-
-            # Reorder columns to put new columns after Coarse Data Modality
-            cols = list(df.columns)
-            if 'Coarse Data Modality' in cols:
-                data_mod_idx = cols.index('Coarse Data Modality')
-                # Remove the new columns from their current positions
-                cols.remove('Coarse Data Types')
-                cols.remove('Granular Data Types')
-                # Insert them after Coarse Data Modality
-                cols.insert(data_mod_idx + 1, 'Coarse Data Types')
-                cols.insert(data_mod_idx + 2, 'Granular Data Types')
-                df = df[cols]
-
+        logger.info(f"Publications loaded: {len(df)} rows, {len(df.columns)} columns")
         return df
     except Exception as e:
+        logger.error(f"Error loading publications: {e}", exc_info=True)
         st.error(f"Error loading publications: {e}")
         return pd.DataFrame()
 
@@ -238,8 +209,10 @@ def load_fair_compliance() -> pd.DataFrame:
     """
     pattern = str(SCRAPERS_DIR / FAIR_LOG_PATTERN)
     fair_files = glob.glob(pattern)
+    logger.info(f"Loading FAIR compliance logs: found {len(fair_files)} files matching {pattern}")
 
     if not fair_files:
+        logger.warning("No FAIR compliance log files found")
         st.warning("No FAIR compliance log files found")
         return pd.DataFrame()
 
@@ -250,6 +223,7 @@ def load_fair_compliance() -> pd.DataFrame:
             df = pd.read_csv(file_path, sep='\t', encoding='utf-8')
             dfs.append(df)
         except Exception as e:
+            logger.warning(f"Error loading {file_path}: {e}")
             st.warning(f"Error loading {file_path}: {e}")
             continue
 
@@ -264,6 +238,7 @@ def load_fair_compliance() -> pd.DataFrame:
         combined_df = combined_df.sort_values('Timestamp', ascending=False)
         combined_df = combined_df.drop_duplicates(subset=['Repository', 'Study', 'Issue Type'], keep='first')
 
+    logger.info(f"FAIR compliance loaded: {len(combined_df)} records")
     return combined_df
 
 
@@ -275,9 +250,11 @@ def load_indi_inventory() -> pd.DataFrame:
     Returns:
         DataFrame with iNDI inventory information
     """
-    file_path = TABLES_DIR / DATA_FILES["indi"]
+    logger.info("Loading iNDI inventory...")
+    file_path = get_latest_file(DATA_FILES_PTRS["indi"], TABLES_DIR)
 
     if not file_path.exists():
+        logger.warning(f"iNDI inventory file not found: {file_path}")
         st.warning(f"iNDI inventory file not found: {file_path}")
         return pd.DataFrame()
 
@@ -285,35 +262,62 @@ def load_indi_inventory() -> pd.DataFrame:
         df = pd.read_csv(file_path, sep='\t', encoding='utf-8')
         df.columns = df.columns.str.strip()
         df = df.fillna("")
+        logger.info(f"iNDI inventory loaded: {len(df)} rows, {len(df.columns)} columns")
         return df
     except Exception as e:
+        logger.error(f"Error loading iNDI inventory: {e}", exc_info=True)
         st.error(f"Error loading iNDI inventory: {e}")
         return pd.DataFrame()
 
 
-def normalize_list_field(field: str, delimiter: str = ";") -> str:
+def normalize_list_field(field: str, delimiter: str = ";", split_delimiters: List[str] = None) -> str:
     """
     Normalize a delimited list field by:
-    - Splitting on delimiter
+    - Splitting on delimiter(s)
     - Stripping whitespace
     - Removing duplicates
     - Sorting alphabetically
-    - Rejoining with delimiter
+    - Rejoining with output delimiter
 
     Args:
         field: String containing delimited values
-        delimiter: Delimiter character
+        delimiter: Output delimiter character (default ";")
+        split_delimiters: List of delimiters to split on (default: [delimiter])
 
     Returns:
-        Normalized string
+        Normalized string joined with delimiter
     """
     if not field or pd.isna(field) or field == "":
         return ""
 
+    separators = split_delimiters if split_delimiters else [delimiter]
+
     # Split and clean - also normalize Unicode whitespace
     import unicodedata
+    items = [str(field)]
+    for sep in separators:
+        items = [part for item in items for part in item.split(sep)]
+    # Expand parenthetical content into additional items
+    # e.g. "Alz(PD,AD,ADRD)" -> ["Alz", "PD", "AD", "ADRD"]
+    expanded = []
+    for item in items:
+        paren_match = re.search(r'\(([^)]+)\)', item)
+        if paren_match:
+            # Add the base (without parenthetical)
+            base = re.sub(r'\s*\([^)]*\)', '', item).strip()
+            if base:
+                expanded.append(base)
+            # Add each comma-separated value inside the parentheses
+            for sub in paren_match.group(1).split(','):
+                sub = sub.strip()
+                if sub:
+                    expanded.append(sub)
+        else:
+            expanded.append(item)
+
+    items_to_process = expanded
     items = []
-    for item in str(field).split(delimiter):
+    for item in items_to_process:
         # Strip regular and Unicode whitespace
         cleaned = item.strip()
         # Normalize Unicode characters (NFKC normalization)
@@ -416,14 +420,14 @@ def normalize_author_names(authors: str) -> str:
     return '; '.join(unique_authors)
 
 
-def get_unique_values(df: pd.DataFrame, column: str, delimiter: str = ";") -> List[str]:
+def get_unique_values(df: pd.DataFrame, column: str, delimiter: str | List[str] = ";") -> List[str]:
     """
     Get unique values from a delimited column.
 
     Args:
         df: DataFrame
         column: Column name
-        delimiter: Delimiter character
+        delimiter: Delimiter character or list of delimiter characters
 
     Returns:
         Sorted list of unique values
@@ -431,11 +435,15 @@ def get_unique_values(df: pd.DataFrame, column: str, delimiter: str = ";") -> Li
     if column not in df.columns:
         return []
 
+    delimiters = delimiter if isinstance(delimiter, list) else [delimiter]
+
     all_values = []
     for value in df[column].dropna():
         if value and str(value).strip():
-            items = [item.strip() for item in str(value).split(delimiter)]
-            all_values.extend([item for item in items if item])
+            items = [str(value)]
+            for sep in delimiters:
+                items = [part for item in items for part in item.split(sep)]
+            all_values.extend([item.strip() for item in items if item.strip()])
 
     # Remove duplicates and sort
     unique_values = sorted(list(set(all_values)))

@@ -9,8 +9,14 @@ import streamlit as st
 from pathlib import Path
 import sys
 
-# Add utils to path
+# Add project root and app dir to path
+PROJECT_ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.append(str(Path(__file__).parent))
+
+from scrapers.logging_config import setup_logger
+logger = setup_logger("", log_file="app/card_catalog_app.log", clear=True)
+
 from config import PAGE_CONFIG, COLORS, LOGOS_DIR
 
 # Configure page
@@ -136,10 +142,12 @@ def main():
     try:
         from utils.data_loader import load_datasets, load_publications, load_code_repos, load_indi_inventory
 
+        logger.info("Home page: loading data statistics...")
         datasets_df = load_datasets()
         pubs_df = load_publications()
         code_df = load_code_repos()
         indi_df = load_indi_inventory()
+        logger.info(f"Home page: datasets={len(datasets_df)}, publications={len(pubs_df)}, code={len(code_df)}, cell_lines={len(indi_df)}")
 
         with col1:
             st.metric(
@@ -170,6 +178,7 @@ def main():
             )
 
     except Exception as e:
+        logger.error(f"Home page: error loading data statistics: {e}", exc_info=True)
         st.error(f"Error loading data statistics: {e}")
 
     st.markdown("---")

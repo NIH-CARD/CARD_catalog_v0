@@ -98,28 +98,28 @@ def main():
     diseases = get_unique_values(df, "Diseases Included", delimiter=";")
     selected_diseases = st.sidebar.multiselect(
         "Diseases",
-        options=diseases,
+        options=sorted(diseases),
         help="Filter by diseases studied"
     )
 
     # Coarse data types filter
-    coarse_types = get_unique_values(df, "Coarse Data Types", delimiter=",")
+    coarse_types = get_unique_values(df, "Coarse Data Modality", delimiter=",")
     selected_coarse = st.sidebar.multiselect(
         "Coarse Data Types",
-        options=coarse_types,
+        options=sorted(coarse_types),
         help="Filter by high-level data categories (clinical, imaging, genetics, etc.)"
     )
 
     # Granular data types filter
-    granular_types = get_unique_values(df, "Granular Data Types", delimiter=";")
+    granular_types = get_unique_values(df, "Granular Data Modality", delimiter=[";", ","])
     selected_granular = st.sidebar.multiselect(
         "Granular Data Types",
-        options=granular_types,
+        options=sorted(granular_types),
         help="Filter by specific data modalities"
     )
 
     # Resource type filter
-    dataset_types = df["Resource Type"].unique().tolist() if "Resource Type" in df.columns else []
+    dataset_types = get_unique_values(df, "Resource Type", delimiter=",") if "Resource Type" in df.columns else []
     selected_types = st.sidebar.multiselect(
         "Resource Type",
         options=dataset_types,
@@ -140,9 +140,9 @@ def main():
     if selected_diseases:
         filters["Diseases Included"] = selected_diseases
     if selected_coarse:
-        filters["Coarse Data Types"] = selected_coarse
+        filters["Coarse Data Modality"] = selected_coarse
     if selected_granular:
-        filters["Granular Data Types"] = selected_granular
+        filters["Granular Data Modality"] = selected_granular
     if selected_types:
         filters["Resource Type"] = selected_types
 

@@ -218,7 +218,7 @@ def create_interactive_graph(
 
     # Calculate node sizes based on degree (number of connections)
     degrees = dict(G.degree())
-    max_degree = max(degrees.values()) if degrees else 1
+    max_degree = max(degrees.values()) if degrees and max(degrees.values()) > 0 else 1
 
     # Create edge traces
     edge_traces = []

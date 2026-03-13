@@ -44,3 +44,9 @@ After column renaming in the Mar_11 inventory (`Data Modalities` → `Coarse Dat
 **Effect**: PubMed results went from ~1195 articles (Feb run) to ~3978 (Mar run) for the same 248 studies with `--query-method original`.
 
 **Fix applied** (2026-03-12): Updated line 439 to correctly join both columns with `"; ".join(filter(None, [...]))`.
+
+---
+
+## 4. App
+
+**Filters** Parenthesis values split does not separate all the value correctly (e.g. granular data modality --> "Cognitive assessment (CASI)")

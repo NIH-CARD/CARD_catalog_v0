@@ -23,12 +23,14 @@ COLORS = {
     "mint_dark": "#7FE67F",
 }
 
-# Data file paths
-DATA_FILES = {
-    "datasets": "dataset-inventory-Dec_02_2025.tab",
-    "code_repos": "gits_to_reannotate_completed_20251202_121816.tsv",
-    "publications": "pubmed_central_20251128_124602.tsv",
-    "indi": "iNDI_inventory_20250620_122423.tsv",
+# Data file path patterns:
+# Will default to the latest file matching this pattern
+# Enter the entire path if you want to have a different file
+DATA_FILES_PTRS = {
+    "datasets": "dataset-inventory*",
+    "code_repos": "gits_to_reannotate_completed*",
+    "publications": "pubmed_central*",
+    "indi": "iNDI_inventory*",
 }
 
 # FAIR compliance log pattern
