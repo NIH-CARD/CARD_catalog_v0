@@ -158,14 +158,14 @@ def main():
         with col2:
             st.metric(
                 label="Publications",
-                value=len(pubs_df),
+                value=pubs_df["PMID"].nunique() if "PMID" in pubs_df.columns else len(pubs_df),
                 help="Total number of scientific publications indexed"
             )
 
         with col3:
             st.metric(
                 label="Code Repositories",
-                value=len(code_df),
+                value=code_df["Repository Link"].nunique() if "Repository Link" in code_df.columns else len(code_df),
                 help="Total number of GitHub repositories cataloged"
             )
 

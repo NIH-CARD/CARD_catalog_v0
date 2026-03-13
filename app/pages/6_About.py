@@ -15,7 +15,7 @@ import sys
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
 
-from config import COLORS, HELP_TEXT, ANTHROPIC_MODEL, DATA_FILES
+from config import COLORS, HELP_TEXT, ANTHROPIC_MODEL, DATA_FILES_PTRS
 
 # Page config
 st.set_page_config(
