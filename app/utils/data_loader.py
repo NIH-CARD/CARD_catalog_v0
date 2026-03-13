@@ -10,6 +10,7 @@ from typing import Dict, List, Optional
 import glob
 import re
 import logging
+import unicodedata
 
 import sys
 sys.path.append(str(Path(__file__).parent.parent))
@@ -112,6 +113,9 @@ def load_code_repos() -> pd.DataFrame:
         # Deduplicate languages
         if 'Languages' in df.columns:
             df['Languages'] = df['Languages'].apply(normalize_list_field)
+
+        # Drop heavy unused column
+        df = df.drop(columns=[c for c in ['Content_For_Analysis'] if c in df.columns])
 
         logger.info(f"Code repos loaded: {len(df)} rows, {len(df.columns)} columns")
         return df
@@ -216,22 +220,14 @@ def load_fair_compliance() -> pd.DataFrame:
         st.warning("No FAIR compliance log files found")
         return pd.DataFrame()
 
-    # Load and concatenate all FAIR files
-    dfs = []
-    for file_path in fair_files:
-        try:
-            df = pd.read_csv(file_path, sep='\t', encoding='utf-8')
-            dfs.append(df)
-        except Exception as e:
-            logger.warning(f"Error loading {file_path}: {e}")
-            st.warning(f"Error loading {file_path}: {e}")
-            continue
+    latest_file = max(fair_files, key=lambda x: Path(x).stat().st_mtime)
+    logger.info(f"Loading latest FAIR compliance log: {latest_file}")
 
-    if not dfs:
+    try:
+        combined_df = pd.read_csv(latest_file, sep='\t', encoding='utf-8')
+    except Exception as e:
+        logger.warning(f"Error loading {latest_file}: {e}")
         return pd.DataFrame()
-
-    # Concatenate all dataframes
-    combined_df = pd.concat(dfs, ignore_index=True)
 
     # Remove duplicates (keep most recent)
     if 'Timestamp' in combined_df.columns:
@@ -292,8 +288,6 @@ def normalize_list_field(field: str, delimiter: str = ";", split_delimiters: Lis
 
     separators = split_delimiters if split_delimiters else [delimiter]
 
-    # Split and clean - also normalize Unicode whitespace
-    import unicodedata
     items = [str(field)]
     for sep in separators:
         items = [part for item in items for part in item.split(sep)]

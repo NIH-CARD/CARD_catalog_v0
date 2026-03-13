@@ -41,7 +41,7 @@ def main():
         """
         ## Overview
 
-        The **CARD Catalog** (Collaborative Alzheimer's and Related Dementias Data Catalog)
+        The **CARD Catalog** (Center for Alzheimer's and Related Dementias Data Catalog)
         is a comprehensive resource for discovering datasets, publications, and code repositories
         related to Alzheimer's Disease and Related Dementias (ADRD) research.
 
@@ -63,21 +63,25 @@ def main():
         **Dr. Sarah Chen** is investigating the role of microglial dysfunction in early-stage Alzheimer's disease progression.
 
         **Discovery Phase:**
+
         1. **Datasets Page**: Sarah searches for datasets combining single-cell RNA-seq data with neuroimaging in Alzheimer's patients. The knowledge graph reveals three connected datasets she hadn't considered: ROSMAP, AMP-AD, and a newer spatial transcriptomics study.
 
         2. **AI Analysis**: She uses the AI-powered analysis to compare these datasets, identifying that ROSMAP has the most comprehensive microglial profiling, while the spatial study provides critical tissue context.
 
         **Methods Development:**
+
         3. **Code Repositories Page**: Sarah explores the Code page, filtering for single-cell analysis tools and microglial markers. The Code Deep Dive feature scores repositories on code quality and identifies two highly-rated pipelines with excellent documentation. She finds one specifically designed for microglial subtype classification.
 
         4. **FAIR Compliance Check**: Before committing to a pipeline, she checks FAIR compliance scores, ensuring the code has proper dependencies, versioning, and reproducible environments.
 
         **Literature Review:**
+
         5. **Publications Page**: Using the knowledge graph on the Publications page, Sarah connects datasets to their associated papers. She discovers a network of 12 publications linking microglial subtypes to Aβ plaque proximity, providing theoretical framework for her hypothesis.
 
         6. **Gap Analysis**: The AI analysis identifies that most publications focus on late-stage disease. This confirms her hypothesis about early-stage microglial dysfunction represents an understudied area with high impact potential.
 
         **Validation Planning:**
+
         7. **Cellular Models Page**: Sarah needs to validate findings experimentally. She searches for iPSC lines with APP or PSEN1 mutations. The AI analysis provides PubMed search links showing recent studies using these specific cell lines for microglial differentiation protocols.
 
         8. **Model Selection**: She identifies three cell lines with appropriate mutations and checks procurement links to order from repositories.
@@ -96,6 +100,7 @@ def main():
         2. **Gap Analysis**: Using AI-powered analysis, he compares his agency's funded datasets against the full catalog. The analysis quantifies that only 15% of agency-funded datasets include longitudinal imaging, compared to 35% in the broader field—a clear coverage gap.
 
         **FAIR Compliance Monitoring:**
+
         3. **Code Repositories Page**: Michael switches to the Code page to assess reproducibility across funded projects. The FAIR compliance dashboard shows that 40% of repositories lack proper dependency specifications, and 25% have no README files.
 
         4. **Best Practices Review**: The Code Deep Dive feature provides aggregate quality scores. He discovers that documentation completeness averages 6.2/10 across the portfolio—below the field average of 7.1/10. This indicates a need for enhanced reproducibility requirements in future funding calls.
@@ -103,16 +108,19 @@ def main():
         5. **Exemplar Identification**: The analysis highlights five repositories with exceptional FAIR compliance and usability scores. Michael bookmarks these as examples for future applicants.
 
         **Strategic Investment Opportunities:**
+
         6. **Publications Page**: Michael uses the Publications page to analyze research trends. The AI analysis identifies emerging themes: inflammasome activation, microbiome-gut-brain axis, and vascular contributions to dementia are growing rapidly but have limited dataset availability in his agency's portfolio.
 
         7. **Collaboration Networks**: The knowledge graph connected by author affiliations reveals that certain institutions are highly collaborative hubs, while others remain isolated. This informs his strategy for encouraging collaborative consortia.
 
         **Cell Model Resource Planning:**
+
         8. **Cellular Models Page**: Michael examines the iNDI collection to assess model system availability. The AI analysis shows that while APP and PSEN1 mutations are well-represented, TREM2 and APOE variants have fewer available lines despite growing research interest.
 
         9. **Publications of Interest**: The AI-generated PubMed links confirm increasing publication rates for TREM2 and APOE, validating the need for expanded cell line resources.
 
         **Decision Making:**
+
         10. **Synthesis**: Michael exports comprehensive reports:
             - Dataset gap analysis showing metabolomics and longitudinal imaging needs
             - FAIR compliance summary for portfolio review with agency leadership
@@ -133,9 +141,9 @@ def main():
         """
         The CARD Catalog aggregates data from multiple sources:
 
-        ### Datasets
-        - **Source**: Curated inventory of neuroscience research datasets
-        - **Content**: Study names, data modalities, diseases, sample sizes, access information
+        ### Data Resources
+        - **Source**: Curated inventory of neuroscience research resources that are usually studies, but also data catalogs, biorepository, data repositories and data catalogs.
+        - **Content**: Resource names, data modalities, diseases, sample sizes, access information
         - **Updates**: Regularly updated from institutional repositories and data sharing platforms
 
         ### Publications

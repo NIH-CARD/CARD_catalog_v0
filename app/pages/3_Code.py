@@ -207,7 +207,7 @@ def main():
     st.session_state[SESSION_KEYS["code_filtered"]] = filtered_df
 
     # Display count
-    st.info(f"Showing {len(filtered_df)} of {len(df)} repositories")
+    st.info(f"Showing {len(filtered_df)} of {len(df)} GitHub records")
 
     # Main content tabs
     tab1, tab2, tab3, tab4, tab5 = st.tabs([
