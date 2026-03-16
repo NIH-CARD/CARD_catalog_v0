@@ -25,7 +25,7 @@ from config import (
 def build_knowledge_graph(
     df: pd.DataFrame,
     connection_features: List[str],
-    name_column: str = "Study Name",
+    name_column: str = "Resource Name",
     delimiter: str = ";",
     min_shared_features: int = 2
 ) -> nx.Graph:
@@ -309,7 +309,7 @@ def create_interactive_graph(
                 hover_text += f"FAIR Issues: {fair_issues}<br>"
 
             # Add other key attributes
-            for key in ['Study Name', 'Data Types', 'Tooling']:
+            for key in ['Resource Name', 'Data Types', 'Tooling']:
                 if key in node_attrs and node_attrs[key]:
                     value = str(node_attrs[key])
                     if len(value) > 50:
@@ -337,7 +337,7 @@ def create_interactive_graph(
                 hover_text += f"Link: {pmc_link}<br>"
 
             # Add key publication attributes
-            for key in ['Study Name', 'Diseases Included']:
+            for key in ['Resource Name', 'Diseases Included']:
                 if key in node_attrs and node_attrs[key]:
                     value = str(node_attrs[key])
                     if len(value) > 60:

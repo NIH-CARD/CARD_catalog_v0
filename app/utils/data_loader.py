@@ -427,9 +427,11 @@ def get_unique_values(df: pd.DataFrame, column: str, delimiter: str | List[str] 
         Sorted list of unique values
     """
     if column not in df.columns:
+        logger.warning(f"Column '{column}' not found in DataFrame")
         return []
 
     delimiters = delimiter if isinstance(delimiter, list) else [delimiter]
+    logger.info(f"Extracting unique values from column '{column}' using delimiters: {delimiters}")
 
     all_values = []
     for value in df[column].dropna():

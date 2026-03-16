@@ -626,7 +626,7 @@ def search_github_with_query(query: str, study_name: str, abbreviation: str, dis
                     ai_analysis = get_ai_analysis(repo_content, repo_name)
 
                 results.append({
-                    "Study Name": study_name,
+                    "Resource Name": study_name,
                     "Abbreviation": abbreviation,
                     "Diseases Included": diseases,
                     "Repository Link": repo_url,
@@ -743,7 +743,7 @@ def main():
 
     # Process each study
     for idx, row in studies_df.iterrows():
-        study_name = row.get("Study Name", "")
+        study_name = row.get("Resource Name", "")
         abbreviation = row.get("Abbreviation", "")
         diseases = row.get("Diseases Included", "")
 
@@ -759,7 +759,7 @@ def main():
 
     for result in all_results:
         repo_link = result.get("Repository Link", "")
-        study_name = result.get("Study Name", "")
+        study_name = result.get("Resource Name", "")
         combination_key = f"{repo_link}_{study_name}"
 
         if combination_key not in seen_combinations:
@@ -770,7 +770,7 @@ def main():
     if deduplicated_results:
         # Reorder columns to match previous format
         columns_order = [
-            "Study Name",
+            "Resource Name",
             "Abbreviation",
             "Diseases Included",
             "Repository Link",

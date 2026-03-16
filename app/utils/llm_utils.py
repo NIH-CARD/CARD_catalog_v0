@@ -164,8 +164,8 @@ def analyze_publications(df: pd.DataFrame, full_df: Optional[pd.DataFrame] = Non
         comparison_info += f"- Analyzing {len(df)} of {len(full_df)} total publications ({len(df)/len(full_df)*100:.1f}%)\n"
 
         # Top studies comparison
-        if 'Study Name' in full_df.columns:
-            top_studies_full = full_df['Study Name'].value_counts().head(5).index.tolist()
+        if 'Resource Name' in full_df.columns:
+            top_studies_full = full_df['Resource Name'].value_counts().head(5).index.tolist()
             comparison_info += f"- Full catalog top studies: {', '.join(top_studies_full)}\n"
 
         # Keyword comparison
@@ -469,7 +469,7 @@ def prepare_dataset_summary(df: pd.DataFrame, max_items: int = 50) -> str:
     summary_parts = []
 
     for idx, row in df_subset.iterrows():
-        name = row.get('Study Name', 'Unknown')
+        name = row.get('Resource Name', 'Unknown')
         abbrev = row.get('Abbreviation', '')
         diseases = row.get('Diseases Included', '')
         modalities = row.get('Coarse Data Modality', '')
@@ -564,8 +564,8 @@ def analyze_repositories(df: pd.DataFrame, full_df: Optional[pd.DataFrame] = Non
         comparison_info += f"- Analyzing {len(df)} of {len(full_df)} total repositories ({len(df)/len(full_df)*100:.1f}%)\n"
 
         # Top studies comparison
-        if 'Study Name' in full_df.columns:
-            top_studies_full = full_df['Study Name'].value_counts().head(5).index.tolist()
+        if 'Resource Name' in full_df.columns:
+            top_studies_full = full_df['Resource Name'].value_counts().head(5).index.tolist()
             comparison_info += f"- Full catalog top studies: {', '.join(top_studies_full)}\n"
 
         # Language comparison
@@ -618,7 +618,7 @@ def prepare_repository_summary(df: pd.DataFrame, max_items: int = 50) -> str:
 
     for idx, row in df_subset.iterrows():
         repo_link = row.get('Repository Link', 'Unknown')
-        study = row.get('Study Name', 'Unknown Study')
+        study = row.get('Resource Name', 'Unknown Study')
         languages = row.get('Languages', '')
         data_types = row.get('Data Types', '')
         tooling = row.get('Tooling', '')

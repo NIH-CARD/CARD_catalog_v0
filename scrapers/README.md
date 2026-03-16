@@ -90,7 +90,7 @@ python3 scrape_publications.py \
 
 **Output format:**
 ```
-Study Name | Abbreviation | Diseases Included | Data Modalities | PubMed Central Link | Authors | Affiliations | Title | Abstract | Keywords
+Resource Name | Abbreviation | Diseases Included | Data Modalities | PubMed Central Link | Authors | Affiliations | Title | Abstract | Keywords
 ```
 
 ### GitHub Repository Scraper
@@ -129,7 +129,7 @@ python3 scrape_github.py \
 
 **Output format:**
 ```
-Study Name | Abbreviation | Diseases Included | Repository Link | Owner | Contributors | Languages | Biomedical Relevance | Code Summary | Data Types | Tooling
+Resource Name | Abbreviation | Diseases Included | Repository Link | Owner | Contributors | Languages | Biomedical Relevance | Code Summary | Data Types | Tooling
 ```
 
 ## Features
@@ -192,14 +192,14 @@ These files can be directly loaded into the CARD catalog application.
 Both scrapers expect a TSV file with the following columns:
 
 **Required columns:**
-- `Study Name` - Full name of the study
+- `Resource Name` - Full name of the study
 - `Abbreviation` - Study abbreviation/acronym
 - `Diseases Included` - Semicolon-separated list of diseases
 - `Data Modalities` - Semicolon-separated list of data types
 
 **Example:**
 ```tsv
-Study Name	Abbreviation	Data Modalities	Diseases Included
+Resource Name	Abbreviation	Data Modalities	Diseases Included
 Alzheimer's Disease Neuroimaging Initiative	ADNI	[clinical, imaging] MRI; PET; CSF	Alzheimer's Disease; MCI
 ```
 
@@ -254,7 +254,7 @@ python3 scrape_github.py --verbose --log-file debug.log
 
 **INFO level includes:**
 - Studies loaded and processing ranges
-- Search progress ([X/99] study names)
+- Search progress ([X/99] Resource Names)
 - Results found per study
 - Success messages with output filenames
 - FAIR compliance summary statistics

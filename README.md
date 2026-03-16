@@ -24,7 +24,7 @@ The **CARD Catalog** (Collaborative Alzheimer's and Related Dementias Data Catal
 
 ### 📊 Datasets Page
 
-Explore 99 neuroscience research datasets with comprehensive study-level metadata and relationship mapping.
+Explore 236 neuroscience research datasets with comprehensive study-level metadata and relationship mapping.
 
 **Features:**
 - **Interactive table view** with sorting, filtering, and search across all columns
@@ -50,7 +50,7 @@ Search and analyze 860 recent scientific publications from PubMed Central linked
 **Features:**
 - **Interactive table view** with complete publication metadata
 - **Fixed PMC links** and normalized author names for consistency
-- **Knowledge graph with 8 connection types**: Study Name, Diseases, Data Types, Authors, Affiliations, Keywords, Abstract similarity
+- **Knowledge graph with 8 connection types**: Resource Name, Diseases, Data Types, Authors, Affiliations, Keywords, Abstract similarity
 - **Data completeness tracking**: Visual indicators for PMC links, abstracts, keywords, and affiliations
 - **AI-powered literature analysis**: Identify research themes, gaps, and funding opportunities
 - **Publication statistics and trends**: Synthesis from AI-assistants

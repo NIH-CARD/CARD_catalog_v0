@@ -201,8 +201,8 @@ def analyze_publications():
     stats['n_pubs'] = len(df)
 
     # Five most prolific studies
-    if 'Study Name' in df.columns:
-        stats['top_studies'] = df['Study Name'].value_counts().head(5).to_dict()
+    if 'Resource Name' in df.columns:
+        stats['top_studies'] = df['Resource Name'].value_counts().head(5).to_dict()
 
     # Five most occurring authors
     if 'Authors' in df.columns:

@@ -1,4 +1,4 @@
-Study Name	Abbreviation	Diseases Included	Repository Link	Owner	Contributors	Languages	Content_For_Analysis	Biomedical Relevance	Code Summary	Data Types	Tooling
+Resource Name	Abbreviation	Diseases Included	Repository Link	Owner	Contributors	Languages	Content_For_Analysis	Biomedical Relevance	Code Summary	Data Types	Tooling
 Dominantly Inherited Alzheimer Network	DIAN	Familial Alzheimer's Disease; Presymptomatic Mutation Carriers; Normal Controls	https://github.com/llevitis/DIAN_ESM_AmyloidBeta_Project	llevitis	llevitis; dependabot[bot]	Jupyter Notebook	"README:
 # Epidemic Spreading Modelling of Amyloid Beta in the Dominantly Inherited Alzheimer's Network dataset
 
@@ -34760,7 +34760,8 @@ npm i papaparse
 - Deleting an NPC/Set/Map also deletes the associated blob from IDB.
 - CSV import still seeds the table; your working data is kept in IDB.
 - To wipe everything, use **Reset** (blobs remain in IDB to avoid accidental data loss—clear site data in your browser if you need to purge).
-#   b r a i n f a r t - g m  
+#   b r a i n f a r t - g m 
+ 
  "				
 Cambridgeshire Parkinsons Incidence from GP to Neurologist Study	CamPaIGN	Alzheimer's Disease; Mild Cognitive Impairment	https://github.com/Lyzr-Apps/campaign-brain-sharp-node-chh4	Lyzr-Apps		TypeScript	"package.json:
 {

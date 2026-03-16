@@ -479,7 +479,7 @@ def reprocess_repo(repo_url: str, study_info: Dict, diseases_included: str, head
     print(f"    Result: SUCCESS - Repository processed", file=sys.stderr)
 
     return {
-        "Study Name": study_info['study_name'],
+        "Resource Name": study_info['study_name'],
         "Abbreviation": study_info['abbreviation'],
         "Diseases Included": diseases_included,
         "Repository Link": repo_url,
@@ -581,7 +581,7 @@ def main():
     if results:
         # Create DataFrame with exact column order
         columns_order = [
-            "Study Name",
+            "Resource Name",
             "Abbreviation",
             "Diseases Included",
             "Repository Link",

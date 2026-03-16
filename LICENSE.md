@@ -85,7 +85,7 @@ The data included in this catalog is sourced from:
 - **PubMed Central** - Public domain
 - **GitHub** - Various licenses per repository (see individual repositories)
 - **iNDI iPSC Collection** - Check individual cell line repositories for terms
-- **Research Datasets** - Various licenses (see individual dataset access terms)
+- **Research Resources** - Various licenses (see individual dataset access terms)
 
 Users are responsible for complying with the terms of use for any data accessed through this catalog.
 

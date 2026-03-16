@@ -229,7 +229,7 @@ Be specific with gene names, disease mechanisms, and pathway details. Use exact 
 
 # Column mappings and aliases
 DATASET_COLUMNS = {
-    "Study Name": "study_name",
+    "Resource Name": "study_name",
     "Abbreviation": "abbreviation",
     "Coarse Data Modality": "data_modalities",
     "Diseases Included": "diseases",
@@ -240,7 +240,7 @@ DATASET_COLUMNS = {
 }
 
 CODE_COLUMNS = {
-    "Study Name": "study_name",
+    "Resource Name": "study_name",
     "Abbreviation": "abbreviation",
     "Diseases Included": "diseases",
     "Repository Link": "repo_link",
@@ -254,7 +254,7 @@ CODE_COLUMNS = {
 }
 
 PUBLICATION_COLUMNS = {
-    "Study Name": "study_name",
+    "Resource Name": "study_name",
     "Abbreviation": "abbreviation",
     "Diseases Included": "diseases",
     "Coarse Data Modality": "data_modalities",

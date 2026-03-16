@@ -200,7 +200,7 @@ def build_search_query(study_name: str, abbreviation: str, diseases: str, data_m
 
     query_parts = []
 
-    # Study name/abbreviation (at least one must match)
+    # Resource Name/abbreviation (at least one must match)
     if study_terms:
         query_parts.append(f'({" OR ".join(study_terms)})')
 
@@ -262,7 +262,7 @@ def build_search_query_v2(study_name: str, abbreviation: str, diseases: str, dat
 
     logger.debug(f"Building v2 query for study: {study_name}, abbreviation: {abbreviation}")
 
-    # Always include full study name in [tiab] — this is the most precise signal
+    # Always include full Resource Name in [tiab] — this is the most precise signal
     study_terms = []
     if study_name and pd.notna(study_name):
         clean_name = re.sub(r'\s*\([^)]*\)\s*$', '', str(study_name)).strip()
@@ -297,7 +297,7 @@ def build_search_query_v3(study_name: str, abbreviation: str, diseases: str, dat
     start_date = end_date - timedelta(days=365*years)
     date_range = f"{start_date.strftime('%Y/%m/%d')}:{end_date.strftime('%Y/%m/%d')}"
 
-    logger.debug(f"Building v3 query for study: {study_name}, abbreviation: {abbreviation}")
+    logger.info(f"Building v3 query for study: {study_name}, abbreviation: {abbreviation}")
 
     # Study terms: [tiab] + noisy abbreviation filter (from v2)
     study_terms = []
@@ -318,8 +318,14 @@ def build_search_query_v3(study_name: str, abbreviation: str, diseases: str, dat
                        "mild cognitive impairment", "mci", "lewy body"]
     disease_terms = []
     if pd.notna(diseases) and isinstance(diseases, str):
-        disease_terms = [d.strip().lower() for d in diseases.split(";")
-                        if any(kw in d.lower() for kw in disease_keywords)]
+        logger.info(f"Diseases: {diseases}")
+        disease_terms = []
+        for d in diseases.split(";"):
+            for kw in disease_keywords:
+                if kw in d.lower():
+                    disease_terms.append(d.strip().lower())
+                    #disease_terms.append(kw) if d.lower() != kw else None
+
     if not disease_terms:
         disease_terms = disease_keywords[:5]
 
@@ -411,7 +417,7 @@ def search_pubmed(study_name: str, abbreviation: str, diseases: str, search_data
                         logger.debug(f"Successfully extracted article: {article_data.get('PMID', 'unknown')}")
                         # Add study information
                         article_data.update({
-                            "Study Name": study_name,
+                            "Resource Name": study_name,
                             "Abbreviation": abbreviation,
                             "Diseases Included": diseases,
                             "Data Modalities": search_data_modalities
@@ -484,7 +490,7 @@ def main():
     # Read the dataset inventory
     try:
         studies_df = pd.read_csv(args.input, sep="\t")
-        logger.info(f"Loaded {len(studies_df)} studies from {args.input}")
+        logger.info(f"Loaded {len(studies_df)} studies from {args.input}. Columns: {', '.join(studies_df.columns)}")
     except Exception as e:
         logger.error(f"Error reading dataset inventory: {str(e)}")
         sys.exit(1)
@@ -494,15 +500,18 @@ def main():
 
     # Process each study
     for idx, row in studies_df.iterrows():
-        study_name = row.get("Study Name", "")
+        study_name = row.get("Resource Name", "")
         abbreviation = row.get("Abbreviation", "")
         diseases = row.get("Diseases Included", "")
         coarse = [m.strip() for m in str(row.get("Coarse Data Modality", "") or "").split(",") if m.strip()]
+        logger.info(f"Processing study: {study_name} ({abbreviation}), diseases: {diseases}, coarse modalities: {coarse}")
         granular = [m.strip() for m in str(row.get("Granular Data Modality", "") or "").split(";") if m.strip()]
         search_data_modalities = ", ".join(coarse + granular)
 
         logger.info(f"[{idx+1}/{len(studies_df)}] Searching for publications: {study_name} ({abbreviation})")
         results = search_pubmed(study_name, abbreviation, diseases, search_data_modalities, args.max_results, ncbi_api_key_suffix, args.query_method)
+        # For each result, the Coarse and Granular Data Modalities should be included from the from the study metadata
+        results = [{**r, "Coarse Data Modality": row.get("Coarse Data Modality", ""), "Granular Data Modality": row.get("Granular Data Modality", "")} for r in results]
         all_results.extend(results)
 
     # Create and save results dataframe
@@ -511,10 +520,11 @@ def main():
         # Reorder columns to match previous format exactly
         columns_order = [
             "PMID",
-            "Study Name",
+            "Resource Name",
             "Abbreviation",
             "Diseases Included",
             "Coarse Data Modality",
+            "Granular Data Modality",
             "PubMed Central Link",
             "Authors",
             "Affiliations",

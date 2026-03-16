@@ -105,7 +105,7 @@ def main():
     )
 
     # Study filter
-    studies = sorted(df["Study Name"].unique().tolist()) if "Study Name" in df.columns else []
+    studies = sorted(df["Resource Name"].unique().tolist()) if "Resource Name" in df.columns else []
     selected_studies = st.sidebar.multiselect(
         "Studies",
         options=studies,
@@ -179,7 +179,7 @@ def main():
     # Apply other filters
     filters = {}
     if selected_studies:
-        filters["Study Name"] = selected_studies
+        filters["Resource Name"] = selected_studies
     if selected_diseases:
         filters["Diseases Included"] = selected_diseases
     if selected_languages:
@@ -242,7 +242,7 @@ def main():
             # Display as expandable records
             for idx, row in filtered_df.iterrows():
                 repo_link = row.get('Repository Link', 'Unknown')
-                study = row.get('Study Name', 'Unknown Study')
+                study = row.get('Resource Name', 'Unknown Study')
                 abbrev = row.get('Abbreviation', 'N/A')
 
                 # Extract repo name from link
@@ -571,7 +571,7 @@ def main():
                         )
 
                         top_repos = numeric_df.nlargest(5, score_col)[
-                            ["Repository Link", "Study Name", score_col]
+                            ["Repository Link", "Resource Name", score_col]
                         ]
 
                         if not top_repos.empty:

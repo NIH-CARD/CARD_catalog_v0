@@ -265,7 +265,7 @@ def create_figure():
             try:
                 sample_size = float(match.group(1).replace(',', ''))
                 if sample_size >= 1:
-                    study_name = row.get('Study Name', 'Unknown')
+                    study_name = row.get('Resource Name', 'Unknown')
                     coarse_types = extract_coarse_types(row.get('Coarse Data Modality', ''))
                     for dtype in coarse_types:
                         datasets_with_samples[dtype].add(study_name)
@@ -279,7 +279,7 @@ def create_figure():
         for _, row in datasets_df.iterrows():
             coarse_types = extract_coarse_types(row.get('Coarse Data Modality', ''))
             if dtype in coarse_types:
-                all_datasets_with_modality.add(row.get('Study Name', 'Unknown'))
+                all_datasets_with_modality.add(row.get('Resource Name', 'Unknown'))
 
         missing_datasets = all_datasets_with_modality - datasets_with_samples.get(dtype, set())
 
@@ -287,7 +287,7 @@ def create_figure():
             print(f"  {len(missing_datasets)} dataset(s) missing sample size data:")
             for study in sorted(missing_datasets):
                 # Find the row and show what's in Sample Size field
-                row = datasets_df[datasets_df['Study Name'] == study].iloc[0]
+                row = datasets_df[datasets_df['Resource Name'] == study].iloc[0]
                 size_field = row.get('Sample Size', '')
                 print(f"    - {study}")
                 print(f"      Sample Size field: '{size_field}'")

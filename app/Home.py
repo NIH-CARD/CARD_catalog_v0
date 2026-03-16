@@ -100,16 +100,14 @@ def main():
         """
         ### Welcome to CARD Catalog
 
-        A comprehensive catalog of datasets, publications, code repositories, and cellular models
+        A comprehensive catalog of research resources with related publications, code repositories, and cellular models
         related to Alzheimer's Disease and Related Dementias (ADRD) research.
-
-        **Powered by Claude Sonnet 4.5** for AI-driven insights and analysis.
 
         #### Features:
 
-        - **📊 Datasets**: Browse 236 neuroscience research datasets with interactive
+        - **📊 Resources**: Browse 236 neuroscience research resources with interactive
           knowledge graphs, coarse and granular data type filtering, and AI-powered analysis
-        - **📚 Publications**: Search 1285 scientific publications from PubMed Central
+        - **📚 Publications**: Search 1288 scientific publications from PubMed Central
           (within 3 years of dataset updates) with normalized author names and fixed PMC links
         - **💻 Code**: Discover 674 GitHub repositories with AI-powered quality scoring
           (cleanliness, completeness, runnability) and FAIR compliance tracking
@@ -124,7 +122,8 @@ def main():
           samples across 23 cohorts and 250+ million protein measurements
         - 📊 **Table Views**: Interactive data tables with sorting and search on all main pages
         - 🔍 **Coarse & Granular Data Types**: Filter by high-level categories or detailed modalities
-        - 🤖 **Claude Sonnet 4.5**: Upgraded AI model for better analysis and insights
+        - 💻 **Alternative URLs & New Corpus**: External links related to main resource that will be
+         used to augment the Catalog.
 
         #### Getting Started:
 
@@ -146,13 +145,13 @@ def main():
         pubs_df = load_publications()
         code_df = load_code_repos()
         indi_df = load_indi_inventory()
-        logger.info(f"Home page: datasets={len(datasets_df)}, publications={len(pubs_df)}, code={len(code_df)}, cell_lines={len(indi_df)}")
+        logger.info(f"Home page: resources={len(datasets_df)}, publications={len(pubs_df)}, code={len(code_df)}, cell_lines={len(indi_df)}")
 
         with col1:
             st.metric(
-                label="Datasets",
+                label="Resources",
                 value=len(datasets_df),
-                help="Total number of neuroscience datasets cataloged"
+                help="Total number of neuroscience resources cataloged"
             )
 
         with col2:

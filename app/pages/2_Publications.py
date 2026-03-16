@@ -13,7 +13,7 @@ Features:
 import streamlit as st
 import pandas as pd
 from pathlib import Path
-import sys
+import sys, logging
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
@@ -49,6 +49,8 @@ st.set_page_config(
     layout="wide"
 )
 
+logger = logging.getLogger(__name__)
+
 # Load custom CSS
 css_file = Path(__file__).parent.parent / "assets" / "style.css"
 if css_file.exists():
@@ -66,6 +68,7 @@ def main():
 
     # Load data
     df = load_publications()
+    logger.info(f"Loaded {len(df)} publications from data source, with columns: {df.columns}")
 
     if df.empty:
         st.error("No publication data available. Please check data files.")
@@ -131,7 +134,7 @@ def main():
     )
 
     # Study filter
-    studies = sorted(df["Study Name"].unique().tolist()) if "Study Name" in df.columns else []
+    studies = sorted(df["Resource Name"].unique().tolist()) if "Resource Name" in df.columns else []
     selected_studies = st.sidebar.multiselect(
         "Studies",
         options=studies,
@@ -147,8 +150,8 @@ def main():
     )
 
     # Coarse data types filter
-    if "Coarse Data Types" in df.columns:
-        coarse_types = get_unique_values(df, "Coarse Data Types", delimiter=",")
+    if "Coarse Data Modality" in df.columns:
+        coarse_types = get_unique_values(df, "Coarse Data Modality", delimiter=",")
         selected_coarse = st.sidebar.multiselect(
             "Coarse Data Types",
             options=coarse_types,
@@ -158,8 +161,8 @@ def main():
         selected_coarse = []
 
     # Granular data types filter
-    if "Granular Data Types" in df.columns:
-        granular_types = get_unique_values(df, "Granular Data Types", delimiter=";")
+    if "Granular Data Modality" in df.columns:
+        granular_types = get_unique_values(df, "Granular Data Modality", delimiter=";")
         selected_granular = st.sidebar.multiselect(
             "Granular Data Types",
             options=granular_types,
@@ -191,7 +194,7 @@ def main():
     # Apply other filters
     filters = {}
     if selected_studies:
-        filters["Study Name"] = selected_studies
+        filters["Resource Name"] = selected_studies
     if selected_diseases:
         filters["Diseases Included"] = selected_diseases
     if selected_coarse:
@@ -243,7 +246,7 @@ def main():
             # Display as expandable records
             for idx, row in filtered_df.iterrows():
                 title = row.get('Title', 'Untitled')
-                study = row.get('Study Name', 'Unknown Study')
+                study = row.get('Resource Name', 'Unknown Study')
                 abbrev = row.get('Abbreviation', 'N/A')
 
                 with st.expander(f"**{title}**"):
@@ -305,8 +308,8 @@ def main():
             with col1:
                 connection_features = st.multiselect(
                     "Select features to create connections",
-                    options=["Study Name", "Diseases Included", "Coarse Data Types", "Granular Data Types", "Authors", "Affiliations", "Keywords", "Abstract"],
-                    default=["Study Name", "Diseases Included"],
+                    options=["Resource Name", "Diseases Included", "Coarse Data Types", "Granular Data Types", "Authors", "Affiliations", "Keywords", "Abstract"],
+                    default=["Resource Name", "Diseases Included"],
                     help="Publications will be connected if they share values in selected features (common words filtered)"
                 )
 
@@ -332,10 +335,10 @@ def main():
                 st.warning("Please select at least one feature to create graph connections.")
             else:
                 with st.spinner("Building knowledge graph..."):
-                    # Build graph (will use Study Name as identifier since publications don't have unique names)
+                    # Build graph (will use Resource Name as identifier since publications don't have unique names)
                     # Create a unique identifier for each publication
                     filtered_df_graph = filtered_df.copy()
-                    filtered_df_graph['Publication ID'] = filtered_df_graph['Study Name'] + " - " + filtered_df_graph['Title'].str[:50]
+                    filtered_df_graph['Publication ID'] = filtered_df_graph['Resource Name'] + " - " + filtered_df_graph['Title'].str[:50]
 
                     G = build_knowledge_graph(
                         filtered_df_graph,
@@ -469,7 +472,7 @@ def main():
 
             with col1:
                 # Top studies by publication count
-                study_counts = filtered_df["Study Name"].value_counts().head(10)
+                study_counts = filtered_df["Resource Name"].value_counts().head(10)
                 st.markdown("**Top Studies by Publications**")
                 for study, count in study_counts.items():
                     st.markdown(f"- {study}: {count}")

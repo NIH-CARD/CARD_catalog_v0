@@ -149,7 +149,7 @@ def main():
         ### Publications
         - **Source**: PubMed Central (PMC)
         - **Content**: Scientific articles, abstracts, author information, keywords
-        - **Linking**: Automatically linked to associated datasets based on study names and metadata
+        - **Linking**: Automatically linked to associated datasets based on Resource Names and metadata
         - **Updates**: Continuous scraping and indexing of new publications
 
         ### Code Repositories
@@ -311,7 +311,7 @@ def main():
 
         #### 2. Publication Scraping
         - Automated PubMed Central API queries
-        - Search terms based on study names and diseases
+        - Search terms based on Resource Names and diseases
         - Metadata extraction: authors, abstracts, keywords
         - URL normalization to fix duplicate PMC identifiers
 
@@ -341,8 +341,8 @@ def main():
         - Preservation of unique information
 
         #### Linking
-        - Datasets ↔ Publications: Linked by study name and diseases
-        - Datasets ↔ Code: Linked by study name and data types
+        - Datasets ↔ Publications: Linked by Resource Name and diseases
+        - Datasets ↔ Code: Linked by Resource Name and data types
         - Code ↔ FAIR Compliance: Linked by repository URL
 
         ### Knowledge Graph Generation
