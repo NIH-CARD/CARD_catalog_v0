@@ -1,4 +1,4 @@
-# CARD Catalog v0.1 - Project Structure
+# CARD Catalog v0.2 - Project Structure
 
 ## Overview
 
@@ -37,8 +37,6 @@ CARD_catalog/                          # Project root
 │   ├── dataset-inventory-*.tab        # Study inventories
 │   ├── pubmed_central_*.tsv           # Publications data
 │   ├── gits_to_reannotate_*.tsv       # GitHub repository data
-│   ├── gits_batch*of4_*.tsv           # Batch processing outputs
-│   ├── insufficient_reprocessed_*.tsv # Reprocessed repositories
 │   └── iNDI_inventory_*.tsv           # iNDI cellular models data
 │
 ├── app/                               # Streamlit web application
@@ -48,10 +46,11 @@ CARD_catalog/                          # Project root
 │   ├── .env.template                  # Environment variable template
 │   │
 │   ├── pages/                         # Streamlit pages
-│   │   ├── 1_Datasets.py              # Dataset explorer
+│   │   ├── 1_Resources.py             # Resources explorer
 │   │   ├── 2_Publications.py          # Publication explorer
 │   │   ├── 3_Code.py                  # Code repository explorer
-│   │   ├── 5_Human_Cellular_Models.py # iNDI cell line explorer
+│   │   ├── 4_Human_Cellular_Models.py # iNDI cell line explorer
+│   │   ├── 5_Datasets.py              # Datasets cited in literature corpus
 │   │   └── 6_About.py                 # Documentation & methodology
 │   │
 │   ├── utils/                         # Utility modules
@@ -81,7 +80,7 @@ CARD_catalog/                          # Project root
 
 ### Security & Privacy
 🔒 **Protected by .gitignore:**
-- `.streamlit/secrets.toml` - Your Anthropic API key
+- `.streamlit/secrets.toml` - Your API key
 - `scrapers/` directory - Entire directory excluded from git
 - `.env` files - Environment variables
 
@@ -110,7 +109,7 @@ pip install -r requirements.txt
 
 # 2. Configure API keys
 cp .streamlit/secrets.toml.template .streamlit/secrets.toml
-# Edit .streamlit/secrets.toml and add your Anthropic API key
+# Edit .streamlit/secrets.toml and add your API key
 
 # 3. Run the app (from project root)
 streamlit run app/Home.py
@@ -150,15 +149,7 @@ Data files can be updated by:
 ## Configuration
 
 ### API Keys
-Required for AI-powered features:
-
-**Anthropic API Key** (required):
-- Get from: https://console.anthropic.com/
-- Store in: `.streamlit/secrets.toml`
-- Format:
-  ```toml
-  ANTHROPIC_API_KEY = "sk-ant-api03-..."
-  ```
+Required for AI-powered features
 
 **For Streamlit Cloud deployment:**
 - Add secrets via App Settings → Secrets in Streamlit Cloud UI
@@ -191,7 +182,7 @@ streamlit run app/Home.py
 3. Point to `app/Home.py` as entry point
 4. Add secrets via Cloud UI:
    ```toml
-   ANTHROPIC_API_KEY = "your-key-here"
+   API_KEY = "your-key-here"
    ```
 
 ## File Organization Philosophy
@@ -237,25 +228,10 @@ git check-ignore .streamlit/secrets.toml  # Should show the file
 git check-ignore scrapers/                 # Should show the directory
 ```
 
-## Migration Notes
-
-The project has been migrated from the beta version:
-- ✅ Beta directory removed
-- ✅ All functionality preserved
-- ✅ Improved structure and security
-- ✅ Better documentation
-
-See `MIGRATION_COMPLETE.md` for details.
-
 ## Contact & Support
 
 **Contact:** Mike A. Nalls PhD via nallsm@nih.gov | mike@datatecnica.com | find us on GitHub.
 
-**Documentation:**
-- Main README: `README.md`
-- Quick start: `QUICK_START.md`
-- API setup: `SETUP_SECRETS.md`
-- App documentation: `app/README.md`
 
 ## Quick Reference Commands
 
@@ -265,7 +241,7 @@ pip install -r requirements.txt
 
 # Setup secrets
 cp .streamlit/secrets.toml.template .streamlit/secrets.toml
-# Edit the file and add your Anthropic API key
+# Edit the file and add your API key
 
 # Run application
 streamlit run app/Home.py
