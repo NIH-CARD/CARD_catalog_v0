@@ -17,7 +17,7 @@ python orchestrator.py {weekly|quarterly} [options]
 | Argument | Type | Default | Description |
 |---|---|---|---|
 | `mode` | positional | — | `weekly` or `quarterly` |
-| `--inventory` | path | latest `dataset-inventory*` in `tables/` | Resource inventory `.tab` file |
+| `--inventory` | path | latest `resources-inventory*` in `tables/` | Resource inventory `.tab` file |
 | `--query-method` | str | `v2` | PubMed query strategy: `original`, `v2`, `v3` |
 | `--max-results` | int | `100` | Max PubMed results per resource |
 | `--ncbi-api-key` | str | `$NCBI_API_KEY` | NCBI Entrez API key |
@@ -82,7 +82,7 @@ Wraps `scrapers/scrape_publications.py` as a subprocess.
 from pipelines.pubmed import PubmedStage
 stage = PubmedStage()
 out = stage.run(
-    input_path=Path("tables/dataset-inventory-Mar_11_2026.tab"),
+    input_path=Path("tables/resources-inventory-Mar_11_2026.tab"),
     output_path=Path("tables/hits/pubmed_hits_20260329.tsv"),
     query_method="v2",
     years=3,
@@ -122,7 +122,7 @@ Wraps `scrapers/scrape_github.py` with `--batch-call-ai` (search + content fetch
 from pipelines.github_search import GithubSearchStage
 stage = GithubSearchStage()
 out = stage.run(
-    input_path=Path("tables/dataset-inventory-Mar_11_2026.tab"),
+    input_path=Path("tables/resources-inventory-Mar_11_2026.tab"),
     output_path=Path("tables/hits/github_hits_20260329.tsv"),
     github_token="ghp_...",
     verbose=False,
@@ -211,7 +211,7 @@ Calls `data_gatherer.DataGatherer.process_metadata()` to visit each resource's A
 from pipelines.page_navigation import PageNavigationStage
 stage = PageNavigationStage()
 out = stage.run(
-    input_path=Path("tables/dataset-inventory-Mar_11_2026.tab"),
+    input_path=Path("tables/resources-inventory-Mar_11_2026.tab"),
     output_path=Path("tables/hits/new_corpus_20260329.tsv"),
     firefox_profile_dir="~/.card-catalog-firefox-profile",
     anthropic_key="sk-ant-...",

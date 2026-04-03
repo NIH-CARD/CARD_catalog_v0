@@ -128,7 +128,7 @@ CARD_catalog_v0/
 ├── tables/
 │   ├── hits/                # Intermediate pipeline outputs
 │   ├── final/               # App-ready validated TSVs
-│   └── dataset-inventory-*.tab   # Resource inventory (source of truth)
+│   └── resources-inventory-*.tab   # Resource inventory (source of truth)
 ├── docs/                    # Sphinx documentation source
 └── logs/                    # Runtime logs (gitignored)
 ```

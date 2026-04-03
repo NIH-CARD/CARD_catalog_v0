@@ -437,8 +437,8 @@ def search_pubmed(study_name: str, abbreviation: str, diseases: str, search_data
 
 def main():
     parser = argparse.ArgumentParser(description='Scrape PubMed for publications related to neurodegenerative disease studies')
-    parser.add_argument('--input', '-i', default='../tables/dataset-inventory-June_20_2025.tab',
-                       help='Input TSV file with study inventory (default: ../tables/dataset-inventory-June_20_2025.tab)')
+    parser.add_argument('--input', '-i', default='../tables/resources-inventory-June_20_2025.tab',
+                       help='Input TSV file with study inventory (default: ../tables/resources-inventory-June_20_2025.tab)')
     parser.add_argument('--output', '-o', default=None,
                        help='Output TSV file (default: pubmed_central_{timestamp}.tsv)')
     parser.add_argument('--max-results', '-m', type=int, default=100,

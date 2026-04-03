@@ -168,7 +168,7 @@ crontab -e
 
 ## Troubleshooting
 
-**"No dataset-inventory file found in tables/"**
+**"No resources-inventory file found in tables/"**
 Run from the project root, or pass `--inventory path/to/file.tab`.
 
 **"GITHUB_TOKEN not set — skipping github_search"**

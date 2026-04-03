@@ -297,7 +297,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--inventory", "-i", default=None,
-        help="Path to resource inventory TSV (default: latest dataset-inventory*.tab in tables/)",
+        help="Path to resource inventory TSV (default: latest resources-inventory*.tab in tables/)",
     )
     parser.add_argument(
         "--query-method", choices=["original", "v2", "v3"], default="v3",
@@ -347,9 +347,9 @@ def main() -> None:
             logger.error(f"Inventory file not found: {inventory}")
             sys.exit(1)
     else:
-        inventory = _latest(TABLES_DIR, "dataset-inventory*")
+        inventory = _latest(TABLES_DIR, "resources-inventory*")
         if inventory is None:
-            logger.error("No dataset-inventory file found in tables/. Use --inventory.")
+            logger.error("No resources-inventory file found in tables/. Use --inventory.")
             sys.exit(1)
         logger.info(f"Using inventory: {inventory.name}")
 

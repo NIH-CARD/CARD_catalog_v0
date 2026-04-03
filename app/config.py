@@ -30,7 +30,7 @@ COLORS = {
 # tables/final/ (output of the v1 pipeline); the second covers tables/
 # directly for backwards compatibility with v0 files.
 DATA_FILES_PTRS = {
-    "datasets":    ["dataset-inventory*", "final/dataset-inventory*"],
+    "datasets":    ["resources-inventory*", "final/resources-inventory*"],
     "code_repos":  ["final/gits_to_reannotate_completed*", "gits_to_reannotate_completed*"],
     "publications":["final/pubmed_central*", "pubmed_central*"],
     "indi":        ["iNDI_inventory*"],

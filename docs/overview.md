@@ -121,7 +121,7 @@ CARD_catalog_v0/
 ├── tables/
 │   ├── hits/                # Intermediate pipeline outputs (committed)
 │   ├── final/               # App-ready validated outputs (committed)
-│   ├── dataset-inventory-*.tab     # Resource inventory (source of truth)
+│   ├── resources-inventory-*.tab     # Resource inventory (source of truth)
 │   ├── iNDI_inventory_*.tsv        # iNDI cellular models (external)
 │   └── *.tsv                       # Legacy v0 outputs (still served by app)
 │
