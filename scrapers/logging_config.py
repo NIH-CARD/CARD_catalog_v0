@@ -50,6 +50,9 @@ def setup_logger(name: str, log_file: str = None, level: int = logging.INFO, cle
 
 
 def get_default_log_file(prefix: str = "scraper") -> str:
-    """Generate a timestamped log filename"""
+    """Generate a timestamped log filename in the project logs/ directory."""
+    import os
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    return f"{prefix}_{timestamp}.log"
+    logs_dir = os.path.join(os.path.dirname(__file__), "..", "logs")
+    os.makedirs(logs_dir, exist_ok=True)
+    return os.path.join(logs_dir, f"{prefix}_{timestamp}.log")

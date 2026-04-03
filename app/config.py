@@ -12,6 +12,7 @@ PROJECT_DIR = APP_DIR.parent
 TABLES_DIR = PROJECT_DIR / "tables"
 LOGOS_DIR = PROJECT_DIR / "logos"
 SCRAPERS_DIR = PROJECT_DIR / "scrapers"
+HITS_DIR = TABLES_DIR / "hits"
 
 # Color palette
 COLORS = {
@@ -24,16 +25,18 @@ COLORS = {
 }
 
 # Data file path patterns:
-# Will default to the latest file matching this pattern
-# Enter the entire path if you want to have a different file
+# Each entry is a list of glob patterns tried in order; the app uses the
+# latest file found across all patterns.  The first pattern covers
+# tables/final/ (output of the v1 pipeline); the second covers tables/
+# directly for backwards compatibility with v0 files.
 DATA_FILES_PTRS = {
-    "datasets": "dataset-inventory*",
-    "code_repos": "gits_to_reannotate_completed*",
-    "publications": "pubmed_central*",
-    "indi": "iNDI_inventory*",
+    "datasets":    ["dataset-inventory*", "final/dataset-inventory*"],
+    "code_repos":  ["final/gits_to_reannotate_completed*", "gits_to_reannotate_completed*"],
+    "publications":["final/pubmed_central*", "pubmed_central*"],
+    "indi":        ["iNDI_inventory*"],
 }
 
-# FAIR compliance log pattern
+# FAIR compliance log pattern (written to tables/hits/ by the github scraper)
 FAIR_LOG_PATTERN = "fair_compliance_log_*.tsv"
 
 # LLM Configuration

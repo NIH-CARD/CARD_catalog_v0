@@ -74,7 +74,9 @@ class FAIRComplianceLogger:
             'has_version_info': 0,
             'has_dependencies': 0
         }
-        self.output_file = output_file or f"fair_compliance_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.tsv"
+        hits_dir = os.path.join(os.path.dirname(__file__), "..", "tables", "hits")
+        os.makedirs(hits_dir, exist_ok=True)
+        self.output_file = output_file or os.path.join(hits_dir, f"fair_compliance_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.tsv")
 
     def log_issue(self, repo_url: str, study_name: str, issue_type: str, details: str):
         """Log a FAIR compliance issue"""
