@@ -53,3 +53,4 @@ htmlcov/
 scrapers/pubmed_scrape.log
 scrapers/**.log
 scripts/CARD_report.ipynb
+docs/_build/*
