@@ -43,7 +43,7 @@ class PubmedStage(PipelineStage):
         if verbose:
             cmd += ["--verbose"]
 
-        logger.info(f"[pubmed] running scraper → {output_path.name}")
+        logger.info(f"Running scraper → {output_path.name}")
         result = subprocess.run(cmd, cwd=str(SCRAPERS_DIR))
         if result.returncode != 0:
             raise RuntimeError(f"PubMed scraper exited with code {result.returncode}")
@@ -57,13 +57,13 @@ class PubmedStage(PipelineStage):
             n_rows = sum(1 for _ in open(output_path)) - 1  # subtract header
             missing = [c for c in PUBMED_HITS_COLUMNS if c not in actual_cols]
             extra   = [c for c in actual_cols if c not in PUBMED_HITS_COLUMNS]
-            logger.info(f"[pubmed] hits schema: {actual_cols}")
-            logger.info(f"[pubmed] rows: {n_rows}")
+            logger.info(f"Hits schema: {actual_cols}")
+            logger.info(f"Rows: {n_rows}")
             if missing:
-                logger.warning(f"[pubmed] columns missing vs expected schema: {missing}")
+                logger.warning(f"Columns missing vs expected schema: {missing}")
             if extra:
-                logger.info(f"[pubmed] extra columns not in schema: {extra}")
+                logger.info(f"Extra columns not in schema: {extra}")
         except Exception as e:
-            logger.warning(f"[pubmed] could not read output for schema check: {e}")
+            logger.warning(f"Could not read output for schema check: {e}")
 
         return output_path

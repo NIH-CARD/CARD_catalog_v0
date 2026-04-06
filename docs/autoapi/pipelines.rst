@@ -4,7 +4,7 @@ pipelines
 .. automodule:: pipelines.base
    :members:
 
-.. automodule:: pipelines.pubmed
+.. automodule:: pipelines.pubmed_search
    :members:
 
 .. automodule:: pipelines.github_search

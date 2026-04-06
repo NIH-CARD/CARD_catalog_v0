@@ -86,7 +86,7 @@ Fetches papers from the past 7 days, validates, and writes a new
 python orchestrator.py quarterly
 ```
 
-Runs all 5 stages: PubMed → publication metadata → GitHub search → AI repo analysis → study page navigation.
+Runs all 5 stages: pubmed_search → publication metadata → GitHub search → AI repo analysis → study page navigation.
 
 ### Skip stages you don't need
 

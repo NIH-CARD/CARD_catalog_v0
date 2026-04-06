@@ -154,11 +154,11 @@ def run_weekly(
     logger.info("WEEKLY UPDATE")
     logger.info("=" * 60)
 
-    from pipelines.pubmed import PubmedStage
+    from pipelines.pubmed_search import PubmedStage
 
     # 1. Scrape last 7 days
     hits_path = run_stage(
-        "pubmed", PubmedStage(),
+        "pubmed_search", PubmedStage(),
         input_path=inventory,
         hits_pattern="pubmed_hits_*.tsv",
         stage_kwargs=dict(
@@ -198,9 +198,9 @@ def run_quarterly(
     logger.info("=" * 60)
 
     # --- Stage 1: PubMed ---
-    from pipelines.pubmed import PubmedStage
+    from pipelines.pubmed_search import PubmedStage
     pubmed_hits = run_stage(
-        "pubmed", PubmedStage(),
+        "pubmed_search", PubmedStage(),
         input_path=inventory,
         hits_pattern="pubmed_hits_*.tsv",
         stage_kwargs=dict(

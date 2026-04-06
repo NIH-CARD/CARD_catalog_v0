@@ -16,7 +16,7 @@ It is maintained by DataTecnica for NIH's Center for Alzheimer's and Related Dem
 │                                                                         │
 │  ┌──────────────┐    ┌──────────────────────────────────────────────┐   │
 │  │  Resources   │    │                 Pipeline                     │   │
-│  │  Inventory   │───▶│  Stage 1: pubmed_extract                     │   │
+│  │  Inventory   │───▶│  Stage 1: pubmed_search                     │   │
 │  │  (.tab file) │    │  Stage 2: github_search                      │   │
 │  │              │    │  Stage 3: repo_analysis  (AI)                │   │
 │  │  - name      │    │  Stage 4: pub_metadata   (AI)                │   │
@@ -53,7 +53,7 @@ The pipeline is a staged DAG. Each stage is independently restartable: if a toda
 
 | Stage | Input | Output (hits/) | Description |
 |---|---|---|---|
-| `pubmed` | inventory.tab | `pubmed_hits_*.tsv` | PubMed search (3 queries: original, v2, v3) |
+| `pubmed_search` | inventory.tab | `pubmed_hits_*.tsv` | PubMed search (3 queries: original, v2, v3) |
 | `github_search` | inventory.tab | `github_hits_*.tsv` | GitHub search, content fetch, no AI |
 | `repo_analysis` | github_hits | `github_analyzed_*.tsv` | AI analysis via external inference engines |
 | `pub_metadata` | pubmed_hits | `pub_datasets_*.tsv`, `pub_supplementary_*.tsv` | Dataset + supplementary file extraction from PMC articles |
@@ -92,7 +92,7 @@ CARD_catalog_v0/
 │
 ├── pipelines/               # One module per pipeline stage
 │   ├── base.py              # PipelineStage ABC
-│   ├── pubmed.py            # Stage 1
+│   ├── pubmed_search.py            # Stage 1
 │   ├── github_search.py     # Stage 2
 │   ├── repo_analysis.py     # Stage 3
 │   ├── pub_metadata.py      # Stage 4
@@ -149,7 +149,7 @@ The app resolves the **latest** file matching each pattern, checking `tables/fin
 
 | Dependency | Used by | Notes |
 |---|---|---|
-| NCBI Entrez API | `pubmed.py` | Free; NCBI API key raises rate limits |
+| NCBI Entrez API | `pubmed_search.py` | Free; NCBI API key raises rate limits |
 | GitHub REST API | `github_search.py` | Requires `GITHUB_TOKEN` |
 | Anthropic API | `repo_analysis.py`, `pub_metadata.py`, app AI features | `ANTHROPIC_API_KEY` |
 | `data_gatherer` (pip) | `pub_metadata.py`, `page_navigation.py` | DataTecnica internal package |

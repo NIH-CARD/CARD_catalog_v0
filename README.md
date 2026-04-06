@@ -25,7 +25,7 @@ Inventory (.tab)
       ▼
 ┌─────────────────────────────────┐
 │          Pipeline               │
-│  1. pubmed_extract              │
+│  1. pubmed_search               │
 │  2. github_search               │
 │  3. repo_analysis   (AI)        │
 │  4. pub_metadata    (AI)        │
@@ -142,7 +142,7 @@ CARD_catalog_v0/
 | `ANTHROPIC_API_KEY` | `repo_analysis`, `pub_metadata`, `page_navigation`, app AI features | Required if using Anthropic models |
 | `OPENAI_API_KEY` | `repo_analysis`, `pub_metadata`, `page_navigation`, app AI features | Required if using OpenAI models |
 | `GITHUB_TOKEN` | `github_search` | Required for GitHub scraping |
-| `NCBI_API_KEY` | `pubmed` | Optional; raises rate limit from 3/s to 10/s |
+| `NCBI_API_KEY` | `pubmed_search` | Optional; raises rate limit from 3/s to 10/s |
 | `FIREFOX_PROFILE_DIR` | `page_navigation` | Pre-authenticated Firefox profile path |
 
 ---

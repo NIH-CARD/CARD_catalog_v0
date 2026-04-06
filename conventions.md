@@ -33,10 +33,10 @@ Pipeline stages and scrapers get their logger via the module name — this makes
 
 ```python
 # Good
-logger.info(f"[pubmed] loaded {len(df)} rows from {input_path.name}")
-logger.info(f"[pubmed] wrote {len(out)} rows → {output_path.name}")
-logger.warning(f"[pubmed] {n_rejected} rows rejected — see {rejected_path.name}")
-logger.error(f"[pubmed] API call failed: {e}", exc_info=True)
+logger.info(f"Loaded {len(df)} rows from {input_path.name}")
+logger.info(f"Wrote {len(out)} rows → {output_path.name}")
+logger.warning(f"[pubmed_search] {n_rejected} rows rejected — see {rejected_path.name}")
+logger.error(f"API call failed: {e}", exc_info=True)
 
 # Bad
 print(f"Done: {output_path}")

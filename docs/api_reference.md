@@ -30,7 +30,7 @@ python orchestrator.py {weekly|quarterly} [options]
 
 ### Weekly mode
 
-1. Runs `pubmed` stage with `years=0.02` (~7 days)
+1. Runs `pubmed_search` stage with `years=0.02` (~7 days)
 2. Deduplicates output against latest `tables/final/pubmed_central_*.tsv` by PMID
 3. Merges new-only rows with existing corpus
 4. Runs normalizer → `tables/final/pubmed_central_{ts}.tsv`
@@ -40,7 +40,7 @@ python orchestrator.py {weekly|quarterly} [options]
 Runs stages in dependency order:
 
 ```
-pubmed → [normalize publications]
+pubmed_search → [normalize publications]
     └── pub_metadata → [normalize pub_datasets, supplementary]
 github_search → repo_analysis → [normalize code]
 page_navigation → [normalize new_corpus]
@@ -72,14 +72,14 @@ Returns the `output_path` that was written.
 
 ---
 
-## `pipelines.pubmed`
+## `pipelines.pubmed_search`
 
 ### `class PubmedStage(PipelineStage)`
 
 Wraps `scrapers/scrape_publications.py` as a subprocess.
 
 ```python
-from pipelines.pubmed import PubmedStage
+from pipelines.pubmed_search import PubmedStage
 stage = PubmedStage()
 out = stage.run(
     input_path=Path("tables/resources-inventory-Mar_11_2026.tab"),
@@ -452,6 +452,6 @@ Load the latest FAIR compliance log from `tables/`. Cached for 1 hour.
 | Variable | Required by | Description |
 |---|---|---|
 | `ANTHROPIC_API_KEY` | `repo_analysis`, `pub_metadata`, `page_navigation`, Streamlit app | Anthropic API key |
-| `NCBI_API_KEY` | `pubmed` | NCBI Entrez API key (optional; raises rate limits from 3/s to 10/s) |
+| `NCBI_API_KEY` | `pubmed_search` | NCBI Entrez API key (optional; raises rate limits from 3/s to 10/s) |
 | `GITHUB_TOKEN` | `github_search` | GitHub personal access token (required for GitHub scraping) |
 | `FIREFOX_PROFILE_DIR` | `page_navigation` | Path to pre-authenticated Firefox profile |
