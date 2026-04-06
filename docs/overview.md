@@ -65,20 +65,20 @@ After each stage, the **normalizer** validates and coerces the hits file to a sc
 
 ## Automation Modes
 
-### Weekly (incremental)
-Runs every Monday. Fetches only papers from the last 7 days, deduplicates against the existing corpus, and appends new papers to a new timestamped `pubmed_central_*.tsv`.
+### Update (incremental)
+Runs every Monday. Fetches only papers from the last 7 days and writes a new timestamped `pubmed_central_*.tsv`.
 
-### Quarterly (full rebuild)
+### Full rebuild
 Runs on the first Monday of January, April, July, October. Full 3-year PubMed window plus all other stages (GitHub, pub_metadata, page_navigation).
 
 Both modes are triggered via cron:
 
 ```bash
-# Weekly — Monday 8am ET
-0 12 * * 1 cd /path/to/CARD_catalog_v0 && venv/bin/python orchestrator.py weekly
+# Update — Monday 8am ET
+0 12 * * 1 cd /path/to/CARD_catalog_v0 && venv/bin/python orchestrator.py update
 
-# Quarterly — first Monday of Jan/Apr/Jul/Oct
-0 12 1-7 1,4,7,10 * [ "$(date +\%u)" = "1" ] && cd /path/to/CARD_catalog_v0 && venv/bin/python orchestrator.py quarterly
+# Full rebuild — first Monday of Jan/Apr/Jul/Oct
+0 12 1-7 1,4,7,10 * [ "$(date +\%u)" = "1" ] && cd /path/to/CARD_catalog_v0 && venv/bin/python orchestrator.py full_rebuild
 ```
 
 ---

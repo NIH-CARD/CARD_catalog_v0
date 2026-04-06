@@ -71,19 +71,19 @@ Opens at http://localhost:8501. Works immediately with existing data in `tables/
 
 ## 4. Run the pipeline
 
-### Weekly update (last 7 days of PubMed)
+### Update (last 7 days of PubMed)
 
 ```bash
-python orchestrator.py weekly
+python orchestrator.py update
 ```
 
 Fetches papers from the past 7 days, validates, and writes a new
 `tables/final/pubmed_central_*.tsv`.
 
-### Full quarterly rebuild
+### Full rebuild
 
 ```bash
-python orchestrator.py quarterly
+python orchestrator.py full_rebuild
 ```
 
 Runs all 5 stages: pubmed_search → publication metadata → GitHub search → AI repo analysis → study page navigation.
@@ -91,8 +91,8 @@ Runs all 5 stages: pubmed_search → publication metadata → GitHub search → 
 ### Skip stages you don't need
 
 ```bash
-python orchestrator.py quarterly --skip page_navigation
-python orchestrator.py quarterly --skip repo_analysis pub_metadata page_navigation
+python orchestrator.py full_rebuild --skip page_navigation
+python orchestrator.py full_rebuild --skip repo_analysis pub_metadata page_navigation
 ```
 
 ### Resume a failed run
@@ -100,15 +100,15 @@ python orchestrator.py quarterly --skip repo_analysis pub_metadata page_navigati
 Stages that already wrote a today-dated hits file are skipped automatically on retry:
 
 ```bash
-python orchestrator.py quarterly   # repo_analysis failed
+python orchestrator.py full_rebuild   # repo_analysis failed
 # fix the issue, then:
-python orchestrator.py quarterly   # earlier stages skip automatically
+python orchestrator.py full_rebuild   # earlier stages skip automatically
 ```
 
 Force re-run all stages:
 
 ```bash
-python orchestrator.py quarterly --force
+python orchestrator.py full_rebuild --force
 ```
 
 ---
@@ -144,11 +144,11 @@ crontab -e
 ```
 
 ```bash
-# Weekly — Monday 8am ET (12pm UTC)
-0 12 * * 1 cd /path/to/CARD_catalog_v0 && set -a && source .env && set +a && venv/bin/python orchestrator.py weekly >> logs/weekly.log 2>&1
+# Update — Monday 8am ET (12pm UTC)
+0 12 * * 1 cd /path/to/CARD_catalog_v0 && set -a && source .env && set +a && venv/bin/python orchestrator.py update >> logs/update.log 2>&1
 
-# Quarterly — first Monday of Jan, Apr, Jul, Oct
-0 12 1-7 1,4,7,10 * [ "$(date +\%u)" = "1" ] && cd /path/to/CARD_catalog_v0 && set -a && source .env && set +a && venv/bin/python orchestrator.py quarterly >> logs/quarterly.log 2>&1
+# Full rebuild — first Monday of Jan, Apr, Jul, Oct
+0 12 1-7 1,4,7,10 * [ "$(date +\%u)" = "1" ] && cd /path/to/CARD_catalog_v0 && set -a && source .env && set +a && venv/bin/python orchestrator.py full_rebuild >> logs/full_rebuild.log 2>&1
 ```
 
 ---

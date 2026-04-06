@@ -28,14 +28,12 @@ python orchestrator.py {weekly|quarterly} [options]
 | `--force` | flag | off | Re-run stages even if today's hits file exists |
 | `--verbose` | flag | off | Enable DEBUG logging in subprocesses |
 
-### Weekly mode
+### Update mode
 
 1. Runs `pubmed_search` stage with `years=0.02` (~7 days)
-2. Deduplicates output against latest `tables/final/pubmed_central_*.tsv` by PMID
-3. Merges new-only rows with existing corpus
-4. Runs normalizer → `tables/final/pubmed_central_{ts}.tsv`
+2. Runs normalizer → `tables/final/pubmed_central_{ts}.tsv`
 
-### Quarterly mode
+### Full rebuild mode
 
 Runs stages in dependency order:
 

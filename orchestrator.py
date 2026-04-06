@@ -4,20 +4,19 @@ CARD Catalog Pipeline Orchestrator
 
 Coordinates two run modes:
 
-  weekly    — Incremental PubMed update (last 7 days).
-              Deduplicates against the existing corpus; writes new merged
-              TSV to tables/final/ if new papers are found.
+  update        — Incremental PubMed update (last 7 days).
+                  Validates and writes new TSV to tables/final/.
 
-  quarterly — Full rebuild from scratch:
-                PubMed (3-year window) + publication metadata (datasets +
-                supplementary) + GitHub search + AI repo analysis +
-                study page navigation.
+  full_rebuild  — Full rebuild from scratch:
+                    PubMed (3-year window) + publication metadata (datasets +
+                    supplementary) + GitHub search + AI repo analysis +
+                    study page navigation.
 
 Usage:
-    python orchestrator.py weekly
-    python orchestrator.py quarterly
-    python orchestrator.py weekly  --query-method v2 --verbose
-    python orchestrator.py quarterly --skip page_navigation
+    python orchestrator.py update
+    python orchestrator.py full_rebuild
+    python orchestrator.py update --query-method v2 --verbose
+    python orchestrator.py full_rebuild --skip page_navigation
 
 Each stage writes intermediate output to tables/hits/.
 The normalizer then validates and writes app-ready files to tables/final/.
@@ -139,10 +138,10 @@ def run_normalizer(
 
 
 # ---------------------------------------------------------------------------
-# Weekly mode
+# Update mode (incremental)
 # ---------------------------------------------------------------------------
 
-def run_weekly(
+def run_incremental_update(
     inventory: Path,
     query_method: str,
     max_results: int,
@@ -151,7 +150,7 @@ def run_weekly(
     skip_stages: list[str],
 ) -> None:
     logger.info("=" * 60)
-    logger.info("WEEKLY UPDATE")
+    logger.info("UPDATE")
     logger.info("=" * 60)
 
     from pipelines.pubmed_search import PubmedStage
@@ -182,7 +181,7 @@ def run_weekly(
 # Quarterly mode
 # ---------------------------------------------------------------------------
 
-def run_quarterly(
+def run_full_rebuild(
     inventory: Path,
     query_method: str,
     max_results: int,
@@ -194,7 +193,7 @@ def run_quarterly(
     skip_stages: list[str],
 ) -> None:
     logger.info("=" * 60)
-    logger.info("QUARTERLY REBUILD")
+    logger.info("FULL REBUILD")
     logger.info("=" * 60)
 
     # --- Stage 1: PubMed ---
@@ -277,7 +276,7 @@ def run_quarterly(
         run_normalizer(nav_hits, "new_corpus", "new_corpus_*.tsv")
 
     logger.info("=" * 60)
-    logger.info("QUARTERLY REBUILD COMPLETE")
+    logger.info("FULL REBUILD COMPLETE")
     logger.info("=" * 60)
 
 
@@ -292,8 +291,8 @@ def main() -> None:
         epilog=__doc__,
     )
     parser.add_argument(
-        "mode", choices=["weekly", "quarterly"],
-        help="'weekly' for incremental 7-day update; 'quarterly' for full rebuild",
+        "mode", choices=["update", "full_rebuild"],
+        help="'update' for incremental 7-day PubMed update; 'full_rebuild' for all stages",
     )
     parser.add_argument(
         "--inventory", "-i", default=None,
@@ -361,10 +360,10 @@ def main() -> None:
 
     skip_stages = args.skip or []
 
-    if args.mode == "weekly":
-        run_weekly(inventory, args.query_method, args.max_results, ncbi_key, args.verbose, skip_stages)
-    elif args.mode == "quarterly":
-        run_quarterly(
+    if args.mode == "update":
+        run_incremental_update(inventory, args.query_method, args.max_results, ncbi_key, args.verbose, skip_stages)
+    elif args.mode == "full_rebuild":
+        run_full_rebuild(
             inventory, args.query_method, args.max_results,
             ncbi_key, github_token, anthropic_key, firefox_profile,
             args.verbose, skip_stages,
