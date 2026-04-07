@@ -35,7 +35,7 @@ Pipeline stages and scrapers get their logger via the module name — this makes
 # Good
 logger.info(f"Loaded {len(df)} rows from {input_path.name}")
 logger.info(f"Wrote {len(out)} rows → {output_path.name}")
-logger.warning(f"[pubmed_search] {n_rejected} rows rejected — see {rejected_path.name}")
+logger.warning(f"{n_rejected} rows rejected — see {rejected_path.name}")
 logger.error(f"API call failed: {e}", exc_info=True)
 
 # Bad

@@ -82,7 +82,7 @@ stage = PubmedStage()
 out = stage.run(
     input_path=Path("tables/resources-inventory-Mar_11_2026.tab"),
     output_path=Path("tables/hits/pubmed_hits_20260329.tsv"),
-    query_method="v2",
+    query_method="v3",
     years=3,
     max_results=100,
     ncbi_api_key="...",
@@ -94,7 +94,7 @@ out = stage.run(
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `query_method` | str | `"v2"` | PubMed query strategy |
+| `query_method` | str | `"v3"` | PubMed query strategy |
 | `years` | float | `3` | Date window in years (use `0.02` for ~7 days) |
 | `max_results` | int | `100` | Max results per resource |
 | `ncbi_api_key` | str\|None | `None` | NCBI API key; falls back to env var |
