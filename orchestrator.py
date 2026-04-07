@@ -133,9 +133,10 @@ def run_normalizer(
     target: str,
     final_pattern: str,
     skip_if_exists: bool = True,
+    force: bool = False,
 ) -> Path | None:
     """Normalize a hits file and write to FINAL_DIR."""
-    if skip_if_exists:
+    if skip_if_exists and not force:
         existing = _today_file(FINAL_DIR, final_pattern)
         if existing:
             logger.info(f"[normalizer/{target}] today's final file exists — skipping: {existing.name}")
@@ -164,6 +165,7 @@ def run_incremental_update(
     ncbi_api_key: str | None,
     verbose: bool,
     skip_stages: list[str],
+    force: bool = False,
     log_file: Path | None = None,
 ) -> None:
     logger.info("=" * 60)
@@ -186,13 +188,14 @@ def run_incremental_update(
             log_file=log_file,
         ),
         skip_stages=skip_stages,
+        force=force,
     )
     if not hits_path or not hits_path.exists():
         logger.error("Weekly PubMed scrape produced no output — aborting.")
         return
 
     # 2. Normalize hits directly → tables/final/
-    run_normalizer(hits_path, "publications", "pubmed_central_*.tsv", skip_if_exists=False)
+    run_normalizer(hits_path, "publications", "pubmed_central_*.tsv", skip_if_exists=False, force=force)
 
 
 # ---------------------------------------------------------------------------
@@ -209,6 +212,7 @@ def run_full_rebuild(
     firefox_profile_dir: str | None,
     verbose: bool,
     skip_stages: list[str],
+    force: bool = False,
     log_file: Path | None = None,
 ) -> None:
     logger.info("=" * 60)
@@ -230,9 +234,10 @@ def run_full_rebuild(
             log_file=log_file,
         ),
         skip_stages=skip_stages,
+        force=force,
     )
     if pubmed_hits and pubmed_hits.exists():
-        run_normalizer(pubmed_hits, "publications", "pubmed_central_*.tsv")
+        run_normalizer(pubmed_hits, "publications", "pubmed_central_*.tsv", force=force)
 
     # --- Stage 4: Publication metadata (needs pubmed_hits) ---
     if pubmed_hits and pubmed_hits.exists():
@@ -243,13 +248,14 @@ def run_full_rebuild(
             hits_pattern="pub_datasets_*.tsv",
             stage_kwargs=dict(anthropic_key=anthropic_key, verbose=verbose, log_file=log_file),
             skip_stages=skip_stages,
+            force=force,
         )
         if pub_datasets_hits and pub_datasets_hits.exists():
-            run_normalizer(pub_datasets_hits, "pub_datasets", "pub_datasets_*.tsv")
+            run_normalizer(pub_datasets_hits, "pub_datasets", "pub_datasets_*.tsv", force=force)
         # Supplementary is written as side-effect by pub_metadata stage
         supp_hits = _latest(HITS_DIR, "pub_supplementary_*.tsv")
         if supp_hits:
-            run_normalizer(supp_hits, "supplementary", "pub_supplementary_*.tsv")
+            run_normalizer(supp_hits, "supplementary", "pub_supplementary_*.tsv", force=force)
     else:
         logger.warning("Skipping pub_metadata: no pubmed_hits available")
 
@@ -264,6 +270,7 @@ def run_full_rebuild(
             hits_pattern="github_hits_*.tsv",
             stage_kwargs=dict(github_token=github_token, verbose=verbose, log_file=log_file),
             skip_stages=skip_stages,
+            force=force,
         )
 
         # --- Stage 3: Repo AI analysis ---
@@ -275,6 +282,7 @@ def run_full_rebuild(
                 hits_pattern="github_analyzed_*.tsv",
                 stage_kwargs=dict(anthropic_key=anthropic_key, verbose=verbose, log_file=log_file),
                 skip_stages=skip_stages,
+                force=force,
             )
             if analyzed_hits and analyzed_hits.exists():
                 run_normalizer(analyzed_hits, "code", "gits_to_reannotate_completed_*.tsv")
