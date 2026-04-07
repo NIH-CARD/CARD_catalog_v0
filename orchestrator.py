@@ -182,9 +182,9 @@ def run_incremental_update(
 # ---------------------------------------------------------------------------
 
 def run_full_rebuild(
-    inventory: Path,
-    query_method: str,
-    max_results: int,
+    inventory: Path | None,
+    query_method: str | 'v3',
+    max_results: int | 150,
     ncbi_api_key: str | None,
     github_token: str | None,
     anthropic_key: str | None,
@@ -296,7 +296,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--inventory", "-i", default=None,
-        help="Path to resource inventory TSV (default: latest resources-inventory*.tab in tables/)",
+        help="Path to resource inventory file (default: latest resources-inventory-* in tables/)",
     )
     parser.add_argument(
         "--query-method", choices=["original", "v2", "v3"], default="v3",
@@ -346,9 +346,9 @@ def main() -> None:
             logger.error(f"Inventory file not found: {inventory}")
             sys.exit(1)
     else:
-        inventory = _latest(TABLES_DIR, "resources-inventory*")
+        inventory = _latest(TABLES_DIR, "resources-inventory-*")
         if inventory is None:
-            logger.error("No resources-inventory file found in tables/. Use --inventory.")
+            logger.error("No resources-inventory-* file found in tables/. Use --inventory.")
             sys.exit(1)
         logger.info(f"Using inventory: {inventory.name}")
 
