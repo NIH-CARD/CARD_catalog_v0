@@ -31,6 +31,7 @@ class PubMetadataStage(PipelineStage):
         *,
         anthropic_key: str | None = None,
         verbose: bool = False,
+        log_file: Path | None = None,
     ) -> Path:
         from data_gatherer.data_gatherer import DataGatherer
         from data_gatherer.llm.response_schema import (
@@ -57,15 +58,17 @@ class PubMetadataStage(PipelineStage):
             .unique()
             .tolist()
         )
-        logger.info(f"[pub_metadata] {len(pmc_links)} PMC links to process")
+        logger.info(f"{len(pmc_links)} PMC links to process")
 
         if not pmc_links:
-            logger.warning("[pub_metadata] no PMC links found — skipping")
+            logger.warning("no PMC links found — skipping")
             return output_path
 
+        log_file_str = str(log_file) if log_file else None
+
         # --- Dataset mentions ---
-        logger.info("[pub_metadata] extracting dataset mentions")
-        dg = DataGatherer(log_level=log_level)
+        logger.info("extracting dataset mentions")
+        dg = DataGatherer(llm_name="claude-haiku-4-5", log_level=log_level, log_file_override=log_file_str, clear_previous_logs=False)
         datasets_raw = dg.process_articles(
             pmc_links,
             response_format=Dataset_w_Context,
@@ -74,13 +77,13 @@ class PubMetadataStage(PipelineStage):
         if datasets_raw is not None and not datasets_raw.empty:
             datasets_raw["_schema"] = "Dataset_w_Context"
             datasets_raw.to_csv(output_path, sep="\t", index=False)
-            logger.info(f"[pub_metadata] datasets → {output_path.name} ({len(datasets_raw)} rows)")
+            logger.info(f"Datasets → {output_path.name} ({len(datasets_raw)} rows)")
         else:
-            logger.warning("[pub_metadata] no dataset mentions found")
+            logger.warning("No dataset mentions found")
 
         # --- Supplementary files ---
-        logger.info("[pub_metadata] extracting supplementary file mentions")
-        dg_supp = DataGatherer(log_level=log_level)
+        logger.info("Extracting supplementary file mentions")
+        dg_supp = DataGatherer(llm_name="claude-haiku-4-5", log_level=log_level, log_file_override=log_file_str, clear_previous_logs=False)
         supp_raw = dg_supp.process_articles(
             pmc_links,
             response_format=SupplementaryFileKeywords,
@@ -90,8 +93,8 @@ class PubMetadataStage(PipelineStage):
         if supp_raw is not None and not supp_raw.empty:
             supp_raw["_schema"] = "SupplementaryFileKeywords"
             supp_raw.to_csv(supp_path, sep="\t", index=False)
-            logger.info(f"[pub_metadata] supplementary → {supp_path.name} ({len(supp_raw)} rows)")
+            logger.info(f"Supplementary → {supp_path.name} ({len(supp_raw)} rows)")
         else:
-            logger.warning("[pub_metadata] no supplementary file mentions found")
+            logger.warning("No supplementary file mentions found")
 
         return output_path

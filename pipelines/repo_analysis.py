@@ -25,6 +25,7 @@ class RepoAnalysisStage(PipelineStage):
         *,
         anthropic_key: str | None = None,
         verbose: bool = False,
+        log_file: Path | None = None,
     ) -> Path:
         cmd = [
             sys.executable, str(SCRAPERS_DIR / "batch_ai_analysis.py"),
@@ -35,8 +36,10 @@ class RepoAnalysisStage(PipelineStage):
             cmd += ["--anthropic-key", anthropic_key]
         if verbose:
             cmd += ["--verbose"]
+        if log_file:
+            cmd += ["--log-file", str(log_file)]
 
-        logger.info(f"[repo_analysis] running batch AI analysis → {output_path.name}")
+        logger.info(f"Running batch AI analysis → {output_path.name}")
         result = subprocess.run(cmd, cwd=str(SCRAPERS_DIR))
         if result.returncode != 0:
             raise RuntimeError(f"Batch AI analysis exited with code {result.returncode}")

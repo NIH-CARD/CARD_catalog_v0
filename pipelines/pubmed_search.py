@@ -29,6 +29,7 @@ class PubmedStage(PipelineStage):
         max_results: int = 100,
         ncbi_api_key: str | None = None,
         verbose: bool = False,
+        log_file: Path | None = None,
     ) -> Path:
         cmd = [
             sys.executable, str(SCRAPERS_DIR / "scrape_publications.py"),
@@ -42,6 +43,8 @@ class PubmedStage(PipelineStage):
             cmd += ["--ncbi-api-key", ncbi_api_key]
         if verbose:
             cmd += ["--verbose"]
+        if log_file:
+            cmd += ["--log-file", str(log_file)]
 
         logger.info(f"Running scraper → {output_path.name}")
         result = subprocess.run(cmd, cwd=str(SCRAPERS_DIR))

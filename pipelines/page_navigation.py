@@ -53,6 +53,7 @@ class PageNavigationStage(PipelineStage):
         firefox_profile_dir: str | None = None,
         anthropic_key: str | None = None,
         verbose: bool = False,
+        log_file: Path | None = None,
     ) -> Path:
         from data_gatherer.data_gatherer import DataGatherer
         from data_gatherer.llm.response_schema import study_sanity_check_w_rationale_schema_claude
@@ -91,9 +92,9 @@ class PageNavigationStage(PipelineStage):
 
         expanded_df = pd.DataFrame(expanded_rows)
         expanded_df["download_link"] = None
-        logger.info(f"[page_navigation] {len(expanded_df)} URLs to visit")
+        logger.info(f"{len(expanded_df)} URLs to visit")
 
-        dg = DataGatherer(llm_name="claude-haiku-4-5", log_level=log_level)
+        dg = DataGatherer(llm_name="claude-haiku-4-5", log_level=log_level, log_file_override=str(log_file) if log_file else None, clear_previous_logs=False)
         outputs = dg.process_metadata(
             expanded_df,
             pass_cols_to_prompt=[
@@ -117,9 +118,9 @@ class PageNavigationStage(PipelineStage):
             out_df = pd.DataFrame(outputs)
             out_df["_schema"] = "study_sanity_check_w_rationale"
             out_df.to_csv(output_path, sep="\t", index=False)
-            logger.info(f"[page_navigation] → {output_path.name} ({len(out_df)} rows)")
+            logger.info(f"→ {output_path.name} ({len(out_df)} rows)")
         else:
-            logger.warning("[page_navigation] no outputs produced")
+            logger.warning("No outputs produced")
 
         return output_path
 

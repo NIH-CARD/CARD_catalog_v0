@@ -252,7 +252,7 @@ def normalize(
     rename_map = _RENAME.get(target, {})
     normalizer_fn = _NORMALIZERS[target]
 
-    logger.info(f"[normalizer] {target}: loading {input_path.name}")
+    logger.info(f"{target}: loading {input_path.name}")
     df = pd.read_csv(input_path, sep="\t", dtype=str).fillna("")
 
     # Drop internal pipeline columns
@@ -286,10 +286,10 @@ def normalize(
         ts = input_path.stem.split("_")[-1]
         rejected_path = HITS_DIR / f"rejected_{target}_{ts}.tsv"
         pd.DataFrame(rejected_rows).to_csv(rejected_path, sep="\t", index=False)
-        logger.warning(f"[normalizer] rejected rows → {rejected_path.name}")
+        logger.warning(f"Rejected rows → {rejected_path.name}")
 
     if not valid_rows:
-        logger.warning(f"[normalizer] no valid rows for {target} — output not written")
+        logger.warning(f"No valid rows for {target} — output not written")
         return output_path
 
     # Rename back to app column names (spaces) and select ordered columns
@@ -305,14 +305,14 @@ def normalize(
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     out_df.to_csv(output_path, sep="\t", index=False)
-    logger.info(f"[normalizer] {target}: wrote {len(out_df)} rows → {output_path.name}")
+    logger.info(f"{target}: wrote {len(out_df)} rows → {output_path.name}")
 
     # Remove older files for this target, keeping only the one just written
     stem = output_path.stem.rsplit("_", 2)[0]  # strip timestamp suffix
     for old_file in sorted(output_path.parent.glob(f"{stem}_*.tsv")):
         if old_file != output_path:
             old_file.unlink()
-            logger.info(f"[normalizer] removed old file: {old_file.name}")
+            logger.info(f"Removed old file: {old_file.name}")
 
     return output_path
 

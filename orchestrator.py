@@ -34,6 +34,7 @@ PROJECT_ROOT = Path(__file__).parent
 TABLES_DIR = PROJECT_ROOT / "tables"
 HITS_DIR = TABLES_DIR / "hits"
 FINAL_DIR = TABLES_DIR / "final"
+LOGS_DIR = PROJECT_ROOT / "logs"
 
 logging.basicConfig(
     level=logging.INFO,
@@ -42,6 +43,21 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)],
 )
 logger = logging.getLogger(__name__)
+
+def _add_file_handler(log_file: Path, verbose: bool = False) -> None:
+    """Attach a file handler to the root logger."""
+    log_file.parent.mkdir(parents=True, exist_ok=True)
+    handler = logging.FileHandler(log_file, mode="w", encoding="utf-8")
+    handler.setLevel(logging.DEBUG if verbose else logging.INFO)
+    handler.setFormatter(logging.Formatter(
+        fmt="%(asctime)s - %(name)s:%(lineno)d - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    ))
+    logging.getLogger().addHandler(handler)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("urllib3").setLevel(logging.WARNING)
+    logger.info(f"Logging to file: {log_file}")
+
 
 
 # ---------------------------------------------------------------------------
@@ -148,6 +164,7 @@ def run_incremental_update(
     ncbi_api_key: str | None,
     verbose: bool,
     skip_stages: list[str],
+    log_file: Path | None = None,
 ) -> None:
     logger.info("=" * 60)
     logger.info("UPDATE")
@@ -166,6 +183,7 @@ def run_incremental_update(
             max_results=max_results,
             ncbi_api_key=ncbi_api_key,
             verbose=verbose,
+            log_file=log_file,
         ),
         skip_stages=skip_stages,
     )
@@ -191,6 +209,7 @@ def run_full_rebuild(
     firefox_profile_dir: str | None,
     verbose: bool,
     skip_stages: list[str],
+    log_file: Path | None = None,
 ) -> None:
     logger.info("=" * 60)
     logger.info("FULL REBUILD")
@@ -208,6 +227,7 @@ def run_full_rebuild(
             max_results=max_results,
             ncbi_api_key=ncbi_api_key,
             verbose=verbose,
+            log_file=log_file,
         ),
         skip_stages=skip_stages,
     )
@@ -221,7 +241,7 @@ def run_full_rebuild(
             "pub_metadata", PubMetadataStage(),
             input_path=pubmed_hits,
             hits_pattern="pub_datasets_*.tsv",
-            stage_kwargs=dict(anthropic_key=anthropic_key, verbose=verbose),
+            stage_kwargs=dict(anthropic_key=anthropic_key, verbose=verbose, log_file=log_file),
             skip_stages=skip_stages,
         )
         if pub_datasets_hits and pub_datasets_hits.exists():
@@ -242,7 +262,7 @@ def run_full_rebuild(
             "github_search", GithubSearchStage(),
             input_path=inventory,
             hits_pattern="github_hits_*.tsv",
-            stage_kwargs=dict(github_token=github_token, verbose=verbose),
+            stage_kwargs=dict(github_token=github_token, verbose=verbose, log_file=log_file),
             skip_stages=skip_stages,
         )
 
@@ -253,7 +273,7 @@ def run_full_rebuild(
                 "repo_analysis", RepoAnalysisStage(),
                 input_path=github_hits,
                 hits_pattern="github_analyzed_*.tsv",
-                stage_kwargs=dict(anthropic_key=anthropic_key, verbose=verbose),
+                stage_kwargs=dict(anthropic_key=anthropic_key, verbose=verbose, log_file=log_file),
                 skip_stages=skip_stages,
             )
             if analyzed_hits and analyzed_hits.exists():
@@ -336,8 +356,17 @@ def main() -> None:
         "--verbose", "-v", action="store_true",
         help="Enable verbose (DEBUG) logging in scrapers",
     )
+    parser.add_argument(
+        "--log-file", default=None,
+        help="Log file path (default: logs/orchestrator_{timestamp}.log)",
+    )
 
     args = parser.parse_args()
+
+    # Set up file logging
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_file = Path(args.log_file) if args.log_file else LOGS_DIR / f"orchestrator_{timestamp}.log"
+    _add_file_handler(log_file, verbose=args.verbose)
 
     # Resolve inventory
     if args.inventory:
@@ -361,12 +390,12 @@ def main() -> None:
     skip_stages = args.skip or []
 
     if args.mode == "update":
-        run_incremental_update(inventory, args.query_method, args.max_results, ncbi_key, args.verbose, skip_stages)
+        run_incremental_update(inventory, args.query_method, args.max_results, ncbi_key, args.verbose, skip_stages, force=args.force, log_file=log_file)
     elif args.mode == "full_rebuild":
         run_full_rebuild(
             inventory, args.query_method, args.max_results,
             ncbi_key, github_token, anthropic_key, firefox_profile,
-            args.verbose, skip_stages,
+            args.verbose, skip_stages, force=args.force, log_file=log_file,
         )
 
 

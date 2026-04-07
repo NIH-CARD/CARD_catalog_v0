@@ -28,6 +28,7 @@ class GithubSearchStage(PipelineStage):
         *,
         github_token: str,
         verbose: bool = False,
+        log_file: Path | None = None,
     ) -> Path:
         cmd = [
             sys.executable, str(SCRAPERS_DIR / "scrape_github.py"),
@@ -38,8 +39,10 @@ class GithubSearchStage(PipelineStage):
         ]
         if verbose:
             cmd += ["--verbose"]
+        if log_file:
+            cmd += ["--log-file", str(log_file)]
 
-        logger.info(f"[github_search] running scraper → {output_path.name}")
+        logger.info(f"running scraper → {output_path.name}")
         result = subprocess.run(cmd, cwd=str(SCRAPERS_DIR))
         if result.returncode != 0:
             raise RuntimeError(f"GitHub scraper exited with code {result.returncode}")
