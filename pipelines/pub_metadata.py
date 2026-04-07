@@ -35,8 +35,7 @@ class PubMetadataStage(PipelineStage):
     ) -> Path:
         from data_gatherer.data_gatherer import DataGatherer
         from data_gatherer.llm.response_schema import (
-            Dataset_w_Context,
-            SupplementaryFileKeywords,
+            supplementary_files_keywords_schema,
         )
 
         if anthropic_key:
@@ -71,7 +70,10 @@ class PubMetadataStage(PipelineStage):
         dg = DataGatherer(llm_name="claude-haiku-4-5", log_level=log_level, log_file_override=log_file_str, clear_previous_logs=False)
         datasets_raw = dg.process_articles(
             pmc_links,
-            response_format=Dataset_w_Context,
+            response_format=dataset_response_schema_with_use_description_and_short,
+            prompt_name="CLAUDE_FDR_FewShot_shortDescr",
+            full_document_read=True,
+            semantic_retrieval=True,
             return_df_joint=True,
         )
         if datasets_raw is not None and not datasets_raw.empty:
@@ -86,7 +88,7 @@ class PubMetadataStage(PipelineStage):
         dg_supp = DataGatherer(llm_name="claude-haiku-4-5", log_level=log_level, log_file_override=log_file_str, clear_previous_logs=False)
         supp_raw = dg_supp.process_articles(
             pmc_links,
-            response_format=SupplementaryFileKeywords,
+            response_format=supplementary_files_keywords_schema,
             section_filter="supplementary_material",
             return_df_joint=True,
         )

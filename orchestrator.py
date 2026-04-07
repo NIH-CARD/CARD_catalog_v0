@@ -285,7 +285,7 @@ def run_full_rebuild(
                 force=force,
             )
             if analyzed_hits and analyzed_hits.exists():
-                run_normalizer(analyzed_hits, "code", "gits_to_reannotate_completed_*.tsv")
+                run_normalizer(analyzed_hits, "code", "gits_to_reannotate_completed_*.tsv", force=force)
 
     # --- Stage 5: Page navigation ---
     from pipelines.page_navigation import PageNavigationStage
