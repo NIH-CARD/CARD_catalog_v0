@@ -203,9 +203,9 @@ def run_incremental_update(
 # ---------------------------------------------------------------------------
 
 def run_full_rebuild(
-    inventory: Path | None,
-    query_method: str | 'v3',
-    max_results: int | 150,
+    inventory: Path,
+    query_method: str,
+    max_results: int,
     ncbi_api_key: str | None,
     github_token: str | None,
     anthropic_key: str | None,

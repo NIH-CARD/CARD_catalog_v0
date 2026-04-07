@@ -24,7 +24,7 @@ class PubmedStage(PipelineStage):
         input_path: Path,
         output_path: Path,
         *,
-        query_method: str = "v2",
+        query_method: str = "v3",
         years: float = 3,
         max_results: int = 100,
         ncbi_api_key: str | None = None,
