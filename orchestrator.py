@@ -47,7 +47,7 @@ logger = logging.getLogger(__name__)
 def _add_file_handler(log_file: Path, verbose: bool = False) -> None:
     """Attach a file handler to the root logger."""
     log_file.parent.mkdir(parents=True, exist_ok=True)
-    handler = logging.FileHandler(log_file, mode="w", encoding="utf-8")
+    handler = logging.FileHandler(log_file, mode="a", encoding="utf-8")
     handler.setLevel(logging.DEBUG if verbose else logging.INFO)
     handler.setFormatter(logging.Formatter(
         fmt="%(asctime)s - %(name)s:%(lineno)d - %(levelname)s - %(message)s",
@@ -288,20 +288,33 @@ def run_full_rebuild(
                 run_normalizer(analyzed_hits, "code", "gits_to_reannotate_completed_*.tsv", force=force)
 
     # --- Stage 5: Page navigation ---
-    from pipelines.page_navigation import PageNavigationStage
-    nav_hits = run_stage(
-        "page_navigation", PageNavigationStage(),
-        input_path=inventory,
-        hits_pattern="new_corpus_*.tsv",
-        stage_kwargs=dict(
-            firefox_profile_dir=firefox_profile_dir,
-            anthropic_key=anthropic_key,
-            verbose=verbose,
-        ),
-        skip_stages=skip_stages,
-    )
-    if nav_hits and nav_hits.exists():
-        run_normalizer(nav_hits, "new_corpus", "new_corpus_*.tsv")
+    if "page_navigation" not in skip_stages:
+        from pipelines.page_navigation import _setup_profile, PROFILE_ENV_VAR
+        default_profile = os.path.expanduser("~/.card-catalog-firefox-profile")
+        firefox_profile_dir = firefox_profile_dir or os.getenv(PROFILE_ENV_VAR) or (
+            default_profile if Path(default_profile).exists() else None
+        )
+        if not firefox_profile_dir:
+            logger.info("No Firefox profile found — launching interactive setup...")
+            _setup_profile()
+            firefox_profile_dir = default_profile
+
+        from pipelines.page_navigation import PageNavigationStage
+        nav_hits = run_stage(
+            "page_navigation", PageNavigationStage(),
+            input_path=inventory,
+            hits_pattern="new_corpus_*.tsv",
+            stage_kwargs=dict(
+                firefox_profile_dir=firefox_profile_dir,
+                anthropic_key=anthropic_key,
+                verbose=verbose,
+                log_file=log_file,
+            ),
+            skip_stages=skip_stages,
+            force=force,
+        )
+        if nav_hits and nav_hits.exists():
+            run_normalizer(nav_hits, "new_corpus", "new_corpus_*.tsv", force=force)
 
     logger.info("=" * 60)
     logger.info("FULL REBUILD COMPLETE")
@@ -383,11 +396,16 @@ def main() -> None:
             logger.error(f"Inventory file not found: {inventory}")
             sys.exit(1)
     else:
-        inventory = _latest(TABLES_DIR, "resources-inventory-*")
-        if inventory is None:
+        import glob as _glob
+        pattern = str(TABLES_DIR / "resources-inventory-*")
+        logger.info(f"Searching for files with pattern: {pattern}")
+        matches = _glob.glob(pattern)
+        logger.info(f"Found {len(matches)} files matching pattern(s)")
+        if not matches:
             logger.error("No resources-inventory-* file found in tables/. Use --inventory.")
             sys.exit(1)
-        logger.info(f"Using inventory: {inventory.name}")
+        inventory = Path(max(matches, key=lambda x: Path(x).stat().st_mtime))
+        logger.info(f"Latest file found: {inventory}")
 
     # Resolve credentials
     ncbi_key = args.ncbi_api_key or os.getenv("NCBI_API_KEY")
