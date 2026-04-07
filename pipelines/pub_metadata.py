@@ -125,6 +125,7 @@ class PubMetadataStage(PipelineStage):
             full_document_read=True,
             semantic_retrieval=True,
             return_df_joint=True,
+            section_filter="data_availability_statement",
         )
         if datasets_raw is not None and not datasets_raw.empty:
             datasets_raw["_schema"] = "Dataset_w_Context"
