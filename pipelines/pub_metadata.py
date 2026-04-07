@@ -23,6 +23,56 @@ from pipelines.base import PipelineStage
 logger = logging.getLogger(__name__)
 
 
+
+dataset_response_schema_with_use_description_and_short = {
+    "type": "json_schema",
+    "schema": {
+        "type": "object",
+        "properties": {
+            "datasets": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "dataset_identifier": {
+                            "type": "string",
+                            "description": "A unique identifier or accession code for the dataset.",
+                            "maxLength": 64
+                        },
+                        "data_repository": {
+                            "type": "string",
+                            "description": "A valid URI or string referring to the repository where the dataset can be found.",
+                            "maxLength": 128
+                        },
+                        "dataset_context_from_paper": {
+                            "type": "string",
+                            "description": "Relevant text passages from the paper that either describe this dataset and provide context of its use or refer to it more implicitly.",
+                            "maxLength": 1024
+                        },
+                        "dataset_keywords": {
+                            "type": "string",
+                            "description": "Two or three keywords to help user understand if they want to reuse this dataset (about content and scope).",
+                            "maxLength": 128
+                        },
+                        "citation_type": {
+                            "type": "string",
+                            "description": "Type of citation used for this dataset. It can be either Primary (firsthand information collected by the researcher for a specific purpose) or Secondary (pre-existing information collected by someone else and then used by another researcher).",
+                            "maxLength": 16
+                        }
+                    },
+                    "additionalProperties": False,
+                    "required": ["dataset_identifier", "data_repository", "dataset_context_from_paper", "dataset_keywords", "citation_type"]
+                },
+                "minItems": 1,
+                "additionalProperties": False
+            }
+        },
+        "additionalProperties": False,
+        "required": ["datasets"]
+    }
+}
+
+
 class PubMetadataStage(PipelineStage):
     def run(
         self,
