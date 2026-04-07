@@ -54,8 +54,8 @@ def _add_file_handler(log_file: Path, verbose: bool = False) -> None:
         datefmt="%Y-%m-%d %H:%M:%S",
     ))
     logging.getLogger().addHandler(handler)
-    logging.getLogger("httpx").setLevel(logging.WARNING)
-    logging.getLogger("urllib3").setLevel(logging.WARNING)
+    for noisy in ("httpx", "urllib3", "httpcore", "hpack", "h2"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
     logger.info(f"Logging to file: {log_file}")
 
 

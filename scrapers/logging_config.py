@@ -27,6 +27,8 @@ def setup_logger(name: str, log_file: str = None, level: int = logging.INFO, cle
         return logger
 
     root.setLevel(logging.DEBUG)  # let handlers decide their own level
+    for noisy in ("httpx", "urllib3", "httpcore", "hpack", "h2"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
 
     # Create formatter
     formatter = logging.Formatter(
