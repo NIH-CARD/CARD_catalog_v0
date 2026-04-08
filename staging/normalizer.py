@@ -39,46 +39,46 @@ FINAL_DIR = PROJECT_ROOT / "tables" / "final"
 # These only need entries where the name differs from schema field name.
 # ---------------------------------------------------------------------------
 _RENAME: dict[str, dict[str, str]] = {
-    "publications": {
-        "Resource Name": "Resource_Name",
-        "Diseases Included": "Diseases_Included",
-        "Coarse Data Modality": "Coarse_Data_Modality",
-        "Granular Data Modality": "Granular_Data_Modality",
-        "PubMed Central Link": "PubMed_Central_Link",
-    },
-    "code": {
-        "Resource Name": "Resource_Name",
-        "Diseases Included": "Diseases_Included",
-        "Repository Link": "Repository_Link",
-        "Biomedical Relevance": "Biomedical_Relevance",
-        "Code Summary": "Code_Summary",
-        "Data Types": "Data_Types",
-    },
-    "pub_datasets": {
-        "dataset_identifier": "Dataset_Identifier",
-        "data_repository": "Data_Repository",
-        "dataset_webpage": "Dataset_Webpage",
-        "citation_type": "Citation_Type",
-        "dataset_context_from_paper": "Usage_Description",
-        "dataset_keywords": "Decision_Rationale",
-        "pub_title": "Source_Resource_Name",
-    },
-    "supplementary": {
-        "download_link": "File_URL",
-        "link": "File_Name",
-        "file_extension": "File_Extension",
-        "raw_data_format": "File_Format",
-        "description": "Keywords",
-        "pub_title": "Source_Resource_Name",
-    },
-    "new_corpus": {
-        "diseases_included": "Diseases_Included",
-        "coarse_data_modality": "Coarse_Data_Modality",
-        "granular_data_modality": "Granular_Data_Modality",
-        "sample_size": "Sample_Size",
-        "dataset_urls": "Access_URL",        # take first element of list
-        "publication_urls": "Publication_URLs",
-    },
+    # "publications": {
+    #     "Resource Name": "Resource_Name",
+    #     "Diseases Included": "Diseases_Included",
+    #     "Coarse Data Modality": "Coarse_Data_Modality",
+    #     "Granular Data Modality": "Granular_Data_Modality",
+    #     "PubMed Central Link": "PubMed_Central_Link",
+    # },
+    # "code": {
+    #     "Resource Name": "Resource_Name",
+    #     "Diseases Included": "Diseases_Included",
+    #     "Repository Link": "Repository_Link",
+    #     "Biomedical Relevance": "Biomedical_Relevance",
+    #     "Code Summary": "Code_Summary",
+    #     "Data Types": "Data_Types",
+    # },
+    # "pub_datasets": {
+    #     "dataset_identifier": "Dataset_Identifier",
+    #     "data_repository": "Data_Repository",
+    #     "dataset_webpage": "Dataset_Webpage",
+    #     "citation_type": "Citation_Type",
+    #     "dataset_context_from_paper": "Usage_Description",
+    #     "dataset_keywords": "Decision_Rationale",
+    #     "pub_title": "Source_Resource_Name",
+    # },
+    # "supplementary": {
+    #     "download_link": "File_URL",
+    #     "link": "File_Name",
+    #     "file_extension": "File_Extension",
+    #     "raw_data_format": "File_Format",
+    #     "description": "Keywords",
+    #     "pub_title": "Source_Resource_Name",
+    # },
+    # "new_corpus": {
+    #     "diseases_included": "Diseases_Included",
+    #     "coarse_data_modality": "Coarse_Data_Modality",
+    #     "granular_data_modality": "Granular_Data_Modality",
+    #     "sample_size": "Sample_Size",
+    #     "dataset_urls": "Access_URL",        # take first element of list
+    #     "publication_urls": "Publication_URLs",
+    # },
 }
 
 # ---------------------------------------------------------------------------
