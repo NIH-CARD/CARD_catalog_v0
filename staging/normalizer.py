@@ -1,14 +1,13 @@
 """
 CARD Catalog normalizer / staging layer.
 
-Converts raw hits TSV files → validated, app-ready TSVs in ``tables/final/``.
+Converts raw hits TSV files → cleaned TSVs in ``tables/final/``.
 
 Responsibilities:
 
-1. Column rename — map scraper/data_gatherer column names to schema field names
+1. Column rename — map scraper/data_gatherer column names to readable names
 2. Field normalization — semicolon-sort lists, fix PMC links, deduplicate authors
-3. Pydantic validation — invalid rows written to ``tables/hits/rejected_<name>_<ts>.tsv``
-4. Output — write ``tables/final/<target>_<ts>.tsv``
+3. Output — write ``tables/final/<target>_<ts>.tsv``
 
 Can be called programmatically (from orchestrator) or as a CLI::
 
@@ -28,9 +27,6 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
-from pydantic import ValidationError
-
-from staging.schemas import SCHEMA_REGISTRY, _Base
 
 logger = logging.getLogger(__name__)
 
@@ -63,21 +59,17 @@ _RENAME: dict[str, dict[str, str]] = {
         "data_repository": "Data_Repository",
         "dataset_webpage": "Dataset_Webpage",
         "citation_type": "Citation_Type",
-        "dataset_usage_role": "Citation_Type",       # Dataset_w_Context uses this name
-        "usage_description": "Usage_Description",
-        "results_relationship": "Results_Relationship",
-        "decision_rationale": "Decision_Rationale",
-        "dataset_scope": "Dataset_Scope",
+        "dataset_context_from_paper": "Usage_Description",
+        "dataset_keywords": "Decision_Rationale",
+        "pub_title": "Source_Resource_Name",
     },
     "supplementary": {
-        "file_url": "File_URL",
-        "file_name": "File_Name",
+        "download_link": "File_URL",
+        "link": "File_Name",
         "file_extension": "File_Extension",
-        "file_format": "File_Format",
-        "supplementary_file_keywords": "Keywords",
-        "data_repository": "Data_Repository",
-        "number_of_files": "Number_Of_Files",
-        "file_license": "File_License",
+        "raw_data_format": "File_Format",
+        "description": "Keywords",
+        "pub_title": "Source_Resource_Name",
     },
     "new_corpus": {
         "diseases_included": "Diseases_Included",
@@ -236,19 +228,15 @@ def normalize(
 
     Args:
         input_path:  Path to raw hits file (tables/hits/).
-        target:      Schema name from SCHEMA_REGISTRY.
+        target:      Normalizer target name (must be in _RENAME / _NORMALIZERS).
         output_path: Destination path (tables/final/).
 
     Returns:
         output_path if successful.
-
-    Raises:
-        KeyError if target is not in SCHEMA_REGISTRY.
     """
-    if target not in SCHEMA_REGISTRY:
-        raise KeyError(f"Unknown target '{target}'. Available: {list(SCHEMA_REGISTRY)}")
+    if target not in _NORMALIZERS:
+        raise KeyError(f"Unknown target '{target}'. Available: {list(_NORMALIZERS)}")
 
-    model_cls = SCHEMA_REGISTRY[target]
     rename_map = _RENAME.get(target, {})
     normalizer_fn = _NORMALIZERS[target]
 
@@ -264,48 +252,15 @@ def normalize(
     # Field-level normalization
     df = normalizer_fn(df)
 
-    # Pydantic validation — row by row
-    valid_rows: list[dict] = []
-    rejected_rows: list[dict] = []
+    logger.info(f"[normalizer] {target}: {len(df)} rows")
 
-    for _, row in df.iterrows():
-        row_dict = row.to_dict()
-        try:
-            validated = model_cls.model_validate(row_dict)
-            valid_rows.append(validated.model_dump())
-        except ValidationError as e:
-            row_dict["_validation_errors"] = str(e)
-            rejected_rows.append(row_dict)
-
-    logger.info(
-        f"[normalizer] {target}: {len(valid_rows)} valid, {len(rejected_rows)} rejected"
-    )
-
-    # Write rejected rows for inspection
-    if rejected_rows:
-        ts = input_path.stem.split("_")[-1]
-        rejected_path = HITS_DIR / f"rejected_{target}_{ts}.tsv"
-        pd.DataFrame(rejected_rows).to_csv(rejected_path, sep="\t", index=False)
-        logger.warning(f"Rejected rows → {rejected_path.name}")
-
-    if not valid_rows:
-        logger.warning(f"No valid rows for {target} — output not written")
+    if df.empty:
+        logger.warning(f"No rows for {target} — output not written")
         return output_path
 
-    # Rename back to app column names (spaces) and select ordered columns
-    out_df = pd.DataFrame(valid_rows)
-    # model_dump uses field names with underscores; convert back to spaced app names
-    out_df = out_df.rename(columns=lambda c: c.replace("_", " "))
-
-    # Preserve only columns defined in the schema's COLUMNS list
-    schema_cols = model_cls.COLUMNS
-    present = [c for c in schema_cols if c in out_df.columns]
-    extra = [c for c in out_df.columns if c not in schema_cols]
-    out_df = out_df[present + extra]
-
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    out_df.to_csv(output_path, sep="\t", index=False)
-    logger.info(f"{target}: wrote {len(out_df)} rows → {output_path.name}")
+    df.to_csv(output_path, sep="\t", index=False)
+    logger.info(f"{target}: wrote {len(df)} rows → {output_path.name}")
 
     # Remove older files for this target, keeping only the one just written
     stem = output_path.stem.rsplit("_", 2)[0]  # strip timestamp suffix
@@ -333,8 +288,8 @@ def _cli() -> None:
     parser.add_argument("--input", "-i", required=True, help="Input hits TSV path")
     parser.add_argument(
         "--target", "-t", required=True,
-        choices=list(SCHEMA_REGISTRY),
-        help="Target schema / output table",
+        choices=list(_NORMALIZERS),
+        help="Target normalizer (publications, code, pub_datasets, supplementary, new_corpus)",
     )
     parser.add_argument("--output", "-o", required=True, help="Output TSV path")
     args = parser.parse_args()
