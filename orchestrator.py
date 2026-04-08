@@ -296,25 +296,32 @@ def run_full_rebuild(
         )
         if not firefox_profile_dir:
             logger.info("No Firefox profile found — launching interactive setup...")
-            _setup_profile()
-            firefox_profile_dir = default_profile
+            try:
+                _setup_profile()
+                firefox_profile_dir = default_profile
+            except Exception as e:
+                logger.warning(f"Firefox profile setup failed ({e}) — skipping page_navigation")
 
-        from pipelines.page_navigation import PageNavigationStage
-        nav_hits = run_stage(
-            "page_navigation", PageNavigationStage(),
-            input_path=inventory,
-            hits_pattern="new_corpus_*.tsv",
-            stage_kwargs=dict(
-                firefox_profile_dir=firefox_profile_dir,
-                anthropic_key=anthropic_key,
-                verbose=verbose,
-                log_file=log_file,
-            ),
-            skip_stages=skip_stages,
-            force=force,
-        )
-        if nav_hits and nav_hits.exists():
-            run_normalizer(nav_hits, "new_corpus", "new_corpus_*.tsv", force=force)
+        if not firefox_profile_dir:
+            logger.warning("No Firefox profile available — skipping page_navigation. "
+                           "Run: python -m pipelines.page_navigation --setup-profile")
+        else:
+            from pipelines.page_navigation import PageNavigationStage
+            nav_hits = run_stage(
+                "page_navigation", PageNavigationStage(),
+                input_path=inventory,
+                hits_pattern="new_corpus_*.tsv",
+                stage_kwargs=dict(
+                    firefox_profile_dir=firefox_profile_dir,
+                    anthropic_key=anthropic_key,
+                    verbose=verbose,
+                    log_file=log_file,
+                ),
+                skip_stages=skip_stages,
+                force=force,
+            )
+            if nav_hits and nav_hits.exists():
+                run_normalizer(nav_hits, "new_corpus", "new_corpus_*.tsv", force=force)
 
     logger.info("=" * 60)
     logger.info("FULL REBUILD COMPLETE")

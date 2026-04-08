@@ -34,7 +34,7 @@ def _setup_profile() -> None:
     print(f"\nStarting Firefox with profile: {profile_dir}")
     print("Log in to any required portals, then close Firefox.\n")
     from data_gatherer.selenium_setup import create_driver
-    driver = create_driver(browser="Firefox", headless=False, profile_dir=profile_dir)
+    driver = create_driver(browser="Firefox", headless=False, profile_dir=profile_dir, logger=logging.getLogger("selenium_setup"))
     driver.get("about:blank")
     input("Press ENTER once you have finished logging in and closed Firefox...")
     try:
