@@ -59,3 +59,7 @@ logs/
 
 # Sphinx build output
 docs/_build/
+
+# stage files
+tables/hits/
+scrapers/batch_**jsonl
