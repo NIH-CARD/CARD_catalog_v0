@@ -10,6 +10,7 @@ research, maintained by DataTecnica for NIH CARD and NIA LNG.
    :caption: Documentation
 
    overview
+   CARD_Catalog_Schema
    getting_started
    api_reference
 

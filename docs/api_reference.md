@@ -9,7 +9,7 @@ Reference for the `pipelines/` and `staging/` Python modules.
 Entry point for the automation pipeline. Run directly as a script.
 
 ```
-python orchestrator.py {weekly|quarterly} [options]
+python orchestrator.py {update|full_rebuild} [options]
 ```
 
 ### Arguments
