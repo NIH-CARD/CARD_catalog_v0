@@ -80,25 +80,99 @@ FIREFOX_PROFILE_DIR  # path to pre-authenticated Firefox profile (page_navigatio
 Streamlit secrets: `.streamlit/secrets.toml` (template at `.streamlit/secrets.toml.template`).  
 Pipeline secrets: `scrapers/.env` (template at `scrapers/.env.template`).
 
-## Logging Rules
+## Logging
 
-Every module must have a module-level logger and emit log statements throughout:
+Every module must have a module-level logger — never `print()`.
 
 ```python
 import logging
 logger = logging.getLogger(__name__)
 ```
 
-- `logger.info()` — stage start/end, file paths written, row counts, key decisions
-- `logger.debug()` — per-item progress, intermediate values, skipped items
-- `logger.warning()` — missing optional inputs, fallback behaviour, partial failures
-- `logger.error()` — unrecoverable failures before raising or returning `None`
-- **Never use `print()`** — always use the module logger
-- Pipeline stages receive a `log_file` kwarg from the orchestrator and must forward it to subprocesses; the orchestrator writes to `logs/orchestrator_{timestamp}.log` by default
+| Level | When to use |
+|---|---|
+| `DEBUG` | Per-row / per-item detail, only useful when diagnosing |
+| `INFO` | Stage start/end, row counts, file paths written |
+| `WARNING` | Recoverable issues: missing optional fields, fallback taken, row rejected |
+| `ERROR` | Stage failed, file not found, API call failed — always include `exc_info=True` |
+
+Required INFO logs for pipeline stages: input path + row count on load, output path + row count on write, valid vs rejected counts after normalization.
+
+```python
+# Good
+logger.info(f"Loaded {len(df)} rows from {input_path.name}")
+logger.info(f"Wrote {len(out)} rows → {output_path.name}")
+logger.warning(f"{n_rejected} rows rejected — see {rejected_path.name}")
+logger.error(f"API call failed: {e}", exc_info=True)
+```
+
+Log files go in `logs/` at project root. Use `logging_config.get_default_log_file(prefix)` for new scrapers.
+
+## Docstrings
+
+Google style for all public functions, classes, and modules.
+
+```python
+def normalize(input_path: Path, target: str, output_path: Path) -> Path:
+    """Normalize a hits TSV and write a validated, app-ready TSV.
+
+    Args:
+        input_path: Path to raw hits file in tables/hits/.
+        target: Schema name from SCHEMA_REGISTRY.
+        output_path: Destination path in tables/final/.
+
+    Returns:
+        output_path if successful.
+
+    Raises:
+        KeyError: If target is not in SCHEMA_REGISTRY.
+    """
+```
+
+Skip docstrings on private helpers unless the logic is non-obvious. No docstring on `__init__` if the class docstring covers it.
+
+## Pipeline Stage Rules
+
+All stages subclass `PipelineStage` from `pipelines/base.py`. Stages are **stateless** — no instance variables, all config via `kwargs`. A stage must always return `output_path` even on failure (caller checks `.exists()`). Stages write to `tables/hits/` only; the orchestrator calls the normalizer afterward. Use `subprocess.run([...], check=True)` for scraper subprocesses and capture stderr to the logger, not the terminal.
+
+## Schemas and Validation
+
+Adding a new output table:
+
+1. Add a Pydantic model to `staging/schemas.py` subclassing `_Base`.
+2. Declare `COLUMNS: ClassVar[list[str]]` — ordered app-facing column names (spaces, not underscores).
+3. Register it in `SCHEMA_REGISTRY`.
+4. Add a rename map entry to `staging/normalizer.py::_RENAME` if scraper column names differ.
+5. Add a normalizer function to `staging/normalizer.py::_NORMALIZERS`.
+
+Use `ClassVar` for `COLUMNS` — Pydantic v2 treats plain `list[str]` class attributes as model fields.
+
+## File and Path Conventions
+
+- All paths in code are `pathlib.Path`, never bare strings.
+- Derive project root from `__file__`: `PROJECT_ROOT = Path(__file__).parent.parent`
+- Intermediate outputs → `tables/hits/<stage>_hits_<YYYYMMDD>.tsv`
+- Validated outputs → `tables/final/<target>_<YYYYMMDD>.tsv` (normalizer removes older files for the same target)
+- Log files → `logs/<scraper>_<YYYYMMDD_HHMMSS>.log`
+
+## Data Handling
+
+- Load TSVs with `dtype=str` and `.fillna("")` — all fields are strings at the boundary.
+- Multi-value fields (diseases, modalities, authors, languages) are **semicolon-delimited**. Normalize with `staging.normalizer._normalize_list_field()`.
+- Never silently drop rows — invalid rows go to `tables/hits/rejected_{target}_{ts}.tsv` with a `_validation_errors` column.
+- App data loaders use `@st.cache_data(ttl=3600)`. Add a "Clear Cache" affordance if a page introduces new loaders.
+
+## What Not To Do
+
+- **No `print()`** anywhere in pipeline or app code.
+- **No hardcoded API keys or paths** — always read from env vars or `config.py`.
+- **No writing to `tables/final/` from a stage** — only the normalizer writes there.
+- **No adding columns to Pydantic models without updating `COLUMNS`** — the normalizer uses `COLUMNS` to order output.
+- **No speculative abstractions** — add helpers when needed, not for hypothetical future tables.
+- **No backwards-compatibility shims** — if a column is renamed, update `_RENAME` and move on.
 
 ## Gotchas
 
-- **Orchestrator modes are `update` / `full_rebuild`** — the api_reference.md incorrectly says `weekly`/`quarterly`.
 - **Page 4 (Datasets & Supplementary) is an empty file** — pipeline produces the TSVs, schemas exist, data_loader can load them, but the Streamlit page has not been implemented yet.
 - **`data_gatherer` is a DataTecnica internal package** — not on PyPI; required by `pub_metadata` and `page_navigation`. Install from the internal repo before running those stages.
 - **Normalizer auto-deletes old files for the same target** — running normalize twice for `publications` keeps only the latest `pubmed_central_*.tsv` in `tables/final/`.
