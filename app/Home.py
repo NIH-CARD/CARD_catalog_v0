@@ -15,7 +15,8 @@ sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.append(str(Path(__file__).parent))
 
 from scrapers.logging_config import setup_logger
-logger = setup_logger("", log_file="app/card_catalog_app.log", clear=True)
+(PROJECT_ROOT / "logs").mkdir(exist_ok=True)
+logger = setup_logger("", log_file=str(PROJECT_ROOT / "logs" / "card_catalog_app.log"), clear=True)
 
 from config import PAGE_CONFIG, COLORS, LOGOS_DIR
 

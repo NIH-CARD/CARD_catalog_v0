@@ -352,15 +352,15 @@ def build_search_query_v3(study_name: str, abbreviation: str, diseases: str, dat
     return final_query
 
 
-def search_pubmed(study_name: str, abbreviation: str, diseases: str, search_data_modalities: str, max_results: int = 100, ncbi_api_key_suffix: str = "", query_method: str = "original") -> List[Dict]:
+def search_pubmed(study_name: str, abbreviation: str, diseases: str, search_data_modalities: str, max_results: int = 100, ncbi_api_key_suffix: str = "", query_method: str = "original", years: float = 3) -> List[Dict]:
     """Search PubMed for articles related to the study"""
     # Build search query
     if query_method == "v2":
-        query = build_search_query_v2(study_name, abbreviation, diseases, search_data_modalities)
+        query = build_search_query_v2(study_name, abbreviation, diseases, search_data_modalities, years=years)
     elif query_method == "v3":
-        query = build_search_query_v3(study_name, abbreviation, diseases, search_data_modalities)
+        query = build_search_query_v3(study_name, abbreviation, diseases, search_data_modalities, years=years)
     else:
-        query = build_search_query(study_name, abbreviation, diseases, search_data_modalities)
+        query = build_search_query(study_name, abbreviation, diseases, search_data_modalities, years=years)
 
     # Search PubMed (URL-encode the query to handle &, parentheses, etc.)
     base_url = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi'
@@ -437,8 +437,8 @@ def search_pubmed(study_name: str, abbreviation: str, diseases: str, search_data
 
 def main():
     parser = argparse.ArgumentParser(description='Scrape PubMed for publications related to neurodegenerative disease studies')
-    parser.add_argument('--input', '-i', default='../tables/dataset-inventory-June_20_2025.tab',
-                       help='Input TSV file with study inventory (default: ../tables/dataset-inventory-June_20_2025.tab)')
+    parser.add_argument('--input', '-i', default='../tables/resources-inventory-June_20_2025.tab',
+                       help='Input TSV file with study inventory (default: ../tables/resources-inventory-June_20_2025.tab)')
     parser.add_argument('--output', '-o', default=None,
                        help='Output TSV file (default: pubmed_central_{timestamp}.tsv)')
     parser.add_argument('--max-results', '-m', type=int, default=100,
@@ -458,6 +458,8 @@ def main():
                             'terms; "v2" uses [tiab] with no disease/modality terms; '
                             '"v3" uses [tiab] + disease + modality terms (v2 precision + original recall) '
                             '(default: original)')
+    parser.add_argument('--years', type=float, default=3,
+                       help='Date range in years to search back from today (default: 3, use 0.02 for ~7 days)')
 
     args = parser.parse_args()
 
@@ -509,7 +511,7 @@ def main():
         search_data_modalities = ", ".join(coarse + granular)
 
         logger.info(f"[{idx+1}/{len(studies_df)}] Searching for publications: {study_name} ({abbreviation})")
-        results = search_pubmed(study_name, abbreviation, diseases, search_data_modalities, args.max_results, ncbi_api_key_suffix, args.query_method)
+        results = search_pubmed(study_name, abbreviation, diseases, search_data_modalities, args.max_results, ncbi_api_key_suffix, args.query_method, args.years)
         # For each result, the Coarse and Granular Data Modalities should be included from the from the study metadata
         results = [{**r, "Coarse Data Modality": row.get("Coarse Data Modality", ""), "Granular Data Modality": row.get("Granular Data Modality", "")} for r in results]
         all_results.extend(results)

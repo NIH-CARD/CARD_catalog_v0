@@ -524,7 +524,7 @@ def main():
     # Set up paths
     script_dir = os.path.dirname(os.path.abspath(__file__))
     log_dir = script_dir
-    dataset_file = os.path.join(script_dir, '..', 'tables', 'dataset-inventory-June_20_2025.tab')
+    dataset_file = os.path.join(script_dir, '..', 'tables', 'resources-inventory-June_20_2025.tab')
 
     # Parse batch logs
     print("\n" + "="*80, file=sys.stderr)

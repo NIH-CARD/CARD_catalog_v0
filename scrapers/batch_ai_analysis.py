@@ -329,7 +329,7 @@ def merge_results_into_dataframe(input_df: pd.DataFrame, parsed_results: Dict[st
     return df
 
 def main():
-    parser = argparse.ArgumentParser(description='Batch AI analysis for GitHub repositories using Anthropic Batch API')
+    parser = argparse.ArgumentParser(description='Batch AI analysis for GitHub repositories using Anthropic/OpenAI Batch API')
     parser.add_argument('--input', '-i', required=True,
                        help='Input TSV file from scrape_github.py --batch-call-ai')
     parser.add_argument('--output', '-o', default=None,

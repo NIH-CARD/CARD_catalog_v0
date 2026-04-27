@@ -19,37 +19,44 @@ def setup_logger(name: str, log_file: str = None, level: int = logging.INFO, cle
     Returns:
         Configured logger instance
     """
+    root = logging.getLogger()
     logger = logging.getLogger(name)
-    logger.setLevel(level)
-    
-    # Avoid duplicate handlers if logger already exists
-    if logger.handlers:
+
+    # Avoid duplicate handlers if already configured
+    if root.handlers:
         return logger
-    
+
+    root.setLevel(logging.DEBUG)  # let handlers decide their own level
+    for noisy in ("httpx", "urllib3", "httpcore", "hpack", "h2"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
+
     # Create formatter
     formatter = logging.Formatter(
         fmt='%(asctime)s - %(name)s:%(lineno)d - %(levelname)s - %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
     )
-    
+
     # Console handler (stderr)
     console_handler = logging.StreamHandler(sys.stderr)
     console_handler.setLevel(level)
     console_handler.setFormatter(formatter)
-    logger.addHandler(console_handler)
-    
+    root.addHandler(console_handler)
+
     # File handler (optional)
     if log_file:
         mode = 'w' if clear else 'a'
         file_handler = logging.FileHandler(log_file, mode=mode, encoding='utf-8')
         file_handler.setLevel(logging.DEBUG)  # Always log everything to file
         file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
-    
+        root.addHandler(file_handler)
+
     return logger
 
 
 def get_default_log_file(prefix: str = "scraper") -> str:
-    """Generate a timestamped log filename"""
+    """Generate a timestamped log filename in the project logs/ directory."""
+    import os
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    return f"{prefix}_{timestamp}.log"
+    logs_dir = os.path.join(os.path.dirname(__file__), "..", "logs")
+    os.makedirs(logs_dir, exist_ok=True)
+    return os.path.join(logs_dir, f"{prefix}_{timestamp}.log")

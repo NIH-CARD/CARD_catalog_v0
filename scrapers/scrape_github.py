@@ -74,7 +74,9 @@ class FAIRComplianceLogger:
             'has_version_info': 0,
             'has_dependencies': 0
         }
-        self.output_file = output_file or f"fair_compliance_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.tsv"
+        hits_dir = os.path.join(os.path.dirname(__file__), "..", "tables", "hits")
+        os.makedirs(hits_dir, exist_ok=True)
+        self.output_file = output_file or os.path.join(hits_dir, f"fair_compliance_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.tsv")
 
     def log_issue(self, repo_url: str, study_name: str, issue_type: str, details: str):
         """Log a FAIR compliance issue"""
@@ -654,8 +656,8 @@ def search_github_with_query(query: str, study_name: str, abbreviation: str, dis
 def main():
     logger.debug("Starting main function")
     parser = argparse.ArgumentParser(description='Scrape GitHub for code repositories related to neurodegenerative disease studies')
-    parser.add_argument('--input', '-i', default='../tables/dataset-inventory-June_20_2025.tab',
-                       help='Input TSV file with study inventory (default: ../tables/dataset-inventory-June_20_2025.tab)')
+    parser.add_argument('--input', '-i', default='../tables/resources-inventory-June_20_2025.tab',
+                       help='Input TSV file with study inventory (default: ../tables/resources-inventory-June_20_2025.tab)')
     parser.add_argument('--output', '-o', default=None,
                        help='Output TSV file (default: gits_to_reannotate_completed_{timestamp}.tsv)')
     parser.add_argument('--start', '-s', type=int, default=0,

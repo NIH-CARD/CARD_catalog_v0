@@ -530,7 +530,7 @@ def main():
         │   └── secrets.toml.template      # Template (safe to commit)
         │
         ├── tables/                        # Data files
-        │   ├── dataset-inventory-*.tab
+        │   ├── resources-inventory-*.tab
         │   ├── pubmed_central_*.tsv
         │   ├── gits_to_reannotate_*.tsv
         │   └── iNDI_inventory_*.tab

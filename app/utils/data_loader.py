@@ -14,21 +14,28 @@ import unicodedata
 
 import sys
 sys.path.append(str(Path(__file__).parent.parent))
-from config import TABLES_DIR, SCRAPERS_DIR, DATA_FILES_PTRS, FAIR_LOG_PATTERN
+from config import TABLES_DIR, SCRAPERS_DIR, HITS_DIR, DATA_FILES_PTRS, FAIR_LOG_PATTERN
 
 logger = logging.getLogger(__name__)
 
 current_dir = Path.cwd()
 
 def get_latest_file(pattern, directory=''):
-    """Load the most recent file matching pattern."""
-    logger.info(f"Looking for files in {directory} matching {pattern}")
-    search_path = Path(directory) / pattern
-    logger.info(f"Searching for files with pattern: {search_path}")
-    files = glob.glob(str(search_path))
-    logger.info(f"Found {len(files)} files matching pattern")
+    """Load the most recent file matching pattern.
+
+    pattern may be a single glob string or a list of glob strings.
+    When a list is given, all patterns are searched and the most recently
+    modified file across all of them is returned.
+    """
+    patterns = pattern if isinstance(pattern, list) else [pattern]
+    files = []
+    for p in patterns:
+        search_path = Path(directory) / p
+        logger.info(f"Searching for files with pattern: {search_path}")
+        files.extend(glob.glob(str(search_path)))
+    logger.info(f"Found {len(files)} files matching pattern(s)")
     if not files:
-        raise FileNotFoundError(f"No files found matching pattern: {search_path}")
+        raise FileNotFoundError(f"No files found matching pattern(s): {patterns} in {directory}")
     latest_file = max(files, key=lambda x: Path(x).stat().st_mtime)
     logger.info(f"Latest file found: {latest_file}")
     assert str(latest_file).endswith(".tsv") or str(latest_file).endswith(".tab"), f"Expected a .tsv / .tab file, got: {latest_file}"
@@ -205,14 +212,17 @@ def load_publications() -> pd.DataFrame:
 @st.cache_data(ttl=3600)
 def load_fair_compliance() -> pd.DataFrame:
     """
-    Load FAIR compliance logs from scrapers directory.
-    Merges all FAIR compliance log files.
+    Load FAIR compliance logs from tables/hits/ directory.
 
     Returns:
         DataFrame with FAIR compliance information
     """
-    pattern = str(SCRAPERS_DIR / FAIR_LOG_PATTERN)
+    # Check hits/ first (v1 pipeline), fall back to scrapers/ for legacy v0 files
+    pattern = str(HITS_DIR / FAIR_LOG_PATTERN)
     fair_files = glob.glob(pattern)
+    if not fair_files:
+        pattern = str(SCRAPERS_DIR / FAIR_LOG_PATTERN)
+        fair_files = glob.glob(pattern)
     logger.info(f"Loading FAIR compliance logs: found {len(fair_files)} files matching {pattern}")
 
     if not fair_files:
@@ -263,6 +273,54 @@ def load_indi_inventory() -> pd.DataFrame:
     except Exception as e:
         logger.error(f"Error loading iNDI inventory: {e}", exc_info=True)
         st.error(f"Error loading iNDI inventory: {e}")
+        return pd.DataFrame()
+
+
+@st.cache_data(ttl=3600)
+def load_pub_datasets() -> pd.DataFrame:
+    """Load publication-referenced datasets from tables/final/.
+
+    Returns:
+        DataFrame with dataset reference information.
+    """
+    logger.info("Loading publication datasets...")
+    try:
+        file_path = get_latest_file(DATA_FILES_PTRS["pub_datasets"], TABLES_DIR)
+    except FileNotFoundError:
+        logger.warning("No pub_datasets file found")
+        return pd.DataFrame()
+
+    try:
+        df = pd.read_csv(file_path, sep="\t", dtype=str, encoding="utf-8").fillna("")
+        df.columns = df.columns.str.strip()
+        logger.info(f"Pub datasets loaded: {len(df)} rows from {file_path.name}")
+        return df
+    except Exception as e:
+        logger.error(f"Error loading pub datasets: {e}", exc_info=True)
+        return pd.DataFrame()
+
+
+@st.cache_data(ttl=3600)
+def load_pub_supplementary() -> pd.DataFrame:
+    """Load publication supplementary file records from tables/final/.
+
+    Returns:
+        DataFrame with supplementary file metadata.
+    """
+    logger.info("Loading supplementary files...")
+    try:
+        file_path = get_latest_file(DATA_FILES_PTRS["pub_supplementary"], TABLES_DIR)
+    except FileNotFoundError:
+        logger.warning("No pub_supplementary file found")
+        return pd.DataFrame()
+
+    try:
+        df = pd.read_csv(file_path, sep="\t", dtype=str, encoding="utf-8").fillna("")
+        df.columns = df.columns.str.strip()
+        logger.info(f"Supplementary files loaded: {len(df)} rows from {file_path.name}")
+        return df
+    except Exception as e:
+        logger.error(f"Error loading supplementary files: {e}", exc_info=True)
         return pd.DataFrame()
 
 
