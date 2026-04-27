@@ -276,6 +276,54 @@ def load_indi_inventory() -> pd.DataFrame:
         return pd.DataFrame()
 
 
+@st.cache_data(ttl=3600)
+def load_pub_datasets() -> pd.DataFrame:
+    """Load publication-referenced datasets from tables/final/.
+
+    Returns:
+        DataFrame with dataset reference information.
+    """
+    logger.info("Loading publication datasets...")
+    try:
+        file_path = get_latest_file(DATA_FILES_PTRS["pub_datasets"], TABLES_DIR)
+    except FileNotFoundError:
+        logger.warning("No pub_datasets file found")
+        return pd.DataFrame()
+
+    try:
+        df = pd.read_csv(file_path, sep="\t", dtype=str, encoding="utf-8").fillna("")
+        df.columns = df.columns.str.strip()
+        logger.info(f"Pub datasets loaded: {len(df)} rows from {file_path.name}")
+        return df
+    except Exception as e:
+        logger.error(f"Error loading pub datasets: {e}", exc_info=True)
+        return pd.DataFrame()
+
+
+@st.cache_data(ttl=3600)
+def load_pub_supplementary() -> pd.DataFrame:
+    """Load publication supplementary file records from tables/final/.
+
+    Returns:
+        DataFrame with supplementary file metadata.
+    """
+    logger.info("Loading supplementary files...")
+    try:
+        file_path = get_latest_file(DATA_FILES_PTRS["pub_supplementary"], TABLES_DIR)
+    except FileNotFoundError:
+        logger.warning("No pub_supplementary file found")
+        return pd.DataFrame()
+
+    try:
+        df = pd.read_csv(file_path, sep="\t", dtype=str, encoding="utf-8").fillna("")
+        df.columns = df.columns.str.strip()
+        logger.info(f"Supplementary files loaded: {len(df)} rows from {file_path.name}")
+        return df
+    except Exception as e:
+        logger.error(f"Error loading supplementary files: {e}", exc_info=True)
+        return pd.DataFrame()
+
+
 def normalize_list_field(field: str, delimiter: str = ";", split_delimiters: List[str] = None) -> str:
     """
     Normalize a delimited list field by:
