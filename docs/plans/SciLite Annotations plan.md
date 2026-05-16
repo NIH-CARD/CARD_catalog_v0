@@ -15,16 +15,17 @@ The current process does not take into account false negatives, i.e. when an ann
 Billions of annotations present.
 
 ### Schema Desiderata
-Metadata element                                Requirement for indexing
-Preprint identifier (Crossref DOI required)     Essential
-Preprint title                                  Essential
-Author names                                    Essential
-Abstracts                                       Essential
-Publication date                                Essential
-Author affiliations                             Desired
-Links to peer-reviewed versions                 Desired
-Licencing                                       Desired
-Funding                                         Desired
-Version information                             Desired
-Withdrawal / removal status                     Desired
-
+  | Metadata element | Requirement for indexing |
+  |---|---|
+  | Preprint identifier (Crossref DOI required) | Essential |
+  | Preprint title | Essential |
+  | Author names | Essential |
+  | Abstracts | Essential |
+  | Publication date | Essential |
+  | Author affiliations | Desired |
+  | Links to peer-reviewed versions | Desired |
+  | Licencing | Desired |
+  | Funding | Desired |
+  | Version information | Desired |
+  | Withdrawal / removal status | Desired |
+  │ Withdrawal / removal status                 │ Desired                  │
