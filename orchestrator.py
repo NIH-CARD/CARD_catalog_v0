@@ -71,13 +71,12 @@ def _latest(directory: Path, pattern: str) -> Path | None:
 
 
 def _today_file(directory: Path, pattern: str) -> Path | None:
-    """Return a file matching pattern that was last modified today, if any."""
-    today = date.today().isoformat()
-    for f in sorted(directory.glob(pattern), key=lambda p: p.stat().st_mtime, reverse=True):
-        if today in f.name or f.stat().st_mtime >= datetime.combine(date.today(), datetime.min.time()).timestamp():
-            return f
-    return None
-
+      today = date.today().strftime("%Y%m%d")   # was .isoformat()
+      today_midnight = datetime.combine(date.today(), datetime.min.time()).timestamp()
+      for f in sorted(directory.glob(pattern), key=lambda p: p.stat().st_mtime, reverse=True):
+          if today in f.name or f.stat().st_mtime >= today_midnight:
+              return f
+      return None
 
 def _ts() -> str:
     return datetime.now().strftime("%Y%m%d_%H%M%S")

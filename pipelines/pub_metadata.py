@@ -82,6 +82,7 @@ class PubMetadataStage(PipelineStage):
         anthropic_key: str | None = None,
         verbose: bool = False,
         log_file: Path | None = None,
+        targets: tuple[str, ...] = ("datasets", "supplementary"),
     ) -> Path:
         from data_gatherer.data_gatherer import DataGatherer
         from data_gatherer.llm.response_schema import (
@@ -116,38 +117,40 @@ class PubMetadataStage(PipelineStage):
         log_file_str = str(log_file) if log_file else None
 
         # --- Dataset mentions ---
-        logger.info("extracting dataset mentions")
-        dg = DataGatherer(llm_name="claude-haiku-4-5", log_level=log_level, log_file_override=log_file_str, clear_previous_logs=False)
-        datasets_raw = dg.process_articles(
-            pmc_links,
-            response_format=dataset_response_schema_with_use_description_and_short,
-            prompt_name="CLAUDE_FDR_FewShot_shortDescr",
-            full_document_read=True,
-            semantic_retrieval=True,
-            return_df_joint=True,
-            section_filter="data_availability_statement",
-        )
-        if datasets_raw is not None and not datasets_raw.empty:
-            datasets_raw["_schema"] = "Dataset_w_Context"
-            datasets_raw.to_csv(output_path, sep="\t", index=False)
-            logger.info(f"Datasets → {output_path.name} ({len(datasets_raw)} rows)")
-        else:
-            logger.warning("No dataset mentions found")
+        if "datasets" in targets:
+            logger.info("extracting dataset mentions")
+            dg = DataGatherer(llm_name="claude-haiku-4-5", log_level=log_level, log_file_override=log_file_str, clear_previous_logs=False)
+            datasets_raw = dg.process_articles(
+                pmc_links,
+                response_format=dataset_response_schema_with_use_description_and_short,
+                prompt_name="CLAUDE_FDR_FewShot_shortDescr",
+                full_document_read=True,
+                semantic_retrieval=True,
+                return_df_joint=True,
+                section_filter="data_availability_statement",
+            )
+            if datasets_raw is not None and not datasets_raw.empty:
+                datasets_raw["_schema"] = "Dataset_w_Context"
+                datasets_raw.to_csv(output_path, sep="\t", index=False)
+                logger.info(f"Datasets → {output_path.name} ({len(datasets_raw)} rows)")
+            else:
+                logger.warning("No dataset mentions found")
 
         # --- Supplementary files ---
-        logger.info("Extracting supplementary file mentions")
-        dg_supp = DataGatherer(llm_name="claude-haiku-4-5", log_level=log_level, log_file_override=log_file_str, clear_previous_logs=False)
-        supp_raw = dg_supp.process_articles(
-            pmc_links,
-            response_format=supplementary_files_keywords_schema,
-            section_filter="supplementary_material",
-            return_df_joint=True,
-        )
-        if supp_raw is not None and not supp_raw.empty:
-            supp_raw["_schema"] = "SupplementaryFileKeywords"
-            supp_raw.to_csv(supp_path, sep="\t", index=False)
-            logger.info(f"Supplementary → {supp_path.name} ({len(supp_raw)} rows)")
-        else:
-            logger.warning("No supplementary file mentions found")
+        if "supplementary" in targets:
+            logger.info("Extracting supplementary file mentions")
+            dg_supp = DataGatherer(llm_name="claude-haiku-4-5", log_level=log_level, log_file_override=log_file_str, clear_previous_logs=False)
+            supp_raw = dg_supp.process_articles(
+                pmc_links,
+                response_format=supplementary_files_keywords_schema,
+                section_filter="supplementary_material",
+                return_df_joint=True,
+            )
+            if supp_raw is not None and not supp_raw.empty:
+                supp_raw["_schema"] = "SupplementaryFileKeywords"
+                supp_raw.to_csv(supp_path, sep="\t", index=False)
+                logger.info(f"Supplementary → {supp_path.name} ({len(supp_raw)} rows)")
+            else:
+                logger.warning("No supplementary file mentions found")
 
         return output_path
