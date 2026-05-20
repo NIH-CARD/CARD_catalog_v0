@@ -4,6 +4,7 @@ import { Chips } from "../components/Chips";
 import { DataTable } from "../components/DataTable";
 import { FilterRail } from "../components/FilterRail";
 import { GraphControls, buildEdgeFields } from "../components/GraphControls";
+import { InfoList } from "../components/HoverInfo";
 import { KnowledgeGraph } from "../components/KnowledgeGraph";
 import { PageShell } from "../components/PageShell";
 import { matchesFacet, matchesQuery } from "../lib/filter";
@@ -43,7 +44,7 @@ export function ResourcesPage() {
   ]);
   const [minShared, setMinShared] = useState(1);
   const [maxNodes, setMaxNodes] = useState(60);
-  const [hideDisconnected, setHideDisconnected] = useState(false);
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     loadResources().then(setRows).catch((e: Error) => setError(e.message));
@@ -164,8 +165,8 @@ export function ResourcesPage() {
                 onMinSharedChange={setMinShared}
                 maxNodes={maxNodes}
                 onMaxNodesChange={setMaxNodes}
-                hideDisconnected={hideDisconnected}
-                onHideDisconnectedChange={setHideDisconnected}
+                showAll={showAll}
+                onShowAllChange={setShowAll}
               />
               <KnowledgeGraph<Resource>
                 rows={filtered}
@@ -173,7 +174,21 @@ export function ResourcesPage() {
                 edgeFields={buildEdgeFields(GRAPH_FIELD_OPTIONS, edgeSelected)}
                 minShared={minShared}
                 maxNodes={maxNodes}
-                hideDisconnected={hideDisconnected}
+                hideDisconnected={!showAll}
+                nodeInfo={(r) => (
+                  <InfoList
+                    rows={[
+                      { label: "Resource", value: r["Resource Name"] },
+                      { label: "Abbrev", value: r.Abbreviation },
+                      { label: "Type", value: r["Resource Type"] },
+                      { label: "Diseases", value: r["Diseases Included"] },
+                      { label: "Coarse modality", value: r["Coarse Data Modality"] },
+                      { label: "Granular modality", value: r["Granular Data Modality"] },
+                      { label: "Sample size", value: r["Sample Size"] },
+                      { label: "FAIR notes", value: r["FAIR Compliance Notes"] },
+                    ]}
+                  />
+                )}
               />
             </>
           )}

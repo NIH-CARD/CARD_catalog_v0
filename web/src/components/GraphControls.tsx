@@ -14,8 +14,8 @@ interface Props<T> {
   onMinSharedChange: (n: number) => void;
   maxNodes: number;
   onMaxNodesChange: (n: number) => void;
-  hideDisconnected: boolean;
-  onHideDisconnectedChange: (v: boolean) => void;
+  showAll: boolean;
+  onShowAllChange: (v: boolean) => void;
 }
 
 export function GraphControls<T>({
@@ -26,8 +26,8 @@ export function GraphControls<T>({
   onMinSharedChange,
   maxNodes,
   onMaxNodesChange,
-  hideDisconnected,
-  onHideDisconnectedChange,
+  showAll,
+  onShowAllChange,
 }: Props<T>) {
   const toggle = (field: keyof T & string) => {
     if (selected.includes(field)) {
@@ -96,11 +96,11 @@ export function GraphControls<T>({
       <label className="inline-flex items-center gap-2 text-slate-700 pb-1.5">
         <input
           type="checkbox"
-          checked={hideDisconnected}
-          onChange={(e) => onHideDisconnectedChange(e.target.checked)}
+          checked={showAll}
+          onChange={(e) => onShowAllChange(e.target.checked)}
           className="accent-accent"
         />
-        Hide disconnected
+        Disconnected Nodes Visibility
       </label>
     </div>
   );

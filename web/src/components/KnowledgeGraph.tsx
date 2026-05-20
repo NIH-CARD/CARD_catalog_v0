@@ -1,12 +1,54 @@
-import { useMemo } from "react";
+import { useMemo, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import ReactFlow, {
   Background,
   Controls,
+  Handle,
+  Position,
   type Edge,
   type Node,
+  type NodeProps,
+  type NodeTypes,
 } from "reactflow";
 import "reactflow/dist/style.css";
+import { HoverInfo, InfoList } from "./HoverInfo";
 import { splitMulti } from "../lib/loadPublications";
+
+interface EdgeShared {
+  field: string;
+  values: string[];
+}
+interface EdgeData {
+  shared: number;
+  sharedByField: EdgeShared[];
+  sourceLabel: string;
+  targetLabel: string;
+}
+
+interface CardNodeData {
+  label: string;
+  info?: ReactNode;
+}
+
+function CardNode({ data }: NodeProps<CardNodeData>) {
+  const body = (
+    <div
+      className="px-2 py-1 text-[11px] bg-white border border-slate-300 rounded text-center break-words"
+      style={{ width: 160 }}
+    >
+      {data.label}
+    </div>
+  );
+  return (
+    <>
+      <Handle type="target" position={Position.Top} className="!opacity-0" />
+      {data.info ? <HoverInfo content={data.info}>{body}</HoverInfo> : body}
+      <Handle type="source" position={Position.Bottom} className="!opacity-0" />
+    </>
+  );
+}
+
+const NODE_TYPES: NodeTypes = { card: CardNode };
 
 export interface EdgeField<T> {
   field: keyof T & string;
@@ -23,8 +65,10 @@ interface Props<T> {
   minShared?: number;
   /** Cap on nodes to keep the layout legible. */
   maxNodes?: number;
-  /** Drop nodes that have zero edges after thresholding. */
+  /** Drop nodes that have zero edges after thresholding. Defaults to true. */
   hideDisconnected?: boolean;
+  /** Optional per-row content rendered in a popover on node hover. */
+  nodeInfo?: (row: T) => ReactNode;
 }
 
 /**
@@ -39,6 +83,7 @@ export function KnowledgeGraph<T>({
   minShared = 1,
   maxNodes = 60,
   hideDisconnected = true,
+  nodeInfo,
 }: Props<T>) {
   const { nodes, edges, totalCandidates } = useMemo(() => {
     const sliced = rows.slice(0, maxNodes);
@@ -54,16 +99,27 @@ export function KnowledgeGraph<T>({
       ),
     );
 
-    const pairs: { i: number; j: number; shared: number }[] = [];
+    const pairs: {
+      i: number;
+      j: number;
+      shared: number;
+      sharedByField: EdgeShared[];
+    }[] = [];
     const degree = new Array<number>(N).fill(0);
     for (let i = 0; i < N; i++) {
       for (let j = i + 1; j < N; j++) {
         let shared = 0;
+        const sharedByField: EdgeShared[] = [];
         for (let f = 0; f < edgeFields.length; f++) {
-          for (const v of sets[i][f]) if (sets[j][f].has(v)) shared++;
+          const overlap: string[] = [];
+          for (const v of sets[i][f]) if (sets[j][f].has(v)) overlap.push(v);
+          if (overlap.length) {
+            shared += overlap.length;
+            sharedByField.push({ field: String(edgeFields[f].field), values: overlap });
+          }
         }
         if (shared >= minShared) {
-          pairs.push({ i, j, shared });
+          pairs.push({ i, j, shared, sharedByField });
           degree[i]++;
           degree[j]++;
         }
@@ -81,26 +137,30 @@ export function KnowledgeGraph<T>({
       const r = sliced[origIdx];
       return {
         id: String(origIdx),
-        data: { label: String((r[nodeField] ?? "") || `#${origIdx}`) },
+        type: "card",
+        data: {
+          label: String((r[nodeField] ?? "") || `#${origIdx}`),
+          info: nodeInfo ? nodeInfo(r) : undefined,
+        },
         position: {
           x: R * Math.cos((2 * Math.PI * layoutIdx) / Math.max(V, 1)),
           y: R * Math.sin((2 * Math.PI * layoutIdx) / Math.max(V, 1)),
         },
-        style: {
-          fontSize: 11,
-          padding: 6,
-          borderRadius: 6,
-          background: "#fff",
-          border: "1px solid #cbd5e1",
-          width: 160,
-        },
       };
     });
 
-    const es: Edge[] = pairs.map(({ i, j, shared }) => ({
+    const labelFor = (idx: number) =>
+      String((sliced[idx][nodeField] ?? "") || `#${idx}`);
+    const es: Edge<EdgeData>[] = pairs.map(({ i, j, shared, sharedByField }) => ({
       id: `${i}-${j}`,
       source: String(i),
       target: String(j),
+      data: {
+        shared,
+        sharedByField,
+        sourceLabel: labelFor(i),
+        targetLabel: labelFor(j),
+      },
       style: {
         stroke: "#94a3b8",
         strokeOpacity: Math.min(0.7, 0.2 + shared * 0.1),
@@ -108,19 +168,55 @@ export function KnowledgeGraph<T>({
     }));
 
     return { nodes: ns, edges: es, totalCandidates: N };
-  }, [rows, nodeField, edgeFields, minShared, maxNodes, hideDisconnected]);
+  }, [rows, nodeField, edgeFields, minShared, maxNodes, hideDisconnected, nodeInfo]);
+
+  const [hoverEdge, setHoverEdge] = useState<EdgeData | null>(null);
+  const [hoverPos, setHoverPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   return (
     <div className="h-[calc(100vh-16rem)] border border-slate-200 rounded bg-white">
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        nodeTypes={NODE_TYPES}
         fitView
         proOptions={{ hideAttribution: true }}
+        onEdgeMouseEnter={(evt, edge) => {
+          if (!edge.data) return;
+          setHoverEdge(edge.data as EdgeData);
+          setHoverPos({ x: evt.clientX, y: evt.clientY });
+        }}
+        onEdgeMouseMove={(evt) => {
+          setHoverPos({ x: evt.clientX, y: evt.clientY });
+        }}
+        onEdgeMouseLeave={() => setHoverEdge(null)}
       >
         <Background gap={20} />
         <Controls />
       </ReactFlow>
+      {hoverEdge &&
+        createPortal(
+          <div
+            className="fixed z-50 max-w-md bg-white border border-slate-200 shadow-lg rounded p-3 text-xs text-slate-700 pointer-events-none"
+            style={{ top: hoverPos.y + 12, left: hoverPos.x + 12 }}
+          >
+            <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-1">
+              Connection ({hoverEdge.shared} shared)
+            </div>
+            <div className="mb-2 text-slate-700">
+              <span className="font-medium">{hoverEdge.sourceLabel}</span>
+              <span className="mx-1 text-slate-400">↔</span>
+              <span className="font-medium">{hoverEdge.targetLabel}</span>
+            </div>
+            <InfoList
+              rows={hoverEdge.sharedByField.map((f) => ({
+                label: f.field,
+                value: f.values.join("; "),
+              }))}
+            />
+          </div>,
+          document.body,
+        )}
       <div className="text-xs text-slate-500 px-3 py-1 flex items-center justify-between">
         <span>
           {nodes.length} nodes, {edges.length} edges

@@ -5,6 +5,7 @@ import { Chips } from "../components/Chips";
 import { DataTable } from "../components/DataTable";
 import { FilterRail } from "../components/FilterRail";
 import { GraphControls, buildEdgeFields } from "../components/GraphControls";
+import { InfoList } from "../components/HoverInfo";
 import { KnowledgeGraph } from "../components/KnowledgeGraph";
 import { PageShell } from "../components/PageShell";
 import { matchesFacet, matchesQuery } from "../lib/filter";
@@ -104,7 +105,7 @@ export function PublicationsPage() {
   ]);
   const [minShared, setMinShared] = useState(1);
   const [maxNodes, setMaxNodes] = useState(60);
-  const [hideDisconnected, setHideDisconnected] = useState(false);
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     loadPublications().then(setPubs).catch((e: Error) => setError(e.message));
@@ -268,8 +269,8 @@ export function PublicationsPage() {
                 onMinSharedChange={setMinShared}
                 maxNodes={maxNodes}
                 onMaxNodesChange={setMaxNodes}
-                hideDisconnected={hideDisconnected}
-                onHideDisconnectedChange={setHideDisconnected}
+                showAll={showAll}
+                onShowAllChange={setShowAll}
               />
               <KnowledgeGraph<Publication>
                 rows={filtered}
@@ -277,7 +278,19 @@ export function PublicationsPage() {
                 edgeFields={buildEdgeFields(GRAPH_FIELD_OPTIONS, edgeSelected)}
                 minShared={minShared}
                 maxNodes={maxNodes}
-                hideDisconnected={hideDisconnected}
+                hideDisconnected={!showAll}
+                nodeInfo={(p) => (
+                  <InfoList
+                    rows={[
+                      { label: "Title", value: p.Title },
+                      { label: "Study", value: p["Resource Name"] },
+                      { label: "PMID", value: p.PMID },
+                      { label: "Diseases", value: p["Diseases Included"] },
+                      { label: "Coarse modality", value: p["Coarse Data Modality"] },
+                      { label: "Authors", value: p.Authors },
+                    ]}
+                  />
+                )}
               />
             </>
           )}
