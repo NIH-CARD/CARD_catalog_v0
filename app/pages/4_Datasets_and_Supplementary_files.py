@@ -20,6 +20,7 @@ from utils.data_loader import (
     get_unique_values,
     load_pub_datasets,
     load_pub_supplementary,
+    load_scilite_annotations,
     search_across_columns,
 )
 from utils.export_utils import (
@@ -96,6 +97,10 @@ def _render_datasets_tab() -> None:
     if df.empty:
         st.error("No publication dataset records available. Please check data files.")
         return
+
+    pmc_filter = st.session_state.get("resource_pmc_filter")
+    if pmc_filter and "source_url" in df.columns:
+        df = df[df["source_url"].astype(str).str.contains(pmc_filter, na=False)]
 
     with st.expander("🔍 Filters", expanded=False):
         search_term = st.text_input(
@@ -200,6 +205,10 @@ def _render_supplementary_tab() -> None:
         st.error("No supplementary file records available. Please check data files.")
         return
 
+    pmc_filter = st.session_state.get("resource_pmc_filter")
+    if pmc_filter and "source_url" in df.columns:
+        df = df[df["source_url"].astype(str).str.contains(pmc_filter, na=False)]
+
     # Decide which column represents the file type for filtering
     ext_col = (
         "File Extension" if "File Extension" in df.columns
@@ -292,16 +301,121 @@ def _render_supplementary_tab() -> None:
 
 
 # ---------------------------------------------------------------------------
+# SciLite Annotations tab
+# ---------------------------------------------------------------------------
+
+def _render_scilite_tab() -> None:
+    df = load_scilite_annotations()
+
+    if df.empty:
+        st.error("No SciLite annotation records available. Please check data files.")
+        return
+
+    pmc_filter = st.session_state.get("resource_pmc_filter")
+    if pmc_filter and "PMC ID" in df.columns:
+        df = df[df["PMC ID"] == pmc_filter]
+
+    with st.expander("🔍 Filters", expanded=False):
+        search_sci = st.text_input(
+            "Search across all columns",
+            key="sci_search",
+            help="Case-insensitive keyword search across all annotation fields",
+        )
+        fc1, fc2, fc3 = st.columns(3)
+        with fc1:
+            selected_types = _multiselect_from_col(df, "Type", "Annotation Type", "sci_types")
+        with fc2:
+            selected_sections = _multiselect_from_col(df, "Section", "Section", "sci_sections")
+        with fc3:
+            selected_tags = _multiselect_from_col(df, "Tag Name", "Tag (concept)", "sci_tags")
+
+    filtered = df.copy()
+    if search_sci:
+        filtered = search_across_columns(filtered, search_sci)
+
+    field_filters: dict = {}
+    if selected_types:
+        field_filters["Type"] = selected_types
+    if selected_sections:
+        field_filters["Section"] = selected_sections
+    if selected_tags:
+        field_filters["Tag Name"] = selected_tags
+    if field_filters:
+        filtered = filter_dataframe(filtered, field_filters)
+
+    st.info(f"Showing {len(filtered)} of {len(df)} annotations")
+
+    tab_table, tab_summary, tab_export = st.tabs(["📊 Table", "📈 Summary", "📥 Export"])
+
+    with tab_table:
+        if filtered.empty:
+            st.warning("No annotations match the current filters.")
+        else:
+            st.dataframe(filtered, use_container_width=True, height=600)
+
+    with tab_summary:
+        if filtered.empty:
+            st.warning("No annotations to summarise.")
+        else:
+            c1, c2 = st.columns(2)
+            with c1:
+                st.markdown("**By Type**")
+                st.dataframe(
+                    filtered["Type"].value_counts().rename_axis("Type").reset_index(name="Count"),
+                    use_container_width=True, hide_index=True,
+                )
+            with c2:
+                st.markdown("**Top Tags**")
+                st.dataframe(
+                    filtered["Tag Name"].value_counts().head(50)
+                        .rename_axis("Tag Name").reset_index(name="Count"),
+                    use_container_width=True, hide_index=True,
+                )
+            st.markdown("**Annotations per PMC (top 20)**")
+            st.dataframe(
+                filtered.groupby("PMC ID").size().sort_values(ascending=False).head(20)
+                    .rename_axis("PMC ID").reset_index(name="Count"),
+                use_container_width=True, hide_index=True,
+            )
+
+    with tab_export:
+        if filtered.empty:
+            st.warning("No records to export.")
+        else:
+            st.markdown(f"**Export {len(filtered)} annotation records**")
+            _download_row(filtered, "scilite_annotations")
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
+_TAB_LABELS = [
+    "📦 Publication Datasets",
+    "📎 Supplementary Files",
+    "🏷️ SciLite Annotations",
+]
+_TAB_KEYS = ["datasets", "supplementary", "scilite"]
+
 
 def main() -> None:
     """Main entry point for the Datasets & Supplementary Files page."""
     st.title("🗂️ Datasets & Supplementary Files")
     st.markdown(
-        "Explore datasets referenced by publications and supplementary materials "
-        "associated with cataloged neuroscience studies."
+        "Explore datasets referenced by publications, supplementary materials, "
+        "and Europe PMC SciLite annotations across cataloged studies."
     )
+
+    pmc_filter = st.session_state.get("resource_pmc_filter")
+    if pmc_filter:
+        c_msg, c_clear = st.columns([5, 1])
+        with c_msg:
+            st.info(f"🔎 Filtered to publication **{pmc_filter}** (from Publications page)")
+        with c_clear:
+            if st.button("Clear filter", key="clear_pmc_filter"):
+                st.session_state.pop("resource_pmc_filter", None)
+                st.session_state.pop("resource_focus_tab", None)
+                st.rerun()
 
     with st.sidebar:
         st.markdown("### App Controls")
@@ -312,16 +426,26 @@ def main() -> None:
             st.rerun()
         st.markdown("---")
 
-    tab_ds, tab_supp = st.tabs([
-        "📦 Publication Datasets",
-        "📎 Supplementary Files",
-    ])
+    focus = st.session_state.pop("resource_focus_tab", None)
+    if focus in _TAB_KEYS:
+        # Reorder tabs so the requested one shows up first
+        idx = _TAB_KEYS.index(focus)
+        order = [idx] + [i for i in range(len(_TAB_KEYS)) if i != idx]
+    else:
+        order = list(range(len(_TAB_KEYS)))
 
-    with tab_ds:
-        _render_datasets_tab()
+    labels = [_TAB_LABELS[i] for i in order]
+    keys = [_TAB_KEYS[i] for i in order]
+    tabs = st.tabs(labels)
 
-    with tab_supp:
-        _render_supplementary_tab()
+    renderers = {
+        "datasets": _render_datasets_tab,
+        "supplementary": _render_supplementary_tab,
+        "scilite": _render_scilite_tab,
+    }
+    for tab, key in zip(tabs, keys):
+        with tab:
+            renderers[key]()
 
 
 if __name__ == "__main__":

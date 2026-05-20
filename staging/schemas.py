@@ -229,6 +229,41 @@ class NewCorpusRow(_Base):
 
 
 # ---------------------------------------------------------------------------
+# Table: SciLite annotations   (tables/final/scilite_annotations_*.tsv)
+# ---------------------------------------------------------------------------
+class SciLiteAnnotationRow(_Base):
+    PMC_ID: str = ""
+    Type: str = ""
+    Exact: str = ""
+    Prefix: str = ""
+    Postfix: str = ""
+    Section: str = ""
+    Provider: str = ""
+    Annotation_ID: str = ""
+    Tag_Name: str = ""
+    Tag_URI: str = ""
+
+    model_config = {
+        "populate_by_name": True,
+        "alias_generator": lambda s: s.replace("_", " "),
+    }
+
+    @field_validator(
+        "PMC_ID", "Type", "Exact", "Prefix", "Postfix", "Section",
+        "Provider", "Annotation_ID", "Tag_Name", "Tag_URI",
+        mode="before",
+    )
+    @classmethod
+    def to_str(cls, v: object) -> str:
+        return _coerce_str(v)
+
+    COLUMNS: ClassVar[list[str]] = [
+        "PMC ID", "Type", "Exact", "Prefix", "Postfix", "Section",
+        "Provider", "Annotation ID", "Tag Name", "Tag URI",
+    ]
+
+
+# ---------------------------------------------------------------------------
 # Hits file schemas  (intermediate outputs in tables/hits/)
 # These match the scraper's own column order exactly.
 # ---------------------------------------------------------------------------
@@ -272,4 +307,5 @@ SCHEMA_REGISTRY: dict[str, type[_Base]] = {
     "pub_datasets": PubDatasetRow,
     "supplementary": SupplementaryRow,
     "new_corpus": NewCorpusRow,
+    "scilite": SciLiteAnnotationRow,
 }

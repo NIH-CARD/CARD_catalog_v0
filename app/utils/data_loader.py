@@ -324,6 +324,30 @@ def load_pub_supplementary() -> pd.DataFrame:
         return pd.DataFrame()
 
 
+@st.cache_data(ttl=3600)
+def load_scilite_annotations() -> pd.DataFrame:
+    """Load Europe PMC SciLite annotations from tables/final/.
+
+    Returns:
+        DataFrame with one row per (annotation × tag), keyed by ``PMC ID``.
+    """
+    logger.info("Loading SciLite annotations...")
+    try:
+        file_path = get_latest_file(DATA_FILES_PTRS["scilite"], TABLES_DIR)
+    except FileNotFoundError:
+        logger.warning("No scilite annotations file found")
+        return pd.DataFrame()
+
+    try:
+        df = pd.read_csv(file_path, sep="\t", dtype=str, encoding="utf-8").fillna("")
+        df.columns = df.columns.str.strip()
+        logger.info(f"SciLite annotations loaded: {len(df)} rows from {file_path.name}")
+        return df
+    except Exception as e:
+        logger.error(f"Error loading SciLite annotations: {e}", exc_info=True)
+        return pd.DataFrame()
+
+
 def normalize_list_field(field: str, delimiter: str = ";", split_delimiters: List[str] = None) -> str:
     """
     Normalize a delimited list field by:

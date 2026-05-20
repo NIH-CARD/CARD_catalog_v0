@@ -36,6 +36,7 @@ DATA_FILES_PTRS = {
     "indi":           ["iNDI_inventory*"],
     "pub_datasets":   ["final/pub_datasets*"],
     "pub_supplementary": ["final/pub_supplementary*"],
+    "scilite":        ["final/scilite_annotations*"],
 }
 
 # FAIR compliance log pattern (written to tables/hits/ by the github scraper)

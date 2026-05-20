@@ -57,6 +57,7 @@ python -m pipelines.page_navigation --setup-profile
 | `github_search` | inventory.tab | `github_hits_*.tsv` | scrapers/scrape_github.py subprocess |
 | `repo_analysis` | github_hits | `github_analyzed_*.tsv` | scrapers/batch_ai_analysis.py (Batch API) |
 | `page_navigation` | inventory.tab | `new_corpus_*.tsv` | data_gatherer + headless Firefox |
+| `scilite` | pubmed_hits | `annotations_*.json` | scrapers/scrape_annotations.py (Europe PMC API) |
 
 After each stage, the normalizer validates and writes to `tables/final/`. Rejected rows go to `tables/hits/rejected_*.tsv`.
 

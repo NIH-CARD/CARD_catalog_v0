@@ -9,8 +9,8 @@ Coordinates two run modes:
 
   full_rebuild  — Full rebuild from scratch:
                     PubMed (3-year window) + publication metadata (datasets +
-                    supplementary) + GitHub search + AI repo analysis +
-                    study page navigation.
+                    supplementary) + SciLite annotations (Europe PMC) +
+                    GitHub search + AI repo analysis + study page navigation.
 
 Usage:
     python orchestrator.py update
@@ -112,8 +112,9 @@ def run_stage(
             return existing
 
     timestamp = _ts()
-    stem = hits_pattern.replace("*", "").replace(".tsv", "")
-    output_path = HITS_DIR / f"{stem}{timestamp}.tsv"
+    ext = Path(hits_pattern).suffix or ".tsv"
+    stem = hits_pattern.replace("*", "").replace(ext, "")
+    output_path = HITS_DIR / f"{stem}{timestamp}{ext}"
 
     try:
         result = stage.run(input_path, output_path, **stage_kwargs)
@@ -257,6 +258,23 @@ def run_full_rebuild(
             run_normalizer(supp_hits, "supplementary", "pub_supplementary_*.tsv", force=force)
     else:
         logger.warning("Skipping pub_metadata: no pubmed_hits available")
+
+    # --- Stage 6: SciLite annotations (Europe PMC) ---
+    if pubmed_hits and pubmed_hits.exists():
+        from pipelines.scilite import SciLiteStage
+        run_stage(
+            "scilite", SciLiteStage(),
+            input_path=pubmed_hits,
+            hits_pattern="annotations_*.json",
+            stage_kwargs=dict(verbose=verbose, log_file=log_file),
+            skip_stages=skip_stages,
+            force=force,
+        )
+        scilite_hits = _latest(HITS_DIR, "scilite_annotations_*.tsv")
+        if scilite_hits:
+            run_normalizer(scilite_hits, "scilite", "scilite_annotations_*.tsv", force=force)
+    else:
+        logger.warning("Skipping scilite: no pubmed_hits available")
 
     # --- Stage 2: GitHub search ---
     if not github_token:

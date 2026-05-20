@@ -39,6 +39,18 @@ FINAL_DIR = PROJECT_ROOT / "tables" / "final"
 # These only need entries where the name differs from schema field name.
 # ---------------------------------------------------------------------------
 _RENAME: dict[str, dict[str, str]] = {
+    "scilite": {
+        "pmcid": "PMC ID",
+        "type": "Type",
+        "exact": "Exact",
+        "prefix": "Prefix",
+        "postfix": "Postfix",
+        "section": "Section",
+        "provider": "Provider",
+        "id": "Annotation ID",
+        "tag_name": "Tag Name",
+        "tag_uri": "Tag URI",
+    },
     # "publications": {
     #     "Resource Name": "Resource_Name",
     #     "Diseases Included": "Diseases_Included",
@@ -206,12 +218,17 @@ def _normalize_new_corpus(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _normalize_scilite(df: pd.DataFrame) -> pd.DataFrame:
+    return df
+
+
 _NORMALIZERS = {
     "publications": _normalize_publications,
     "code": _normalize_code,
     "pub_datasets": _normalize_pub_datasets,
     "supplementary": _normalize_supplementary,
     "new_corpus": _normalize_new_corpus,
+    "scilite": _normalize_scilite,
 }
 
 # ---------------------------------------------------------------------------
