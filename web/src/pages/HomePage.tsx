@@ -95,7 +95,7 @@ export function HomePage() {
         <div className="text-center mb-8">
           <h1 className="text-4xl font-semibold text-slate-900 mb-2">CARD Catalog</h1>
           <h3 className="text-lg text-slate-500 font-normal">
-            Collaborative Alzheimer&apos;s and Related Dementias Data Catalog
+            Center for Alzheimer&apos;s and Related Dementias Data Catalog
           </h3>
         </div>
 

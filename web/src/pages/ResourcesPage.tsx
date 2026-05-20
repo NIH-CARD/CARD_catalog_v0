@@ -71,7 +71,7 @@ export function ResourcesPage() {
         },
       }),
       col.accessor("Abbreviation", {
-        header: "Abbrev",
+        header: "Abbreviation",
         cell: (info) => (
           <span className="font-mono text-xs text-slate-600">{info.getValue()}</span>
         ),
@@ -89,7 +89,7 @@ export function ResourcesPage() {
         cell: (info) => <Chips value={info.getValue()} delimiter="," />,
       }),
       col.accessor("Sample Size", {
-        header: "N",
+        header: "Sample Size",
         cell: (info) => (
           <span className="text-xs tabular-nums text-slate-700">{info.getValue()}</span>
         ),
