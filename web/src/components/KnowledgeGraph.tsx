@@ -175,6 +175,11 @@ export function KnowledgeGraph<T>({
 
   const [hoverEdge, setHoverEdge] = useState<EdgeData | null>(null);
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [pinnedEdge, setPinnedEdge] = useState<EdgeData | null>(null);
+  const [pinnedPos, setPinnedPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  const activeEdge = pinnedEdge ?? hoverEdge;
+  const activePos = pinnedEdge ? pinnedPos : hoverPos;
 
   return (
     <div className="h-[calc(100vh-16rem)] border border-slate-200 rounded bg-white">
@@ -193,25 +198,45 @@ export function KnowledgeGraph<T>({
           setHoverPos({ x: evt.clientX, y: evt.clientY });
         }}
         onEdgeMouseLeave={() => setHoverEdge(null)}
+        onEdgeClick={(evt, edge) => {
+          if (!edge.data) return;
+          setPinnedEdge(edge.data as EdgeData);
+          setPinnedPos({ x: evt.clientX, y: evt.clientY });
+        }}
+        onPaneClick={() => setPinnedEdge(null)}
       >
         <Background gap={20} />
         <Controls />
       </ReactFlow>
-      {hoverEdge &&
+      {activeEdge &&
         createPortal(
           <div
-            className="fixed z-50 max-w-lg bg-white border border-slate-200 shadow-lg rounded p-3 text-xs text-slate-700 pointer-events-none"
-            style={{ top: hoverPos.y + 12, left: hoverPos.x + 12 }}
+            className={
+              "fixed z-50 max-w-lg bg-white border border-slate-200 shadow-lg rounded p-3 text-xs text-slate-700 " +
+              (pinnedEdge ? "pointer-events-auto max-h-[80vh] overflow-auto" : "pointer-events-none")
+            }
+            style={{ top: activePos.y + 12, left: activePos.x + 12 }}
           >
-            <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-1">
-              Connection ({hoverEdge.shared} shared)
+            <div className="flex items-start justify-between gap-3 mb-1">
+              <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                Connection ({activeEdge.shared} shared){pinnedEdge ? " · pinned" : ""}
+              </div>
+              {pinnedEdge && (
+                <button
+                  className="text-slate-400 hover:text-slate-700 text-xs leading-none -mt-0.5"
+                  onClick={() => setPinnedEdge(null)}
+                  aria-label="Close"
+                >
+                  ✕
+                </button>
+              )}
             </div>
             <div className="mb-2 text-slate-700">
-              <span className="font-medium">{hoverEdge.sourceLabel}</span>
+              <span className="font-medium">{activeEdge.sourceLabel}</span>
               <span className="mx-1 text-slate-400">↔</span>
-              <span className="font-medium">{hoverEdge.targetLabel}</span>
+              <span className="font-medium">{activeEdge.targetLabel}</span>
             </div>
-            {hoverEdge.sharedByField.map((f) => (
+            {activeEdge.sharedByField.map((f) => (
               <div key={f.field} className="mb-2 last:mb-0">
                 <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-0.5">
                   {f.field} ({f.values.length})

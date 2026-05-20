@@ -122,6 +122,7 @@ function DatasetsTab() {
     () => [
       dsCol.accessor("dataset_identifier", {
         header: "Identifier",
+        size: 150,
         cell: (info) => {
           const webpage = info.row.original.dataset_webpage;
           const id = info.getValue();
@@ -130,28 +131,72 @@ function DatasetsTab() {
               href={webpage}
               target="_blank"
               rel="noreferrer"
-              className="text-accent hover:underline font-mono text-xs"
+              className="text-accent hover:underline font-mono text-xs break-all"
             >
               {id}
             </a>
           ) : (
-            <span className="font-mono text-xs">{id}</span>
+            <span className="font-mono text-xs break-all">{id}</span>
           );
         },
       }),
-      dsCol.accessor("data_repository", { header: "Repository" }),
-      dsCol.accessor("citation_type", { header: "Citation" }),
+      dsCol.accessor("data_repository", {
+        header: "Repository",
+        size: 120,
+        cell: (info) => (
+          <span className="text-xs text-slate-700">{info.getValue()}</span>
+        ),
+      }),
+      dsCol.accessor("citation_type", {
+        header: "Citation",
+        size: 90,
+        cell: (info) => (
+          <span className="text-xs text-slate-600">{info.getValue()}</span>
+        ),
+      }),
       dsCol.accessor("dataset_keywords", {
         header: "Keywords",
+        size: 180,
         cell: (info) => <Chips value={info.getValue()} delimiter="," />,
+      }),
+      dsCol.accessor("dataset_context_from_paper", {
+        header: "Context",
+        size: 560,
+        cell: (info) => {
+          const text = info.getValue();
+          if (!text) return null;
+          return (
+            <p
+              className="text-xs text-slate-700 line-clamp-6"
+              title={text}
+            >
+              {text}
+            </p>
+          );
+        },
       }),
       dsCol.accessor("pub_title", {
         header: "Publication",
-        cell: (info) => (
-          <span className="text-xs text-slate-600 line-clamp-2 max-w-md">
-            {info.getValue()}
-          </span>
-        ),
+        cell: (info) => {
+          const url = info.row.original.source_url;
+          const title = info.getValue();
+          if (!title && !url) return null;
+          return url ? (
+            <a
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-accent hover:underline line-clamp-2 max-w-md"
+              title={title}
+            >
+              {title || url}
+            </a>
+          ) : (
+            <span className="text-xs text-slate-600 line-clamp-2 max-w-md">
+              {title}
+            </span>
+          );
+        },
       }),
     ],
     [],
@@ -242,6 +287,7 @@ function SupplementaryTab() {
     () => [
       spCol.accessor("link", {
         header: "File",
+        size: 300,
         cell: (info) => {
           const url = info.row.original.download_link;
           const name = info.getValue();
@@ -250,32 +296,72 @@ function SupplementaryTab() {
               href={url}
               target="_blank"
               rel="noreferrer"
-              className="text-accent hover:underline font-mono text-xs"
+              className="text-accent hover:underline font-mono text-xs break-all"
             >
               {name}
             </a>
           ) : (
-            <span className="font-mono text-xs">{name}</span>
+            <span className="font-mono text-xs break-all">{name}</span>
           );
         },
       }),
-      spCol.accessor("file_extension", { header: "Ext" }),
-      spCol.accessor("content_type", { header: "Content Type" }),
+      spCol.accessor("file_extension", {
+        header: "Ext",
+        size: 60,
+        cell: (info) => (
+          <span className="text-xs text-slate-600">{info.getValue()}</span>
+        ),
+      }),
       spCol.accessor("caption", {
         header: "Caption",
+        size: 120,
         cell: (info) => (
-          <span className="text-xs text-slate-600 line-clamp-2 max-w-md">
+          <span
+            className="text-xs text-slate-600 line-clamp-3"
+            title={info.getValue()}
+          >
             {info.getValue()}
           </span>
         ),
       }),
+      spCol.accessor("context_description", {
+        header: "Context",
+        size: 560,
+        cell: (info) => {
+          const text = info.getValue();
+          if (!text) return null;
+          return (
+            <p
+              className="text-xs text-slate-700 line-clamp-6"
+              title={text}
+            >
+              {text}
+            </p>
+          );
+        },
+      }),
       spCol.accessor("pub_title", {
         header: "Publication",
-        cell: (info) => (
-          <span className="text-xs text-slate-600 line-clamp-2 max-w-md">
-            {info.getValue()}
-          </span>
-        ),
+        cell: (info) => {
+          const url = info.row.original.source_url;
+          const title = info.getValue();
+          if (!title && !url) return null;
+          return url ? (
+            <a
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-accent hover:underline line-clamp-2 max-w-md"
+              title={title}
+            >
+              {title || url}
+            </a>
+          ) : (
+            <span className="text-xs text-slate-600 line-clamp-2 max-w-md">
+              {title}
+            </span>
+          );
+        },
       }),
     ],
     [],

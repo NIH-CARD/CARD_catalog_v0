@@ -9,10 +9,16 @@ import { InfoList } from "../components/HoverInfo";
 import { KnowledgeGraph } from "../components/KnowledgeGraph";
 import { PageShell } from "../components/PageShell";
 import { matchesFacet, matchesQuery } from "../lib/filter";
-import { loadPubDatasets, loadPublications, loadSciLite, loadSupplementary } from "../lib/loaders";
+import {
+  loadPubDatasets,
+  loadPublications,
+  loadSciLite,
+  loadSupplementary,
+} from "../lib/loaders";
 import { pmcidFrom } from "../lib/loadPublications";
 import {
-  buildGraphData,
+  applyToPubs,
+  indexAnnotations,
   PAPER_GRAPH_FIELD_OPTIONS,
   type GraphPublication,
 } from "../lib/paperGraph";
@@ -25,14 +31,7 @@ import type {
   Supplementary,
 } from "../types";
 
-const FACETS: readonly FacetSpec<Publication>[] = [
-  { field: "Diseases Included", multivalue: true },
-  { field: "Coarse Data Modality", multivalue: true, delimiter: "," },
-  { field: "Granular Data Modality", multivalue: true },
-  { field: "Resource Name", multivalue: false },
-];
-
-const SEARCH_FIELDS: (keyof Publication & string)[] = [
+const SEARCH_FIELDS: (keyof GraphPublication & string)[] = [
   "Title",
   "Abstract",
   "Authors",
@@ -42,7 +41,7 @@ const SEARCH_FIELDS: (keyof Publication & string)[] = [
 
 const GRAPH_FIELD_OPTIONS = PAPER_GRAPH_FIELD_OPTIONS;
 
-const col = createColumnHelper<Publication>();
+const col = createColumnHelper<GraphPublication>();
 
 function ResourceLinks({
   pmcid,
@@ -110,11 +109,76 @@ export function PublicationsPage() {
     loadSciLite().then(setSc).catch(() => undefined);
   }, []);
 
-  const fields = useMemo(() => FACETS.map((f) => f.field), []);
-  const { selections, query, setFacet, setQuery, clearAll, totalSelected } =
-    useFacets(fields as readonly (keyof Publication & string)[]);
+  // Build the annotation index once for the whole corpus
+  const index = useMemo(() => indexAnnotations(sc, ds), [sc, ds]);
 
-  // Index datasets/supplementary by PMC for fast per-row counts
+  // Augment all publications once (no hub filter) — used by rail + table
+  const allAugmented = useMemo<GraphPublication[]>(() => {
+    if (!pubs) return [];
+    return applyToPubs(index, pubs, 1.1);
+  }, [pubs, index]);
+
+  // displayLabel resolvers — render URIs as readable names in the rail facets
+  const conceptLabel = useMemo(
+    () => (value: string) => index.conceptMeta.get(value)?.name || value,
+    [index],
+  );
+  const datasetLabel = useMemo(
+    () => (value: string) => {
+      const meta = index.datasetMeta.get(value);
+      if (!meta?.repository) return value;
+      return `${value} (${meta.repository})`;
+    },
+    [index],
+  );
+
+  // Paper-grounded facets: SciLite types + cited datasets
+  const FACETS: readonly FacetSpec<GraphPublication>[] = useMemo(
+    () => [
+      {
+        field: "Diseases (Annotated)",
+        label: "Diseases (SciLite)",
+        multivalue: true,
+        delimiter: ";",
+        displayLabel: conceptLabel,
+      },
+      {
+        field: "Genes / Proteins",
+        label: "Genes / Proteins (SciLite)",
+        multivalue: true,
+        delimiter: ";",
+        displayLabel: conceptLabel,
+      },
+      {
+        field: "GO Terms",
+        label: "GO Terms (SciLite)",
+        multivalue: true,
+        delimiter: ";",
+        displayLabel: conceptLabel,
+      },
+      {
+        field: "Chemicals",
+        label: "Chemicals (SciLite)",
+        multivalue: true,
+        delimiter: ";",
+        displayLabel: conceptLabel,
+      },
+      {
+        field: "Cited Datasets",
+        label: "Cited Datasets",
+        multivalue: true,
+        delimiter: ";",
+        displayLabel: datasetLabel,
+      },
+    ],
+    [conceptLabel, datasetLabel],
+  );
+
+  const fieldNames = useMemo(() => FACETS.map((f) => f.field), [FACETS]);
+  const { selections, query, setFacet, setQuery, clearAll, totalSelected } =
+    useFacets(fieldNames as readonly (keyof GraphPublication & string)[]);
+
+  // Index datasets/supplementary by PMC for the per-row resource chips
   const dsByPmc = useMemo(() => {
     const m = new Map<string, PubDataset[]>();
     for (const r of ds) {
@@ -149,28 +213,27 @@ export function PublicationsPage() {
     return m;
   }, [sc]);
 
+  // Rail filtering operates on augmented rows
   const filtered = useMemo(() => {
-    if (!pubs) return [];
-    return pubs.filter((p) => {
+    return allAugmented.filter((p) => {
       for (const spec of FACETS) {
         if (!matchesFacet(p, spec, selections[spec.field] ?? new Set())) return false;
       }
       return matchesQuery(p, SEARCH_FIELDS, query);
     });
-  }, [pubs, selections, query]);
+  }, [allAugmented, FACETS, selections, query]);
 
-  // Augment filtered publications with paper-grounded concept fields for the KG.
-  // Hub filter applies to the *filtered* corpus so thresholds adapt to slices.
-  const graphData = useMemo(() => {
-    if (!pubs) return null;
+  // Re-augment the *filtered* corpus with hub filter for the graph view
+  const graphRows = useMemo<GraphPublication[]>(() => {
     const threshold = hubEnabled ? hubThresholdPct / 100 : 1.1;
-    return buildGraphData(filtered, sc, ds, threshold);
-  }, [pubs, filtered, sc, ds, hubEnabled, hubThresholdPct]);
+    return applyToPubs(index, filtered, threshold);
+  }, [index, filtered, hubEnabled, hubThresholdPct]);
 
   const columns = useMemo(
     () => [
       col.accessor("PMID", {
         header: "PMID",
+        size: 80,
         cell: (info) => (
           <span className="font-mono text-xs text-slate-600">{info.getValue()}</span>
         ),
@@ -195,12 +258,21 @@ export function PublicationsPage() {
               ) : (
                 info.getValue()
               )}
-              <ResourceLinks
-                pmcid={pmcid}
-                ds={dsByPmc.get(pmcid) ?? []}
-                sp={spByPmc.get(pmcid) ?? []}
-                sc={scByPmc.get(pmcid) ?? []}
-              />
+              {pmcid ? (
+                <ResourceLinks
+                  pmcid={pmcid}
+                  ds={dsByPmc.get(pmcid) ?? []}
+                  sp={spByPmc.get(pmcid) ?? []}
+                  sc={scByPmc.get(pmcid) ?? []}
+                />
+              ) : (
+                <div
+                  className="mt-1 text-[10px] inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200"
+                  title="No PubMed Central link available — datasets, supplementary files, and SciLite annotations cannot be linked to this publication."
+                >
+                  ⚠️ No PMC link
+                </div>
+              )}
             </div>
           );
         },
@@ -232,9 +304,9 @@ export function PublicationsPage() {
           : "Loading…"
       }
       rail={
-        <FilterRail<Publication>
+        <FilterRail<GraphPublication>
           specs={FACETS}
-          rows={pubs ?? []}
+          rows={allAugmented}
           selections={selections as Record<string, Set<string>>}
           onFacetChange={(field, next) =>
             setFacet(field as (typeof FACETS)[number]["field"], next)
@@ -262,7 +334,7 @@ export function PublicationsPage() {
             ))}
           </div>
           {view === "table" ? (
-            <DataTable<Publication> rows={filtered} columns={columns} />
+            <DataTable<GraphPublication> rows={filtered} columns={columns} />
           ) : (
             <>
               <GraphControls<GraphPublication>
@@ -283,7 +355,7 @@ export function PublicationsPage() {
                 }}
               />
               <KnowledgeGraph<GraphPublication>
-                rows={graphData?.rows ?? []}
+                rows={graphRows}
                 nodeField="Title"
                 edgeFields={buildEdgeFields(GRAPH_FIELD_OPTIONS, edgeSelected)}
                 minShared={minShared}
@@ -303,7 +375,7 @@ export function PublicationsPage() {
                 )}
                 valueMeta={(field, value) => {
                   if (field === "Cited Datasets") {
-                    const meta = graphData?.datasetMeta.get(value);
+                    const meta = index.datasetMeta.get(value);
                     return (
                       <div>
                         <div className="font-medium">{value}</div>
@@ -315,18 +387,12 @@ export function PublicationsPage() {
                       </div>
                     );
                   }
-                  const meta = graphData?.conceptMeta.get(value);
+                  const meta = index.conceptMeta.get(value);
                   return (
                     <div>
-                      <div className="font-medium">
-                        {meta?.name || value}
-                      </div>
-                      <div className="text-[10px] text-slate-500">
-                        {meta?.type}
-                      </div>
-                      <div className="text-[10px] text-slate-400 break-all">
-                        {value}
-                      </div>
+                      <div className="font-medium">{meta?.name || value}</div>
+                      <div className="text-[10px] text-slate-500">{meta?.type}</div>
+                      <div className="text-[10px] text-slate-400 break-all">{value}</div>
                     </div>
                   );
                 }}

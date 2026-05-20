@@ -21,7 +21,7 @@ export function FilterRail<T>({
   error,
 }: Props<T>) {
   return (
-    <aside className="w-72 border-r border-slate-200 bg-white px-4 py-4 overflow-y-auto">
+    <aside className="w-72 border-r border-slate-200 bg-slate-50 px-3 py-4 overflow-y-auto">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-semibold text-slate-700">Filters</h2>
         {totalSelected > 0 && (

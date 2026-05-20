@@ -66,6 +66,7 @@ export interface Supplementary {
   content_type: string;
   caption: string;
   description: string;
+  context_description: string;
   source_section: string;
   file_extension: string;
   pub_title: string;
@@ -114,4 +115,10 @@ export interface FacetSpec<T> {
   multivalue?: boolean;
   /** Override the multi-value delimiter. Defaults to ";". */
   delimiter?: string;
+  /**
+   * Optional: turn each underlying value (e.g. a URI) into a human-readable
+   * label. The Facet uses this for display and for search; selections still
+   * carry the underlying value.
+   */
+  displayLabel?: (value: string) => string;
 }
