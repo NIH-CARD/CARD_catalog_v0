@@ -46,7 +46,7 @@ When using or citing this work, please include:
 
 **Suggested Citation:**
 ```
-Nalls, M.A. (2025). CARD Catalog: Collaborative Alzheimer's and Related Dementias Data Catalog (Version 0.1) [Software].
+Nalls, M.A. (2025). CARD Catalog: Center for Alzheimer's and Related Dementias Data Catalog (Version 0.1) [Software].
 Center for Alzheimer's and Related Dementias (CARD).
 https://github.com/NIH-CARD/CARD_catalog_v0
 Licensed under CC BY-NC 4.0
