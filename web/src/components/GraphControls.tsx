@@ -71,7 +71,7 @@ export function GraphControls<T>({
         <input
           type="number"
           min={1}
-          max={10}
+          max={100}
           value={minShared}
           onChange={(e) => onMinSharedChange(Math.max(1, parseInt(e.target.value || "1", 10)))}
           className="w-16 px-2 py-1 border border-slate-300 rounded text-sm tabular-nums"
