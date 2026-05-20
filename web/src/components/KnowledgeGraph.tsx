@@ -38,7 +38,7 @@ export function KnowledgeGraph<T>({
   edgeFields,
   minShared = 1,
   maxNodes = 60,
-  hideDisconnected = false,
+  hideDisconnected = true,
 }: Props<T>) {
   const { nodes, edges, totalCandidates } = useMemo(() => {
     const sliced = rows.slice(0, maxNodes);
