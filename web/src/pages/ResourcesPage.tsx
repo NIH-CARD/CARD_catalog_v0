@@ -3,12 +3,20 @@ import { createColumnHelper } from "@tanstack/react-table";
 import { Chips } from "../components/Chips";
 import { DataTable } from "../components/DataTable";
 import { FilterRail } from "../components/FilterRail";
+import { GraphControls, buildEdgeFields } from "../components/GraphControls";
 import { KnowledgeGraph } from "../components/KnowledgeGraph";
 import { PageShell } from "../components/PageShell";
 import { matchesFacet, matchesQuery } from "../lib/filter";
 import { loadResources } from "../lib/loaders";
 import { useFacets } from "../lib/useFacets";
 import type { FacetSpec, Resource } from "../types";
+
+const GRAPH_FIELD_OPTIONS: readonly { field: keyof Resource & string; label?: string; delimiter?: string }[] = [
+  { field: "Diseases Included", delimiter: ";" },
+  { field: "Coarse Data Modality", delimiter: "," },
+  { field: "Granular Data Modality", delimiter: ";" },
+  { field: "Resource Type", delimiter: "," },
+];
 
 const FACETS: readonly FacetSpec<Resource>[] = [
   { field: "Resource Type", multivalue: true, delimiter: "," },
@@ -30,6 +38,12 @@ export function ResourcesPage() {
   const [rows, setRows] = useState<Resource[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<"table" | "graph">("table");
+  const [edgeSelected, setEdgeSelected] = useState<(keyof Resource & string)[]>([
+    "Diseases Included",
+  ]);
+  const [minShared, setMinShared] = useState(1);
+  const [maxNodes, setMaxNodes] = useState(60);
+  const [hideDisconnected, setHideDisconnected] = useState(false);
 
   useEffect(() => {
     loadResources().then(setRows).catch((e: Error) => setError(e.message));
@@ -141,11 +155,27 @@ export function ResourcesPage() {
           {view === "table" ? (
             <DataTable<Resource> rows={filtered} columns={columns} />
           ) : (
-            <KnowledgeGraph<Resource>
-              rows={filtered}
-              nodeField="Resource Name"
-              edgeField="Diseases Included"
-            />
+            <>
+              <GraphControls<Resource>
+                options={GRAPH_FIELD_OPTIONS}
+                selected={edgeSelected}
+                onSelectedChange={setEdgeSelected}
+                minShared={minShared}
+                onMinSharedChange={setMinShared}
+                maxNodes={maxNodes}
+                onMaxNodesChange={setMaxNodes}
+                hideDisconnected={hideDisconnected}
+                onHideDisconnectedChange={setHideDisconnected}
+              />
+              <KnowledgeGraph<Resource>
+                rows={filtered}
+                nodeField="Resource Name"
+                edgeFields={buildEdgeFields(GRAPH_FIELD_OPTIONS, edgeSelected)}
+                minShared={minShared}
+                maxNodes={maxNodes}
+                hideDisconnected={hideDisconnected}
+              />
+            </>
           )}
         </>
       ) : (

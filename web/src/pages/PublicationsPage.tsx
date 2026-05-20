@@ -4,6 +4,7 @@ import { createColumnHelper } from "@tanstack/react-table";
 import { Chips } from "../components/Chips";
 import { DataTable } from "../components/DataTable";
 import { FilterRail } from "../components/FilterRail";
+import { GraphControls, buildEdgeFields } from "../components/GraphControls";
 import { KnowledgeGraph } from "../components/KnowledgeGraph";
 import { PageShell } from "../components/PageShell";
 import { matchesFacet, matchesQuery } from "../lib/filter";
@@ -31,6 +32,18 @@ const SEARCH_FIELDS: (keyof Publication & string)[] = [
   "Authors",
   "Keywords",
   "Resource Name",
+];
+
+const GRAPH_FIELD_OPTIONS: readonly {
+  field: keyof Publication & string;
+  label?: string;
+  delimiter?: string;
+}[] = [
+  { field: "Resource Name" },
+  { field: "Diseases Included", delimiter: ";" },
+  { field: "Coarse Data Modality", delimiter: "," },
+  { field: "Granular Data Modality", delimiter: ";" },
+  { field: "Keywords", delimiter: ";" },
 ];
 
 const col = createColumnHelper<Publication>();
@@ -85,6 +98,13 @@ export function PublicationsPage() {
   const [sc, setSc] = useState<SciLiteAnnotation[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<"table" | "graph">("table");
+  const [edgeSelected, setEdgeSelected] = useState<(keyof Publication & string)[]>([
+    "Resource Name",
+    "Diseases Included",
+  ]);
+  const [minShared, setMinShared] = useState(1);
+  const [maxNodes, setMaxNodes] = useState(60);
+  const [hideDisconnected, setHideDisconnected] = useState(false);
 
   useEffect(() => {
     loadPublications().then(setPubs).catch((e: Error) => setError(e.message));
@@ -239,11 +259,27 @@ export function PublicationsPage() {
           {view === "table" ? (
             <DataTable<Publication> rows={filtered} columns={columns} />
           ) : (
-            <KnowledgeGraph<Publication>
-              rows={filtered}
-              nodeField="Title"
-              edgeField="Diseases Included"
-            />
+            <>
+              <GraphControls<Publication>
+                options={GRAPH_FIELD_OPTIONS}
+                selected={edgeSelected}
+                onSelectedChange={setEdgeSelected}
+                minShared={minShared}
+                onMinSharedChange={setMinShared}
+                maxNodes={maxNodes}
+                onMaxNodesChange={setMaxNodes}
+                hideDisconnected={hideDisconnected}
+                onHideDisconnectedChange={setHideDisconnected}
+              />
+              <KnowledgeGraph<Publication>
+                rows={filtered}
+                nodeField="Title"
+                edgeFields={buildEdgeFields(GRAPH_FIELD_OPTIONS, edgeSelected)}
+                minShared={minShared}
+                maxNodes={maxNodes}
+                hideDisconnected={hideDisconnected}
+              />
+            </>
           )}
         </>
       ) : (
