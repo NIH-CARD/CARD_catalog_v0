@@ -1,0 +1,7 @@
+node_modules
+dist
+.vite
+
+# Data is regenerated from the Python pipeline — don't track here
+public/data/*.tsv
+public/data/*.json

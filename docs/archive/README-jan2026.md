@@ -4,7 +4,7 @@ Thanks for stopping by, before we get into the technical details below, check ou
 
 ## Overview
 
-The **CARD Catalog** (Collaborative Alzheimer's and Related Dementias Data Catalog) is an interactive web application that brings together datasets, publications, code repositories, and cellular models for Alzheimer's Disease and Related Dementias (ADRD) research. Built on Streamlit and powered by Claude Sonnet 4.5, it enables researchers and program staff to discover resources, identify connections, and leverage AI-driven insights to accelerate research and inform funding decisions to cover programmatic gaps.
+The **CARD Catalog** (Center for Alzheimer's and Related Dementias Data Catalog) is an interactive web application that brings together datasets, publications, code repositories, and cellular models for Alzheimer's Disease and Related Dementias (ADRD) research. Built on Streamlit and powered by Claude Sonnet 4.5, it enables researchers and program staff to discover resources, identify connections, and leverage AI-driven insights to accelerate research and inform funding decisions to cover programmatic gaps.
 
 **What makes CARD Catalog unique:**
 - **Unified Access**: Browse 99 datasets, 860 publications, 568 code repositories, and 626 iPSC cell lines in one place

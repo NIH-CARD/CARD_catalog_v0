@@ -203,7 +203,7 @@ def main():
 
     # Tab 3: Knowledge Graph
     with tab3:
-        st.subheader("Dataset Relationship Network")
+        st.subheader("D")
 
         st.info(HELP_TEXT["knowledge_graph"])
 
