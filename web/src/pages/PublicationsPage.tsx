@@ -11,6 +11,11 @@ import { PageShell } from "../components/PageShell";
 import { matchesFacet, matchesQuery } from "../lib/filter";
 import { loadPubDatasets, loadPublications, loadSciLite, loadSupplementary } from "../lib/loaders";
 import { pmcidFrom } from "../lib/loadPublications";
+import {
+  buildGraphData,
+  PAPER_GRAPH_FIELD_OPTIONS,
+  type GraphPublication,
+} from "../lib/paperGraph";
 import { useFacets } from "../lib/useFacets";
 import type {
   FacetSpec,
@@ -35,17 +40,7 @@ const SEARCH_FIELDS: (keyof Publication & string)[] = [
   "Resource Name",
 ];
 
-const GRAPH_FIELD_OPTIONS: readonly {
-  field: keyof Publication & string;
-  label?: string;
-  delimiter?: string;
-}[] = [
-  { field: "Resource Name" },
-  { field: "Diseases Included", delimiter: ";" },
-  { field: "Coarse Data Modality", delimiter: "," },
-  { field: "Granular Data Modality", delimiter: ";" },
-  { field: "Keywords", delimiter: ";" },
-];
+const GRAPH_FIELD_OPTIONS = PAPER_GRAPH_FIELD_OPTIONS;
 
 const col = createColumnHelper<Publication>();
 
@@ -99,13 +94,14 @@ export function PublicationsPage() {
   const [sc, setSc] = useState<SciLiteAnnotation[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<"table" | "graph">("table");
-  const [edgeSelected, setEdgeSelected] = useState<(keyof Publication & string)[]>([
-    "Resource Name",
-    "Diseases Included",
+  const [edgeSelected, setEdgeSelected] = useState<(keyof GraphPublication & string)[]>([
+    "Diseases (Annotated)",
   ]);
   const [minShared, setMinShared] = useState(1);
   const [maxNodes, setMaxNodes] = useState(60);
   const [showAll, setShowAll] = useState(false);
+  const [hubEnabled, setHubEnabled] = useState(false);
+  const [hubThresholdPct, setHubThresholdPct] = useState(30);
 
   useEffect(() => {
     loadPublications().then(setPubs).catch((e: Error) => setError(e.message));
@@ -162,6 +158,14 @@ export function PublicationsPage() {
       return matchesQuery(p, SEARCH_FIELDS, query);
     });
   }, [pubs, selections, query]);
+
+  // Augment filtered publications with paper-grounded concept fields for the KG.
+  // Hub filter applies to the *filtered* corpus so thresholds adapt to slices.
+  const graphData = useMemo(() => {
+    if (!pubs) return null;
+    const threshold = hubEnabled ? hubThresholdPct / 100 : 1.1;
+    return buildGraphData(filtered, sc, ds, threshold);
+  }, [pubs, filtered, sc, ds, hubEnabled, hubThresholdPct]);
 
   const columns = useMemo(
     () => [
@@ -261,7 +265,7 @@ export function PublicationsPage() {
             <DataTable<Publication> rows={filtered} columns={columns} />
           ) : (
             <>
-              <GraphControls<Publication>
+              <GraphControls<GraphPublication>
                 options={GRAPH_FIELD_OPTIONS}
                 selected={edgeSelected}
                 onSelectedChange={setEdgeSelected}
@@ -271,9 +275,15 @@ export function PublicationsPage() {
                 onMaxNodesChange={setMaxNodes}
                 showAll={showAll}
                 onShowAllChange={setShowAll}
+                hubFilter={{
+                  enabled: hubEnabled,
+                  onEnabledChange: setHubEnabled,
+                  threshold: hubThresholdPct,
+                  onThresholdChange: setHubThresholdPct,
+                }}
               />
-              <KnowledgeGraph<Publication>
-                rows={filtered}
+              <KnowledgeGraph<GraphPublication>
+                rows={graphData?.rows ?? []}
                 nodeField="Title"
                 edgeFields={buildEdgeFields(GRAPH_FIELD_OPTIONS, edgeSelected)}
                 minShared={minShared}
@@ -291,6 +301,35 @@ export function PublicationsPage() {
                     ]}
                   />
                 )}
+                valueMeta={(field, value) => {
+                  if (field === "Cited Datasets") {
+                    const meta = graphData?.datasetMeta.get(value);
+                    return (
+                      <div>
+                        <div className="font-medium">{value}</div>
+                        {meta?.repository && (
+                          <div className="text-[10px] text-slate-500">
+                            {meta.repository}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+                  const meta = graphData?.conceptMeta.get(value);
+                  return (
+                    <div>
+                      <div className="font-medium">
+                        {meta?.name || value}
+                      </div>
+                      <div className="text-[10px] text-slate-500">
+                        {meta?.type}
+                      </div>
+                      <div className="text-[10px] text-slate-400 break-all">
+                        {value}
+                      </div>
+                    </div>
+                  );
+                }}
               />
             </>
           )}

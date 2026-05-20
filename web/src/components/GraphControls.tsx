@@ -16,6 +16,13 @@ interface Props<T> {
   onMaxNodesChange: (n: number) => void;
   showAll: boolean;
   onShowAllChange: (v: boolean) => void;
+  /** Optional hub-filter pair — pass undefined to hide this control. */
+  hubFilter?: {
+    enabled: boolean;
+    onEnabledChange: (v: boolean) => void;
+    threshold: number;
+    onThresholdChange: (n: number) => void;
+  };
 }
 
 export function GraphControls<T>({
@@ -28,6 +35,7 @@ export function GraphControls<T>({
   onMaxNodesChange,
   showAll,
   onShowAllChange,
+  hubFilter,
 }: Props<T>) {
   const toggle = (field: keyof T & string) => {
     if (selected.includes(field)) {
@@ -102,6 +110,30 @@ export function GraphControls<T>({
         />
         Disconnected Nodes Visibility
       </label>
+
+      {hubFilter && (
+        <label className="inline-flex items-center gap-2 text-slate-700 pb-1.5">
+          <input
+            type="checkbox"
+            checked={hubFilter.enabled}
+            onChange={(e) => hubFilter.onEnabledChange(e.target.checked)}
+            className="accent-accent"
+          />
+          Hub filter: drop concepts in &gt;
+          <input
+            type="number"
+            min={1}
+            max={99}
+            value={hubFilter.threshold}
+            disabled={!hubFilter.enabled}
+            onChange={(e) =>
+              hubFilter.onThresholdChange(Math.max(1, parseInt(e.target.value || "30", 10)))
+            }
+            className="w-14 px-1.5 py-0.5 border border-slate-300 rounded text-xs tabular-nums disabled:bg-slate-100 disabled:text-slate-400"
+          />
+          % of papers
+        </label>
+      )}
     </div>
   );
 }

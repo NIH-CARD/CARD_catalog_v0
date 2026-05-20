@@ -11,7 +11,7 @@ import ReactFlow, {
   type NodeTypes,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { HoverInfo, InfoList } from "./HoverInfo";
+import { HoverInfo } from "./HoverInfo";
 import { splitMulti } from "../lib/loadPublications";
 
 interface EdgeShared {
@@ -69,6 +69,8 @@ interface Props<T> {
   hideDisconnected?: boolean;
   /** Optional per-row content rendered in a popover on node hover. */
   nodeInfo?: (row: T) => ReactNode;
+  /** Optional lookup that turns an edge value (e.g. a URI) into structured metadata. */
+  valueMeta?: (field: string, value: string) => ReactNode | null;
 }
 
 /**
@@ -84,6 +86,7 @@ export function KnowledgeGraph<T>({
   maxNodes = 60,
   hideDisconnected = true,
   nodeInfo,
+  valueMeta,
 }: Props<T>) {
   const { nodes, edges, totalCandidates } = useMemo(() => {
     const sliced = rows.slice(0, maxNodes);
@@ -197,7 +200,7 @@ export function KnowledgeGraph<T>({
       {hoverEdge &&
         createPortal(
           <div
-            className="fixed z-50 max-w-md bg-white border border-slate-200 shadow-lg rounded p-3 text-xs text-slate-700 pointer-events-none"
+            className="fixed z-50 max-w-lg bg-white border border-slate-200 shadow-lg rounded p-3 text-xs text-slate-700 pointer-events-none"
             style={{ top: hoverPos.y + 12, left: hoverPos.x + 12 }}
           >
             <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-1">
@@ -208,12 +211,23 @@ export function KnowledgeGraph<T>({
               <span className="mx-1 text-slate-400">↔</span>
               <span className="font-medium">{hoverEdge.targetLabel}</span>
             </div>
-            <InfoList
-              rows={hoverEdge.sharedByField.map((f) => ({
-                label: f.field,
-                value: f.values.join("; "),
-              }))}
-            />
+            {hoverEdge.sharedByField.map((f) => (
+              <div key={f.field} className="mb-2 last:mb-0">
+                <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-0.5">
+                  {f.field} ({f.values.length})
+                </div>
+                <ul className="space-y-1">
+                  {f.values.map((v) => {
+                    const meta = valueMeta ? valueMeta(f.field, v) : null;
+                    return (
+                      <li key={v} className="text-slate-700">
+                        {meta ?? <span className="font-mono text-[10px]">{v}</span>}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
           </div>,
           document.body,
         )}
