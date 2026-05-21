@@ -23,12 +23,20 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="CARD Catalog API", version="0.1.0")
 
+_default_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://alzheimersdatahub.org",
+    "https://www.alzheimersdatahub.org",
+]
+# EXTRA_ORIGINS: space- or comma-separated list of additional allowed origins,
+# e.g. the *.netlify.app preview URL during testing.
+_extra = os.environ.get("EXTRA_ORIGINS", "")
+_allowed_origins = _default_origins + [o.strip() for o in _extra.replace(",", " ").split() if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=_allowed_origins,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
@@ -37,7 +45,7 @@ app.add_middleware(
 class AnalyzeRequest(BaseModel):
     page: str = Field(..., description="Page identifier: publications, resources, code, …")
     context: str = Field(..., description="Filtered-subset summary block to feed the model")
-    model: str = Field("claude-sonnet-4-5", description="Claude model id")
+    model: str = Field("claude-sonnet-4-6", description="Claude model id")
     max_tokens: int = Field(2000, ge=100, le=8000)
 
 

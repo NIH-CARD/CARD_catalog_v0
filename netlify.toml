@@ -1,0 +1,10 @@
+[build]
+  base    = "web"
+  command = "npm ci && npm run sync-data && npm run build"
+  publish = "dist"
+
+# SPA routing — let React Router handle all paths
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
