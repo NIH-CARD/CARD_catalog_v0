@@ -7,7 +7,6 @@ interface Props<T> {
   rows: T[];
   selected: Set<string>;
   onChange: (next: Set<string>) => void;
-  maxShown?: number;
 }
 
 export function Facet<T>({
@@ -15,7 +14,6 @@ export function Facet<T>({
   rows,
   selected,
   onChange,
-  maxShown = 12,
 }: Props<T>) {
   const [query, setQuery] = useState("");
 
@@ -52,9 +50,7 @@ export function Facet<T>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [counts, query, spec]);
 
-  const visible = query.trim()
-    ? filteredCounts
-    : filteredCounts.slice(0, maxShown);
+  const visible = query.trim() ? filteredCounts : filteredCounts.slice(0, 100);
 
   const toggle = (value: string) => {
     const next = new Set(selected);
@@ -79,7 +75,7 @@ export function Facet<T>({
         )}
       </div>
 
-      {counts.length > maxShown && (
+      {counts.length > 5 && (
         <input
           type="text"
           value={query}
@@ -118,11 +114,6 @@ export function Facet<T>({
             </li>
           );
         })}
-        {!query.trim() && filteredCounts.length > visible.length && (
-          <li className="text-xs text-slate-500 pl-2 pt-1">
-            +{filteredCounts.length - visible.length} more — search to find them
-          </li>
-        )}
         {query.trim() && filteredCounts.length === 0 && (
           <li className="text-xs text-slate-500 pl-2 pt-1 italic">No matches</li>
         )}
