@@ -60,6 +60,9 @@ logs/
 # Sphinx build output
 docs/_build/
 
+# TypeScript incremental build cache — contains local absolute paths, breaks CI
+*.tsbuildinfo
+
 # stage files
 tables/hits/
 scrapers/batch_**jsonl
