@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { createColumnHelper } from "@tanstack/react-table";
-import { Chips } from "../components/Chips";
 import { DataTable } from "../components/DataTable";
 import { FilterRail } from "../components/FilterRail";
 import { GraphControls, buildEdgeFields } from "../components/GraphControls";
@@ -132,9 +131,20 @@ export function PublicationsPage() {
     [index],
   );
 
-  // Paper-grounded facets: SciLite types + cited datasets
+  // Paper-grounded facets: SciLite types + cited datasets + publication metadata
   const FACETS: readonly FacetSpec<GraphPublication>[] = useMemo(
     () => [
+      {
+        field: "Resource Name",
+        label: "Study",
+        multivalue: false,
+      },
+      {
+        field: "Authors",
+        label: "Authors",
+        multivalue: true,
+        delimiter: ";",
+      },
       {
         field: "Diseases (Annotated)",
         label: "Diseases (SciLite)",
@@ -149,13 +159,7 @@ export function PublicationsPage() {
         delimiter: ";",
         displayLabel: conceptLabel,
       },
-      {
-        field: "GO Terms",
-        label: "GO Terms (SciLite)",
-        multivalue: true,
-        delimiter: ";",
-        displayLabel: conceptLabel,
-      },
+
       {
         field: "Chemicals",
         label: "Chemicals (SciLite)",
@@ -231,13 +235,6 @@ export function PublicationsPage() {
 
   const columns = useMemo(
     () => [
-      col.accessor("PMID", {
-        header: "PMID",
-        size: 80,
-        cell: (info) => (
-          <span className="font-mono text-xs text-slate-600">{info.getValue()}</span>
-        ),
-      }),
       col.accessor("Title", {
         header: "Title",
         cell: (info) => {
@@ -277,17 +274,22 @@ export function PublicationsPage() {
           );
         },
       }),
+      col.accessor("Publication Date", {
+        header: "Date",
+        size: 30,
+        cell: (info) => (
+          <span className="text-xs text-slate-500 whitespace-nowrap">{info.getValue()}</span>
+        ),
+      }),
+      col.accessor("Authors", {
+        header: "Authors",
+        cell: (info) => (
+          <span className="text-xs text-slate-600">{info.getValue()}</span>
+        ),
+      }),
       col.accessor("Resource Name", {
         header: "Study",
         cell: (info) => <span className="text-slate-700">{info.getValue()}</span>,
-      }),
-      col.accessor("Diseases Included", {
-        header: "Diseases",
-        cell: (info) => <Chips value={info.getValue()} />,
-      }),
-      col.accessor("Coarse Data Modality", {
-        header: "Modality",
-        cell: (info) => <Chips value={info.getValue()} delimiter="," />,
       }),
     ],
     [dsByPmc, spByPmc, scByPmc],

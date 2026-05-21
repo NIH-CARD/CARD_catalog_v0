@@ -11,6 +11,7 @@ export interface Publication {
   Title: string;
   Abstract: string;
   Keywords: string;
+  "Publication Date": string;
 }
 
 export interface Resource {

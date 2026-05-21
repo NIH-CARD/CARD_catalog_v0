@@ -218,7 +218,54 @@ def _normalize_new_corpus(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _fetch_go_aspects(go_ids: list[str], chunk_size: int = 200) -> dict[str, str]:
+    """Fetch GO term aspects from QuickGO in batched requests.
+
+    Args:
+        go_ids: List of GO IDs e.g. ["GO:0006915", "GO:0007568"].
+        chunk_size: Number of IDs per request (QuickGO handles up to ~200).
+
+    Returns:
+        Mapping of GO ID → aspect string (e.g. "biological_process").
+    """
+    import requests
+
+    aspects: dict[str, str] = {}
+    for i in range(0, len(go_ids), chunk_size):
+        batch = go_ids[i : i + chunk_size]
+        url = "https://www.ebi.ac.uk/QuickGO/services/ontology/go/terms/" + ",".join(batch)
+        try:
+            r = requests.get(url, timeout=30)
+            r.raise_for_status()
+            for term in r.json().get("results", []):
+                aspects[term["id"]] = term.get("aspect", "")
+        except Exception as exc:
+            logger.warning(f"QuickGO batch {i}–{i+len(batch)} failed: {exc}")
+    return aspects
+
+
 def _normalize_scilite(df: pd.DataFrame) -> pd.DataFrame:
+    """Replace Type 'Gene Ontology' with the term's GO aspect from QuickGO."""
+    if "Type" not in df.columns or "Tag URI" not in df.columns:
+        return df
+
+    go_mask = df["Type"] == "Gene Ontology"
+    if not go_mask.any():
+        return df
+
+    go_ids = list({
+        m.group(1)
+        for uri in df.loc[go_mask, "Tag URI"]
+        if (m := re.search(r"(GO:\d+)", uri))
+    })
+    logger.info(f"Fetching aspects for {len(go_ids)} unique GO terms from QuickGO…")
+    aspects = _fetch_go_aspects(go_ids)
+    logger.info(f"Received aspects for {len(aspects)} GO terms")
+
+    mapped = df.loc[go_mask, "Tag URI"].map(
+        lambda uri: aspects.get(m.group(1), "") if (m := re.search(r"(GO:\d+)", uri)) else ""
+    )
+    df.loc[go_mask, "Type"] = mapped.where(mapped != "", other="Gene Ontology")
     return df
 
 

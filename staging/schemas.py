@@ -53,6 +53,7 @@ class PublicationRow(_Base):
     Title: str = ""
     Abstract: str = ""
     Keywords: str = ""
+    Publication_Date: str = ""
 
     # Map from scraper column names (with spaces) to model field names
     model_config = {
@@ -64,6 +65,7 @@ class PublicationRow(_Base):
         "PMID", "Resource_Name", "Abbreviation", "Diseases_Included",
         "Coarse_Data_Modality", "Granular_Data_Modality", "PubMed_Central_Link",
         "Authors", "Affiliations", "Title", "Abstract", "Keywords",
+        "Publication_Date",
         mode="before",
     )
     @classmethod
@@ -75,7 +77,7 @@ class PublicationRow(_Base):
         "PMID", "Resource Name", "Abbreviation",
         "Diseases Included", "Coarse Data Modality", "Granular Data Modality",
         "PubMed Central Link", "Authors", "Affiliations",
-        "Title", "Abstract", "Keywords",
+        "Title", "Abstract", "Keywords", "Publication Date",
     ]
 
 

@@ -140,6 +140,27 @@ def extract_article_details(article_xml: ET.Element) -> Optional[Dict]:
         # Create PMC link if available by adding prefix
         pmc_link = f"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC{pmc_id}/" if pmc_id else ""
 
+        # Get publication date — prefer ArticleDate (electronic), fall back to PubDate
+        pub_date = ""
+        article_date = article_xml.find('.//ArticleDate')
+        if article_date is not None:
+            year = getattr(article_date.find('Year'), 'text', '')
+            month = getattr(article_date.find('Month'), 'text', '').zfill(2)
+            day = getattr(article_date.find('Day'), 'text', '').zfill(2)
+            if year:
+                pub_date = f"{year}-{month}-{day}" if month and day else year
+        if not pub_date:
+            pub_date_elem = article_xml.find('.//Journal/JournalIssue/PubDate')
+            if pub_date_elem is not None:
+                year = getattr(pub_date_elem.find('Year'), 'text', '')
+                month = getattr(pub_date_elem.find('Month'), 'text', '').zfill(2)
+                day = getattr(pub_date_elem.find('Day'), 'text', '').zfill(2)
+                medline = getattr(pub_date_elem.find('MedlineDate'), 'text', '')
+                if year:
+                    pub_date = f"{year}-{month}-{day}" if month and day else year
+                elif medline:
+                    pub_date = medline
+
         return {
             "PMID": pmid,
             "Title": title_text,
@@ -147,7 +168,8 @@ def extract_article_details(article_xml: ET.Element) -> Optional[Dict]:
             "Authors": "; ".join(authors),
             "Affiliations": "; ".join(affiliations),
             "Keywords": "; ".join(keywords),
-            "PubMed Central Link": pmc_link
+            "PubMed Central Link": pmc_link,
+            "Publication Date": pub_date,
         }
     except Exception as e:
         logger.error(f"Error extracting article details: {str(e)}")
