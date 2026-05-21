@@ -204,9 +204,10 @@ export function buildGraphData(
 export const PAPER_GRAPH_FIELD_OPTIONS = [
   { field: "Diseases (Annotated)" as const, label: "Diseases (SciLite)", delimiter: ";" },
   { field: "Genes / Proteins" as const, label: "Genes / Proteins (SciLite)", delimiter: ";" },
-
   { field: "Chemicals" as const, label: "Chemicals (SciLite)", delimiter: ";" },
   { field: "Cited Datasets" as const, label: "Cited Datasets", delimiter: ";" },
+  { field: "Authors" as const, label: "Authors", delimiter: ";" },
+  { field: "Resource Name" as const, label: "Study", delimiter: ";" },
 ];
 
 export { SCILITE_TYPE_TO_FIELD };
