@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createColumnHelper } from "@tanstack/react-table";
+import { BrowseCard, BrowseGrid, Field, Section } from "../components/BrowseCard";
 import { Chips } from "../components/Chips";
 import { DataTable } from "../components/DataTable";
 import { FilterRail } from "../components/FilterRail";
@@ -28,6 +29,7 @@ const col = createColumnHelper<CodeRepo>();
 export function CodePage() {
   const [rows, setRows] = useState<CodeRepo[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<"table" | "browse">("table");
 
   useEffect(() => {
     loadCodeRepos().then(setRows).catch((e: Error) => setError(e.message));
@@ -117,7 +119,59 @@ export function CodePage() {
       }
     >
       {rows ? (
-        <DataTable<CodeRepo> rows={filtered} columns={columns} />
+        <>
+          <div className="mb-3 inline-flex rounded border border-slate-200 overflow-hidden text-sm">
+            {(["table", "browse"] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                className={
+                  "px-3 py-1.5 " +
+                  (view === v ? "bg-accent text-white" : "bg-white text-slate-700 hover:bg-slate-100")
+                }
+              >
+                {v === "table" ? "📊 Table" : "🗂 Browse"}
+              </button>
+            ))}
+          </div>
+          {view === "table" ? (
+            <DataTable<CodeRepo> rows={filtered} columns={columns} />
+          ) : (
+            <BrowseGrid>
+              {filtered.map((r, i) => {
+                const repoShort = r["Repository Link"]?.replace(/^https?:\/\/github\.com\//, "") ?? r["Repository Link"];
+                return (
+                  <BrowseCard
+                    key={i}
+                    title={
+                      r["Repository Link"] ? (
+                        <a href={r["Repository Link"]} target="_blank" rel="noreferrer" className="text-accent hover:underline font-mono text-sm">
+                          {repoShort}
+                        </a>
+                      ) : r["Repository Link"]
+                    }
+                    subtitle={r["Resource Name"]}
+                  >
+                    <Field label="Languages" value={r.Languages} chips />
+                    <Field label="Data Types" value={r["Data Types"]} chips />
+                    <Field label="Tooling" value={r.Tooling} chips />
+                    <Field label="Biomedical Relevance" value={r["Biomedical Relevance"]} expandable maxChars={160} />
+                    {r["Code Summary"] && (
+                      <Section title="Summary">
+                        <Field label="" value={r["Code Summary"]} expandable maxChars={300} />
+                      </Section>
+                    )}
+                    {r.Contributors && (
+                      <Section title="Contributors">
+                        <Field label="" value={r.Contributors} />
+                      </Section>
+                    )}
+                  </BrowseCard>
+                );
+              })}
+            </BrowseGrid>
+          )}
+        </>
       ) : (
         <div className="text-sm text-slate-500">Loading code repositories…</div>
       )}

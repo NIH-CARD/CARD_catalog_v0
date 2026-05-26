@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { BrowseCard, BrowseGrid, Field, Section } from "../components/BrowseCard";
 import { createColumnHelper } from "@tanstack/react-table";
 import { DataTable } from "../components/DataTable";
 import { FilterRail } from "../components/FilterRail";
@@ -91,7 +92,7 @@ export function PublicationsPage() {
   const [sp, setSp] = useState<Supplementary[]>([]);
   const [sc, setSc] = useState<SciLiteAnnotation[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<"table" | "graph">("table");
+  const [view, setView] = useState<"table" | "browse" | "graph">("table");
   const [edgeSelected, setEdgeSelected] = useState<(keyof GraphPublication & string)[]>([
     "Diseases (Annotated)",
   ]);
@@ -322,7 +323,7 @@ export function PublicationsPage() {
       {pubs ? (
         <>
           <div className="mb-3 inline-flex rounded border border-slate-200 overflow-hidden text-sm">
-            {(["table", "graph"] as const).map((v) => (
+            {(["table", "browse", "graph"] as const).map((v) => (
               <button
                 key={v}
                 onClick={() => setView(v)}
@@ -331,12 +332,61 @@ export function PublicationsPage() {
                   (view === v ? "bg-accent text-white" : "bg-white text-slate-700 hover:bg-slate-100")
                 }
               >
-                {v === "table" ? "📊 Table" : "🕸 Graph"}
+                {v === "table" ? "📊 Table" : v === "browse" ? "🗂 Browse" : "🕸 Graph"}
               </button>
             ))}
           </div>
           {view === "table" ? (
             <DataTable<GraphPublication> rows={filtered} columns={columns} />
+          ) : view === "browse" ? (
+            <BrowseGrid>
+              {filtered.map((p, i) => {
+                const pmcid = pmcidFrom(p["PubMed Central Link"]);
+                return (
+                  <BrowseCard
+                    key={i}
+                    title={
+                      p["PubMed Central Link"] ? (
+                        <a href={p["PubMed Central Link"]} target="_blank" rel="noreferrer" className="text-accent hover:underline">
+                          {p.Title}
+                        </a>
+                      ) : p.Title
+                    }
+                    subtitle={`${p["Resource Name"]}${p["Publication Date"] ? ` · ${p["Publication Date"]}` : ""}`}
+                  >
+                    <Field label="Authors" value={p.Authors} expandable maxChars={120} />
+                    <Field label="Affiliations" value={p.Affiliations} expandable maxChars={120} />
+                    <Field label="Diseases" value={p["Diseases Included"]} chips />
+                    <Field label="Modality" value={p["Coarse Data Modality"]} chips delimiter="," />
+                    <Field label="Keywords" value={p.Keywords} chips delimiter="," />
+                    {p.Abstract && (
+                      <Section title="Abstract">
+                        <Field label="" value={p.Abstract} expandable maxChars={300} />
+                      </Section>
+                    )}
+                    {pmcid && (
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {(dsByPmc.get(pmcid) ?? []).length > 0 && (
+                          <Link to={`/datasets?pmc=${pmcid}`} className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100">
+                            📦 {(dsByPmc.get(pmcid) ?? []).length} datasets
+                          </Link>
+                        )}
+                        {(spByPmc.get(pmcid) ?? []).length > 0 && (
+                          <Link to={`/datasets/supplementary?pmc=${pmcid}`} className="text-[10px] px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100">
+                            📎 {(spByPmc.get(pmcid) ?? []).length} supplementary
+                          </Link>
+                        )}
+                        {(scByPmc.get(pmcid) ?? []).length > 0 && (
+                          <Link to={`/datasets/scilite?pmc=${pmcid}`} className="text-[10px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100">
+                            🏷️ {(scByPmc.get(pmcid) ?? []).length} annotations
+                          </Link>
+                        )}
+                      </div>
+                    )}
+                  </BrowseCard>
+                );
+              })}
+            </BrowseGrid>
           ) : (
             <>
               <GraphControls<GraphPublication>

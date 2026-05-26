@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createColumnHelper } from "@tanstack/react-table";
+import { BrowseCard, BrowseGrid, Field, Section } from "../components/BrowseCard";
 import { Chips } from "../components/Chips";
 import { DataTable } from "../components/DataTable";
 import { FilterRail } from "../components/FilterRail";
@@ -38,7 +39,7 @@ const col = createColumnHelper<Resource>();
 export function ResourcesPage() {
   const [rows, setRows] = useState<Resource[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<"table" | "graph">("table");
+  const [view, setView] = useState<"table" | "browse" | "graph">("table");
   const [edgeSelected, setEdgeSelected] = useState<(keyof Resource & string)[]>([
     "Diseases Included",
   ]);
@@ -140,7 +141,7 @@ export function ResourcesPage() {
       {rows ? (
         <>
           <div className="mb-3 inline-flex rounded border border-slate-200 overflow-hidden text-sm">
-            {(["table", "graph"] as const).map((v) => (
+            {(["table", "browse", "graph"] as const).map((v) => (
               <button
                 key={v}
                 onClick={() => setView(v)}
@@ -149,12 +150,47 @@ export function ResourcesPage() {
                   (view === v ? "bg-accent text-white" : "bg-white text-slate-700 hover:bg-slate-100")
                 }
               >
-                {v === "table" ? "📊 Table" : "🕸 Graph"}
+                {v === "table" ? "📊 Table" : v === "browse" ? "🗂 Browse" : "🕸 Graph"}
               </button>
             ))}
           </div>
           {view === "table" ? (
             <DataTable<Resource> rows={filtered} columns={columns} />
+          ) : view === "browse" ? (
+            <BrowseGrid>
+              {filtered.map((r, i) => (
+                <BrowseCard
+                  key={i}
+                  title={
+                    r["Access URL"] ? (
+                      <a href={r["Access URL"]} target="_blank" rel="noreferrer" className="text-accent hover:underline">
+                        {r["Resource Name"]}
+                      </a>
+                    ) : r["Resource Name"]
+                  }
+                  subtitle={r.Abbreviation}
+                  badge={r["Sample Size"] ? <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">{r["Sample Size"]}</span> : undefined}
+                >
+                  <Field label="Type" value={r["Resource Type"]} chips delimiter="," />
+                  <Field label="Diseases" value={r["Diseases Included"]} chips />
+                  <Field label="Coarse Modality" value={r["Coarse Data Modality"]} chips delimiter="," />
+                  <Field label="Granular Modality" value={r["Granular Data Modality"]} chips />
+                  {r["FAIR Compliance Notes"] && (
+                    <Section title="FAIR Compliance Notes">
+                      <Field label="" value={r["FAIR Compliance Notes"]} expandable />
+                    </Section>
+                  )}
+                  {r.Notes && (
+                    <Section title="Notes">
+                      <Field label="" value={r.Notes} expandable />
+                    </Section>
+                  )}
+                  {r["Date added to catalog"] && (
+                    <Field label="Added" value={r["Date added to catalog"]} />
+                  )}
+                </BrowseCard>
+              ))}
+            </BrowseGrid>
           ) : (
             <>
               <GraphControls<Resource>
