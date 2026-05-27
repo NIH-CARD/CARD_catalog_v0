@@ -5,11 +5,22 @@ import { Chips } from "../components/Chips";
 import { DataTable } from "../components/DataTable";
 import { ExportButton } from "../components/ExportButton";
 import { FilterRail } from "../components/FilterRail";
+import { GraphControls, buildEdgeFields } from "../components/GraphControls";
+import { InfoList } from "../components/HoverInfo";
+import { KnowledgeGraph } from "../components/KnowledgeGraph";
 import { PageShell } from "../components/PageShell";
 import { matchesFacet, matchesQuery } from "../lib/filter";
 import { loadCodeRepos } from "../lib/loaders";
 import { useFacets } from "../lib/useFacets";
 import type { CodeRepo, FacetSpec } from "../types";
+
+const GRAPH_FIELD_OPTIONS = [
+  { field: "Languages" as const, label: "Languages", delimiter: ";" },
+  { field: "Data Types" as const, label: "Data Types", delimiter: ";" },
+  { field: "Tooling" as const, label: "Tooling", delimiter: ";" },
+  { field: "Diseases Included" as const, label: "Diseases", delimiter: ";" },
+  { field: "Resource Name" as const, label: "Study" },
+];
 
 const FACETS: readonly FacetSpec<CodeRepo>[] = [
   { field: "Languages", multivalue: true },
@@ -30,7 +41,11 @@ const col = createColumnHelper<CodeRepo>();
 export function CodePage() {
   const [rows, setRows] = useState<CodeRepo[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<"table" | "browse">("table");
+  const [view, setView] = useState<"table" | "browse" | "graph">("table");
+  const [edgeSelected, setEdgeSelected] = useState<(keyof CodeRepo & string)[]>(["Languages"]);
+  const [minShared, setMinShared] = useState(1);
+  const [maxNodes, setMaxNodes] = useState(60);
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     loadCodeRepos().then(setRows).catch((e: Error) => setError(e.message));
@@ -176,7 +191,7 @@ export function CodePage() {
         <>
           <div className="mb-3 flex items-center justify-between gap-3">
             <div className="inline-flex rounded border border-slate-200 overflow-hidden text-sm">
-              {(["table", "browse"] as const).map((v) => (
+              {(["table", "browse", "graph"] as const).map((v) => (
                 <button
                   key={v}
                   onClick={() => setView(v)}
@@ -185,7 +200,7 @@ export function CodePage() {
                     (view === v ? "bg-accent text-white" : "bg-white text-slate-700 hover:bg-slate-100")
                   }
                 >
-                  {v === "table" ? "📊 Table" : "🗂 Browse"}
+                  {v === "table" ? "📊 Table" : v === "browse" ? "🗂 Browse" : "🕸 Graph"}
                 </button>
               ))}
             </div>
@@ -193,7 +208,7 @@ export function CodePage() {
           </div>
           {view === "table" ? (
             <DataTable<CodeRepo> rows={filtered} columns={columns} />
-          ) : (
+          ) : view === "browse" ? (
             <BrowseGrid>
               {filtered.map((r, i) => {
                 const repoShort = r["Repository Link"]?.replace(/^https?:\/\/github\.com\//, "") ?? r["Repository Link"];
@@ -227,6 +242,42 @@ export function CodePage() {
                 );
               })}
             </BrowseGrid>
+          ) : (
+            <>
+              <GraphControls<CodeRepo>
+                options={GRAPH_FIELD_OPTIONS}
+                selected={edgeSelected}
+                onSelectedChange={setEdgeSelected}
+                minShared={minShared}
+                onMinSharedChange={setMinShared}
+                maxNodes={maxNodes}
+                onMaxNodesChange={setMaxNodes}
+                showAll={showAll}
+                onShowAllChange={setShowAll}
+              />
+              <KnowledgeGraph<CodeRepo>
+                rows={filtered}
+                nodeField="Resource Name"
+                edgeFields={buildEdgeFields(GRAPH_FIELD_OPTIONS, edgeSelected)}
+                minShared={minShared}
+                maxNodes={maxNodes}
+                hideDisconnected={!showAll}
+                nodeInfo={(r) => (
+                  <InfoList
+                    rows={[
+                      { label: "Study", value: r["Resource Name"] },
+                      { label: "Repo", value: r["Repository Link"] },
+                      { label: "Languages", value: r.Languages },
+                      { label: "Data Types", value: r["Data Types"] },
+                      { label: "FAIR Score", value: r["FAIR Score"] },
+                    ]}
+                  />
+                )}
+                valueMeta={(_field, value) => (
+                  <div className="font-medium">{value}</div>
+                )}
+              />
+            </>
           )}
         </>
       ) : (

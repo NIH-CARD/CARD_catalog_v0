@@ -4,11 +4,22 @@ import { BrowseCard, BrowseGrid, Field, Section } from "../components/BrowseCard
 import { DataTable } from "../components/DataTable";
 import { ExportButton } from "../components/ExportButton";
 import { FilterRail } from "../components/FilterRail";
+import { GraphControls, buildEdgeFields } from "../components/GraphControls";
+import { InfoList } from "../components/HoverInfo";
+import { KnowledgeGraph } from "../components/KnowledgeGraph";
 import { PageShell } from "../components/PageShell";
 import { matchesFacet, matchesQuery } from "../lib/filter";
 import { loadCellularModels } from "../lib/loaders";
 import { useFacets } from "../lib/useFacets";
 import type { CellularModel, FacetSpec } from "../types";
+
+const GRAPH_FIELD_OPTIONS = [
+  { field: "Gene" as const, label: "Gene" },
+  { field: "Condition" as const, label: "Condition" },
+  { field: "Parental Line" as const, label: "Parental Line" },
+  { field: "Gene Variant" as const, label: "Gene Variant" },
+  { field: "Genotype" as const, label: "Genotype" },
+];
 
 const FACETS: readonly FacetSpec<CellularModel>[] = [
   { field: "Gene", multivalue: false },
@@ -41,7 +52,11 @@ function StatCard({ label, value }: { label: string; value: number }) {
 export function CellularModelsPage() {
   const [rows, setRows] = useState<CellularModel[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<"table" | "browse">("table");
+  const [view, setView] = useState<"table" | "browse" | "graph">("table");
+  const [edgeSelected, setEdgeSelected] = useState<(keyof CellularModel & string)[]>(["Gene"]);
+  const [minShared, setMinShared] = useState(1);
+  const [maxNodes, setMaxNodes] = useState(60);
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     loadCellularModels().then(setRows).catch((e: Error) => setError(e.message));
@@ -142,7 +157,7 @@ export function CellularModelsPage() {
           </div>
           <div className="mb-3 flex items-center justify-between gap-3">
             <div className="inline-flex rounded border border-slate-200 overflow-hidden text-sm">
-              {(["table", "browse"] as const).map((v) => (
+              {(["table", "browse", "graph"] as const).map((v) => (
                 <button
                   key={v}
                   onClick={() => setView(v)}
@@ -151,7 +166,7 @@ export function CellularModelsPage() {
                     (view === v ? "bg-accent text-white" : "bg-white text-slate-700 hover:bg-slate-100")
                   }
                 >
-                  {v === "table" ? "📊 Table" : "🗂 Browse"}
+                  {v === "table" ? "📊 Table" : v === "browse" ? "🗂 Browse" : "🕸 Graph"}
                 </button>
               ))}
             </div>
@@ -159,7 +174,7 @@ export function CellularModelsPage() {
           </div>
           {view === "table" ? (
             <DataTable<CellularModel> rows={filtered} columns={columns} />
-          ) : (
+          ) : view === "browse" ? (
             <BrowseGrid>
               {filtered.map((r, i) => (
                 <BrowseCard
@@ -203,6 +218,43 @@ export function CellularModelsPage() {
                 </BrowseCard>
               ))}
             </BrowseGrid>
+          ) : (
+            <>
+              <GraphControls<CellularModel>
+                options={GRAPH_FIELD_OPTIONS}
+                selected={edgeSelected}
+                onSelectedChange={setEdgeSelected}
+                minShared={minShared}
+                onMinSharedChange={setMinShared}
+                maxNodes={maxNodes}
+                onMaxNodesChange={setMaxNodes}
+                showAll={showAll}
+                onShowAllChange={setShowAll}
+              />
+              <KnowledgeGraph<CellularModel>
+                rows={filtered}
+                nodeField="Product Code"
+                edgeFields={buildEdgeFields(GRAPH_FIELD_OPTIONS, edgeSelected)}
+                minShared={minShared}
+                maxNodes={maxNodes}
+                hideDisconnected={!showAll}
+                nodeInfo={(r) => (
+                  <InfoList
+                    rows={[
+                      { label: "Product Code", value: r["Product Code"] },
+                      { label: "Gene", value: r.Gene },
+                      { label: "Gene Variant", value: r["Gene Variant"] },
+                      { label: "Condition", value: r.Condition },
+                      { label: "Parental Line", value: r["Parental Line"] },
+                      { label: "Genotype", value: r.Genotype },
+                    ]}
+                  />
+                )}
+                valueMeta={(_field, value) => (
+                  <div className="font-medium">{value}</div>
+                )}
+              />
+            </>
           )}
         </>
       ) : (
