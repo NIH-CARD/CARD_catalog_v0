@@ -126,6 +126,30 @@ export function PublicationsPage() {
         multivalue: false,
       },
       {
+        field: "Diseases Included",
+        label: "Diseases",
+        multivalue: true,
+        delimiter: ";",
+      },
+      {
+        field: "Coarse Data Modality",
+        label: "Coarse Modality",
+        multivalue: true,
+        delimiter: ";",
+      },
+      {
+        field: "Granular Data Modality",
+        label: "Granular Modality",
+        multivalue: true,
+        delimiter: ";",
+      },
+      {
+        field: "Keywords",
+        label: "Keywords",
+        multivalue: true,
+        delimiter: ";",
+      },
+      {
         field: "Authors",
         label: "Authors",
         multivalue: true,

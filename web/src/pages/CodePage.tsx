@@ -23,10 +23,12 @@ const GRAPH_FIELD_OPTIONS = [
 ];
 
 const FACETS: readonly FacetSpec<CodeRepo>[] = [
+  { field: "Resource Name", label: "Study", multivalue: false },
   { field: "Languages", multivalue: true },
   { field: "Diseases Included", multivalue: true },
   { field: "Data Types", multivalue: true },
   { field: "Tooling", multivalue: true },
+  { field: "Biomedical Relevance", multivalue: false },
 ];
 
 const SEARCH_FIELDS: (keyof CodeRepo & string)[] = [
