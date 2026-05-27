@@ -28,6 +28,15 @@ const SEARCH_FIELDS: (keyof CellularModel & string)[] = [
 
 const col = createColumnHelper<CellularModel>();
 
+function StatCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="bg-white border border-slate-200 rounded-lg px-4 py-3 flex flex-col items-center gap-0.5">
+      <span className="text-2xl font-bold text-accent">{value.toLocaleString()}</span>
+      <span className="text-xs text-slate-500 text-center">{label}</span>
+    </div>
+  );
+}
+
 export function CellularModelsPage() {
   const [rows, setRows] = useState<CellularModel[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +59,15 @@ export function CellularModelsPage() {
       return matchesQuery(r, SEARCH_FIELDS, query);
     });
   }, [rows, selections, query]);
+
+  const stats = useMemo(() => ({
+    total: filtered.length,
+    genes: new Set(filtered.map((r) => r.Gene).filter(Boolean)).size,
+    conditions: new Set(
+      filtered.map((r) => r.Condition).filter((c) => c && c !== "0")
+    ).size,
+    parentalLines: new Set(filtered.map((r) => r["Parental Line"]).filter(Boolean)).size,
+  }), [filtered]);
 
   const columns = useMemo(
     () => [
@@ -115,6 +133,12 @@ export function CellularModelsPage() {
     >
       {rows ? (
         <>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            <StatCard label="Cell Lines" value={stats.total} />
+            <StatCard label="Unique Genes" value={stats.genes} />
+            <StatCard label="Unique Conditions" value={stats.conditions} />
+            <StatCard label="Parental Lines" value={stats.parentalLines} />
+          </div>
           <div className="mb-3 inline-flex rounded border border-slate-200 overflow-hidden text-sm">
             {(["table", "browse"] as const).map((v) => (
               <button

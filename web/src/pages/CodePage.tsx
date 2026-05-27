@@ -57,17 +57,18 @@ export function CodePage() {
       }),
       col.accessor("Repository Link", {
         header: "Repo",
+        size: 320,
         cell: (info) => {
           const url = info.getValue();
           if (!url) return null;
-          // Show "owner/name" if possible
           const shown = url.replace(/^https?:\/\/github\.com\//, "");
           return (
             <a
               href={url}
               target="_blank"
               rel="noreferrer"
-              className="text-accent hover:underline font-mono text-xs"
+              className="text-accent hover:underline font-mono text-xs break-all"
+              title={url}
             >
               {shown || url}
             </a>
@@ -85,10 +86,62 @@ export function CodePage() {
       col.accessor("Biomedical Relevance", {
         header: "Relevance",
         cell: (info) => (
-          <span className="text-xs text-slate-600 line-clamp-2 max-w-md">
+          <span className="text-xs text-slate-600 line-clamp-2 max-w-xs" title={info.getValue()}>
             {info.getValue()}
           </span>
         ),
+      }),
+      col.accessor("Code Summary", {
+        header: "Summary",
+        cell: (info) => {
+          const text = info.getValue();
+          if (!text) return null;
+          return (
+            <p className="text-xs text-slate-700 line-clamp-3 max-w-sm" title={text}>
+              {text}
+            </p>
+          );
+        },
+      }),
+      col.accessor("Owner", {
+        header: "Owner",
+        size: 30,
+        cell: (info) => (
+          <span className="text-xs text-slate-500 font-mono truncate block" title={info.getValue()}>
+            {info.getValue()}
+          </span>
+        ),
+      }),
+      col.accessor("Contributors", {
+        header: "Contributors",
+        size: 140,
+        cell: (info) => (
+          <span className="text-xs text-slate-500 line-clamp-2" title={info.getValue()}>
+            {info.getValue()}
+          </span>
+        ),
+      }),
+      col.accessor("FAIR Score", {
+        header: "FAIR Score",
+        cell: (info) => {
+          const score = Number(info.getValue());
+          const color = score >= 8 ? "text-emerald-600" : score >= 5 ? "text-amber-600" : "text-red-500";
+          return (
+            <span className={`text-xs font-semibold tabular-nums ${color}`}>
+              {info.getValue()}/10
+            </span>
+          );
+        },
+      }),
+      col.accessor("FAIR Issues", {
+        header: "FAIR Issues",
+        cell: (info) => {
+          const text = info.getValue();
+          if (!text) return <span className="text-xs text-emerald-600">None</span>;
+          return (
+            <p className="text-xs text-slate-600 line-clamp-3" title={text}>{text}</p>
+          );
+        },
       }),
     ],
     [],
@@ -106,7 +159,7 @@ export function CodePage() {
       }
       rail={
         <FilterRail<CodeRepo>
-          specs={FACETS}
+          specs={FACETS as readonly FacetSpec<CodeRepo>[]}
           rows={rows ?? []}
           selections={selections as Record<string, Set<string>>}
           onFacetChange={(field, next) =>

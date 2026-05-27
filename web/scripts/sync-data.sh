@@ -38,6 +38,10 @@ copy_latest "scilite_annotations_*.tsv"        scilite_annotations.tsv  "$FINAL_
 copy_latest "resources-inventory-*"            resources.tsv            "$TABLES_DIR"
 copy_latest "iNDI_inventory_*"                 cellular_models.tsv      "$TABLES_DIR"
 
+# FAIR compliance log lives in tables/hits/
+HITS_DIR="../tables/hits"
+copy_latest "fair_compliance_log_*.tsv"        fair_compliance.tsv      "$HITS_DIR"
+
 # Logos for the Home page
 mkdir -p public/logos
 for f in ADDI.png card_logo.png stacked_DT.png; do

@@ -45,7 +45,7 @@ export function DataTable<T>({
                     <th
                       key={h.id}
                       className="text-left px-3 py-2 text-xs font-semibold text-slate-600 uppercase tracking-wide cursor-pointer select-none"
-                      style={explicit ? { width: h.getSize() } : undefined}
+                      style={explicit ? { minWidth: h.getSize(), width: h.getSize() } : undefined}
                       onClick={h.column.getToggleSortingHandler()}
                     >
                       {flexRender(h.column.columnDef.header, h.getContext())}
@@ -68,7 +68,7 @@ export function DataTable<T>({
                     <td
                       key={c.id}
                       className="px-3 py-2 align-top"
-                      style={explicit ? { width: c.column.getSize() } : undefined}
+                      style={explicit ? { minWidth: c.column.getSize(), width: c.column.getSize() } : undefined}
                     >
                       {flexRender(c.column.columnDef.cell, c.getContext())}
                     </td>

@@ -419,9 +419,89 @@ const SC_SEARCH: (keyof SciLiteAnnotation & string)[] = [
 ];
 const scCol = createColumnHelper<SciLiteAnnotation>();
 
+function SciLiteStats({ rows }: { rows: SciLiteAnnotation[] }) {
+  const typeCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const r of rows) {
+      if (r.Type) m.set(r.Type, (m.get(r.Type) ?? 0) + 1);
+    }
+    return [...m.entries()].sort((a, b) => b[1] - a[1]);
+  }, [rows]);
+
+  const topTags = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const r of rows) {
+      if (r["Tag Name"]) m.set(r["Tag Name"], (m.get(r["Tag Name"]) ?? 0) + 1);
+    }
+    return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 15);
+  }, [rows]);
+
+  const topPmc = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const r of rows) {
+      if (r["PMC ID"]) m.set(r["PMC ID"], (m.get(r["PMC ID"]) ?? 0) + 1);
+    }
+    return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+  }, [rows]);
+
+  const maxType = typeCounts[0]?.[1] ?? 1;
+  const maxTag = topTags[0]?.[1] ?? 1;
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-4">
+      <div>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">Type Distribution</h3>
+        <div className="flex flex-col gap-2">
+          {typeCounts.map(([type, count]) => (
+            <div key={type} className="flex items-center gap-2">
+              <span className="text-xs text-slate-700 w-32 truncate shrink-0" title={type}>{type}</span>
+              <div className="flex-1 bg-slate-100 rounded h-4 overflow-hidden">
+                <div
+                  className="bg-accent h-full rounded"
+                  style={{ width: `${(count / maxType) * 100}%` }}
+                />
+              </div>
+              <span className="text-xs text-slate-500 w-10 text-right shrink-0">{count.toLocaleString()}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">Top Tags</h3>
+        <div className="flex flex-col gap-2">
+          {topTags.map(([tag, count]) => (
+            <div key={tag} className="flex items-center gap-2">
+              <span className="text-xs text-slate-700 w-36 truncate shrink-0" title={tag}>{tag}</span>
+              <div className="flex-1 bg-slate-100 rounded h-4 overflow-hidden">
+                <div
+                  className="bg-violet-400 h-full rounded"
+                  style={{ width: `${(count / maxTag) * 100}%` }}
+                />
+              </div>
+              <span className="text-xs text-slate-500 w-10 text-right shrink-0">{count.toLocaleString()}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">Top PMCs by Annotation Count</h3>
+        <div className="flex flex-col gap-1.5">
+          {topPmc.map(([pmc, count]) => (
+            <div key={pmc} className="flex items-center justify-between text-xs">
+              <span className="font-mono text-accent">{pmc}</span>
+              <span className="text-slate-500">{count.toLocaleString()}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SciliteTab() {
   const [rows, setRows] = useState<SciLiteAnnotation[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<"table" | "stats">("table");
   const [sp] = useSearchParams();
   const pmcFilter = sp.get("pmc");
 
@@ -517,7 +597,27 @@ function SciliteTab() {
       <SubNav />
       <PmcBanner />
       {rows ? (
-        <DataTable<SciLiteAnnotation> rows={filtered} columns={columns} />
+        <>
+          <div className="mb-3 inline-flex rounded border border-slate-200 overflow-hidden text-sm">
+            {(["table", "stats"] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                className={
+                  "px-3 py-1.5 " +
+                  (view === v ? "bg-accent text-white" : "bg-white text-slate-700 hover:bg-slate-100")
+                }
+              >
+                {v === "table" ? "📊 Table" : "📈 Stats"}
+              </button>
+            ))}
+          </div>
+          {view === "table" ? (
+            <DataTable<SciLiteAnnotation> rows={filtered} columns={columns} />
+          ) : (
+            <SciLiteStats rows={filtered} />
+          )}
+        </>
       ) : (
         <div className="text-sm text-slate-500">Loading SciLite annotations…</div>
       )}

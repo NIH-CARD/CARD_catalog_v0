@@ -189,6 +189,17 @@ def _normalize_publications(df: pd.DataFrame) -> pd.DataFrame:
     for col in ["Diseases_Included", "Keywords", "Coarse_Data_Modality", "Granular_Data_Modality"]:
         if col in df.columns:
             df[col] = df[col].apply(_normalize_list_field)
+    completeness_fields = [
+        "PubMed_Central_Link", "Abstract", "Keywords", "Authors", "Affiliations",
+    ]
+    present = [c for c in completeness_fields if c in df.columns]
+    if present:
+        df["Data Completeness"] = df[present].apply(
+            lambda row: str(round(
+                sum(bool(str(v).strip()) for v in row) / len(present) * 100
+            )),
+            axis=1,
+        )
     return df
 
 
@@ -196,6 +207,36 @@ def _normalize_code(df: pd.DataFrame) -> pd.DataFrame:
     for col in ["Diseases_Included", "Data_Types", "Tooling", "Languages"]:
         if col in df.columns:
             df[col] = df[col].apply(_normalize_list_field)
+
+    # Merge FAIR compliance log — adds FAIR Score and FAIR Issues columns
+    hits_dir = Path(__file__).parent.parent / "tables" / "hits"
+    fair_files = sorted(hits_dir.glob("fair_compliance_log_*.tsv"))
+    if fair_files:
+        fair_df = pd.read_csv(fair_files[-1], sep="\t", dtype=str).fillna("")
+        by_repo = (
+            fair_df.groupby("Repository")["Issue Type"]
+            .apply(list)
+            .reset_index()
+        )
+        by_repo.columns = pd.Index(["Repository Link", "issues"])
+        by_repo["FAIR Issues"] = by_repo["issues"].apply(lambda x: "; ".join(x))
+        by_repo["FAIR Score"] = by_repo["issues"].apply(
+            lambda x: str(max(0, 10 - len(x)))
+        )
+        repo_col = "Repository_Link" if "Repository_Link" in df.columns else "Repository Link"
+        by_repo = by_repo.rename(columns={"Repository Link": repo_col})
+        df = df.merge(
+            by_repo[[repo_col, "FAIR Issues", "FAIR Score"]],
+            on=repo_col,
+            how="left",
+        )
+        df["FAIR Issues"] = df["FAIR Issues"].fillna("")
+        df["FAIR Score"] = df["FAIR Score"].fillna("10")
+    else:
+        logger.warning("No FAIR compliance log found — setting default scores")
+        df["FAIR Issues"] = ""
+        df["FAIR Score"] = "10"
+
     return df
 
 

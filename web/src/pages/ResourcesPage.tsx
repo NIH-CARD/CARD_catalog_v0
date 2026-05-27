@@ -110,6 +110,18 @@ export function ResourcesPage() {
           <span className="text-xs tabular-nums text-slate-700">{info.getValue()}</span>
         ),
       }),
+      col.accessor("FAIR Compliance Notes", {
+        header: "FAIR Notes",
+        cell: (info) => {
+          const text = info.getValue();
+          if (!text) return null;
+          return (
+            <p className="text-xs text-slate-600 line-clamp-3 max-w-sm" title={text}>
+              {text}
+            </p>
+          );
+        },
+      }),
     ],
     [],
   );

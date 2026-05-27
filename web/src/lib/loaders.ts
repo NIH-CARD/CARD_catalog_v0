@@ -2,6 +2,7 @@ import { loadTsv } from "./loadPublications";
 import type {
   CellularModel,
   CodeRepo,
+  FairIssue,
   PubDataset,
   Publication,
   Resource,
@@ -13,6 +14,8 @@ export const loadPublications = () =>
   loadTsv<Publication>("/data/publications.tsv");
 export const loadResources = () => loadTsv<Resource>("/data/resources.tsv");
 export const loadCodeRepos = () => loadTsv<CodeRepo>("/data/code_repos.tsv");
+export const loadFairCompliance = () =>
+  loadTsv<FairIssue>("/data/fair_compliance.tsv").catch(() => [] as FairIssue[]);
 export const loadPubDatasets = () =>
   loadTsv<PubDataset>("/data/pub_datasets.tsv");
 export const loadSupplementary = () =>

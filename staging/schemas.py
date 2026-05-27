@@ -54,6 +54,7 @@ class PublicationRow(_Base):
     Abstract: str = ""
     Keywords: str = ""
     Publication_Date: str = ""
+    Data_Completeness: str = ""
 
     # Map from scraper column names (with spaces) to model field names
     model_config = {
@@ -65,7 +66,7 @@ class PublicationRow(_Base):
         "PMID", "Resource_Name", "Abbreviation", "Diseases_Included",
         "Coarse_Data_Modality", "Granular_Data_Modality", "PubMed_Central_Link",
         "Authors", "Affiliations", "Title", "Abstract", "Keywords",
-        "Publication_Date",
+        "Publication_Date", "Data_Completeness",
         mode="before",
     )
     @classmethod
@@ -77,7 +78,7 @@ class PublicationRow(_Base):
         "PMID", "Resource Name", "Abbreviation",
         "Diseases Included", "Coarse Data Modality", "Granular Data Modality",
         "PubMed Central Link", "Authors", "Affiliations",
-        "Title", "Abstract", "Keywords", "Publication Date",
+        "Title", "Abstract", "Keywords", "Publication Date", "Data Completeness",
     ]
 
 
@@ -96,6 +97,8 @@ class CodeRepoRow(_Base):
     Code_Summary: str = ""
     Data_Types: str = ""
     Tooling: str = ""
+    FAIR_Score: str = "10"
+    FAIR_Issues: str = ""
 
     model_config = {
         "populate_by_name": True,
@@ -105,7 +108,7 @@ class CodeRepoRow(_Base):
     @field_validator(
         "Resource_Name", "Abbreviation", "Diseases_Included", "Repository_Link",
         "Owner", "Contributors", "Languages", "Biomedical_Relevance",
-        "Code_Summary", "Data_Types", "Tooling",
+        "Code_Summary", "Data_Types", "Tooling", "FAIR_Score", "FAIR_Issues",
         mode="before",
     )
     @classmethod
@@ -116,6 +119,7 @@ class CodeRepoRow(_Base):
         "Resource Name", "Abbreviation", "Diseases Included",
         "Repository Link", "Owner", "Contributors", "Languages",
         "Biomedical Relevance", "Code Summary", "Data Types", "Tooling",
+        "FAIR Score", "FAIR Issues",
     ]
 
 

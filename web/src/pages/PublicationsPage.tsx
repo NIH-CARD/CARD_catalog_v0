@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { BrowseCard, BrowseGrid, Field, Section } from "../components/BrowseCard";
 import { createColumnHelper } from "@tanstack/react-table";
+import { Chips } from "../components/Chips";
 import { DataTable } from "../components/DataTable";
 import { FilterRail } from "../components/FilterRail";
 import { GraphControls, buildEdgeFields } from "../components/GraphControls";
@@ -18,7 +19,6 @@ import {
 import { pmcidFrom } from "../lib/loadPublications";
 import {
   applyToPubs,
-  indexAnnotations,
   PAPER_GRAPH_FIELD_OPTIONS,
   type GraphPublication,
 } from "../lib/paperGraph";
@@ -109,27 +109,11 @@ export function PublicationsPage() {
     loadSciLite().then(setSc).catch(() => undefined);
   }, []);
 
-  // Build the annotation index once for the whole corpus
-  const index = useMemo(() => indexAnnotations(sc, ds), [sc, ds]);
-
-  // Augment all publications once (no hub filter) — used by rail + table
-  const allAugmented = useMemo<GraphPublication[]>(() => {
-    if (!pubs) return [];
-    return applyToPubs(index, pubs, 1.1);
-  }, [pubs, index]);
-
-  // displayLabel resolvers — render URIs as readable names in the rail facets
-  const conceptLabel = useMemo(
-    () => (value: string) => index.conceptMeta.get(value)?.name || value,
-    [index],
-  );
-  const datasetLabel = useMemo(
-    () => (value: string) => {
-      const meta = index.datasetMeta.get(value);
-      if (!meta?.repository) return value;
-      return `${value} (${meta.repository})`;
-    },
-    [index],
+  // Publications already carry annotation columns from the pipeline (staging/join_annotations.py).
+  // Cast to GraphPublication — the type is now identical to Publication.
+  const allAugmented = useMemo<GraphPublication[]>(
+    () => (pubs as GraphPublication[]) ?? [],
+    [pubs],
   );
 
   // Paper-grounded facets: SciLite types + cited datasets + publication metadata
@@ -151,32 +135,27 @@ export function PublicationsPage() {
         label: "Diseases (SciLite)",
         multivalue: true,
         delimiter: ";",
-        displayLabel: conceptLabel,
       },
       {
         field: "Genes / Proteins",
         label: "Genes / Proteins (SciLite)",
         multivalue: true,
         delimiter: ";",
-        displayLabel: conceptLabel,
       },
-
       {
         field: "Chemicals",
         label: "Chemicals (SciLite)",
         multivalue: true,
         delimiter: ";",
-        displayLabel: conceptLabel,
       },
       {
         field: "Cited Datasets",
         label: "Cited Datasets",
         multivalue: true,
         delimiter: ";",
-        displayLabel: datasetLabel,
       },
     ],
-    [conceptLabel, datasetLabel],
+    [],
   );
 
   const fieldNames = useMemo(() => FACETS.map((f) => f.field), [FACETS]);
@@ -231,8 +210,8 @@ export function PublicationsPage() {
   // Re-augment the *filtered* corpus with hub filter for the graph view
   const graphRows = useMemo<GraphPublication[]>(() => {
     const threshold = hubEnabled ? hubThresholdPct / 100 : 1.1;
-    return applyToPubs(index, filtered, threshold);
-  }, [index, filtered, hubEnabled, hubThresholdPct]);
+    return applyToPubs(null, filtered, threshold);
+  }, [filtered, hubEnabled, hubThresholdPct]);
 
   const columns = useMemo(
     () => [
@@ -285,12 +264,58 @@ export function PublicationsPage() {
       col.accessor("Authors", {
         header: "Authors",
         cell: (info) => (
-          <span className="text-xs text-slate-600">{info.getValue()}</span>
+          <span className="text-xs text-slate-600 line-clamp-2" title={info.getValue()}>{info.getValue()}</span>
+        ),
+      }),
+      col.accessor("Affiliations", {
+        header: "Affiliations",
+        cell: (info) => (
+          <span className="text-xs text-slate-500 line-clamp-2" title={info.getValue()}>{info.getValue()}</span>
         ),
       }),
       col.accessor("Resource Name", {
         header: "Study",
         cell: (info) => <span className="text-slate-700">{info.getValue()}</span>,
+      }),
+      col.accessor("Diseases Included", {
+        header: "Diseases",
+        cell: (info) => <Chips value={info.getValue()} max={3} />,
+      }),
+      col.accessor("Coarse Data Modality", {
+        header: "Modality",
+        cell: (info) => <Chips value={info.getValue()} delimiter="," max={3} />,
+      }),
+      col.accessor("Keywords", {
+        header: "Keywords",
+        cell: (info) => <Chips value={info.getValue()} delimiter="," max={3} />,
+      }),
+      col.accessor("Abstract", {
+        header: "Abstract",
+        cell: (info) => {
+          const text = info.getValue();
+          if (!text) return null;
+          return (
+            <p className="text-xs text-slate-700 line-clamp-3 max-w-sm" title={text}>
+              {text}
+            </p>
+          );
+        },
+      }),
+      col.accessor("Data Completeness", {
+        header: "Completeness",
+        size: 110,
+        cell: (info) => {
+          const pct = Number(info.getValue()) || 0;
+          const color = pct === 100 ? "bg-emerald-500" : pct >= 60 ? "bg-amber-400" : "bg-red-400";
+          return (
+            <div className="flex flex-col gap-1" title={`${pct}% complete`}>
+              <div className="w-full bg-slate-100 rounded h-1.5 overflow-hidden">
+                <div className={`${color} h-full rounded`} style={{ width: `${pct}%` }} />
+              </div>
+              <span className="text-[10px] text-slate-500 tabular-nums">{pct}%</span>
+            </div>
+          );
+        },
       }),
     ],
     [dsByPmc, spByPmc, scByPmc],
@@ -425,29 +450,9 @@ export function PublicationsPage() {
                     ]}
                   />
                 )}
-                valueMeta={(field, value) => {
-                  if (field === "Cited Datasets") {
-                    const meta = index.datasetMeta.get(value);
-                    return (
-                      <div>
-                        <div className="font-medium">{value}</div>
-                        {meta?.repository && (
-                          <div className="text-[10px] text-slate-500">
-                            {meta.repository}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  }
-                  const meta = index.conceptMeta.get(value);
-                  return (
-                    <div>
-                      <div className="font-medium">{meta?.name || value}</div>
-                      <div className="text-[10px] text-slate-500">{meta?.type}</div>
-                      <div className="text-[10px] text-slate-400 break-all">{value}</div>
-                    </div>
-                  );
-                }}
+                valueMeta={(_field, value) => (
+                  <div className="font-medium">{value}</div>
+                )}
               />
             </>
           )}

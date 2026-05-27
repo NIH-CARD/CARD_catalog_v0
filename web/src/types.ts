@@ -12,6 +12,11 @@ export interface Publication {
   Abstract: string;
   Keywords: string;
   "Publication Date": string;
+  "Data Completeness": string;
+  "Diseases (Annotated)": string;
+  "Genes / Proteins": string;
+  "Chemicals": string;
+  "Cited Datasets": string;
 }
 
 export interface Resource {
@@ -44,6 +49,8 @@ export interface CodeRepo {
   "Code Summary": string;
   "Data Types": string;
   Tooling: string;
+  "FAIR Score": string;
+  "FAIR Issues": string;
 }
 
 export interface PubDataset {
@@ -103,6 +110,14 @@ export interface CellularModel {
   "Procurement link": string;
   "About this gene": string;
   "About this variant": string;
+}
+
+export interface FairIssue {
+  Repository: string;
+  Study: string;
+  "Issue Type": string;
+  Details: string;
+  Timestamp: string;
 }
 
 export interface FacetCount {
