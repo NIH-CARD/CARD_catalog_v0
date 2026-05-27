@@ -31,7 +31,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install sphinx myst-parser sphinx-rtd-theme pydantic pandas
+          pip install sphinx myst-parser sphinx-rtd-theme sphinxcontrib-mermaid pydantic pandas
 
       - name: Build Sphinx HTML
         working-directory: docs

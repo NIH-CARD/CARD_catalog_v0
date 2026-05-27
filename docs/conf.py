@@ -16,6 +16,7 @@ release = "1.0"
 # ---------------------------------------------------------------------------
 extensions = [
     "myst_parser",              # render .md files
+    "sphinxcontrib.mermaid",    # render Mermaid diagrams
     "sphinx.ext.autodoc",       # pull docstrings from Python modules
     "sphinx.ext.napoleon",      # Google/NumPy docstring style
     "sphinx.ext.viewcode",      # links to source code

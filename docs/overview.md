@@ -49,17 +49,19 @@ It is maintained by DataTecnica for NIH's Center for Alzheimer's and Related Dem
 
 ## Pipeline Stages
 
-The pipeline is a staged DAG. Each stage is independently restartable: if a today-dated hits file already exists in `tables/hits/`, the orchestrator skips that stage.
+The pipeline is a staged DAG. Each stage is independently restartable: if a today-dated hits file already exists in `tables/hits/`, the orchestrator skips that stage. See [Pipeline Diagram](pipeline_diagram.md) for a full visual DAG.
 
 | Stage | Input | Output (hits/) | Description |
 |---|---|---|---|
-| `pubmed_search` | inventory.tab | `pubmed_hits_*.tsv` | PubMed search (3 queries: original, v2, v3) |
+| `pubmed_search` | inventory.tab | `pubmed_hits_*.tsv` | PubMed search (3-year window) |
 | `github_search` | inventory.tab | `github_hits_*.tsv` | GitHub search, content fetch, no AI |
-| `repo_analysis` | github_hits | `github_analyzed_*.tsv` | AI analysis via external inference engines |
-| `pub_metadata` | pubmed_hits | `pub_datasets_*.tsv`, `pub_supplementary_*.tsv` | Dataset + supplementary file extraction from PMC articles |
-| `page_navigation` | inventory.tab | `new_corpus_*.tsv` | Study page visits via browser + LLM for metadata verification and new resource discovery |
+| `repo_analysis` | github_hits | `github_analyzed_*.tsv` | AI repo analysis via Anthropic Batch API |
+| `pub_metadata` | pubmed_hits | `pub_datasets_*.tsv`, `pub_supplementary_*.tsv` | Dataset + supplementary extraction from PMC articles (DataGatherer + Haiku) |
+| `page_navigation` | inventory.tab | `new_corpus_*.tsv` | Study page visits via headless Firefox + LLM |
+| `scilite` | pubmed_hits | `scilite_annotations_*.tsv` | Bioentity annotations from Europe PMC SciLite API |
+| `join_annotations` | pubmed_central + pub_datasets + scilite | pubmed_central (enriched) | Post-normalization join — adds Diseases (Annotated), Genes/Proteins, Chemicals, Cited Datasets to the publications table |
 
-After each stage, the **normalizer** validates and coerces the hits file to a schema-conformant TSV in `tables/final/`.
+After each stage, the **normalizer** validates and writes to `tables/final/`. `join_annotations` runs last and enriches the publications table in place.
 
 ---
 
@@ -137,9 +139,10 @@ CARD_catalog_v0/
 |---|---|---|
 | `pubmed_central_*.tsv` | `PublicationRow` | Publications |
 | `gits_to_reannotate_completed_*.tsv` | `CodeRepoRow` | Code Repositories |
-| `pub_datasets_*.tsv` | `PubDatasetRow` | (future Datasets page) |
-| `pub_supplementary_*.tsv` | `SupplementaryRow` | (future Datasets page) |
-| `new_corpus_*.tsv` | `NewCorpusRow` | (feeds back into inventory) |
+| `pub_datasets_*.tsv` | `PubDatasetRow` | Datasets & Supplementary → Datasets tab |
+| `pub_supplementary_*.tsv` | `SupplementaryRow` | Datasets & Supplementary → Supplementary tab |
+| `scilite_annotations_*.tsv` | `SciLiteRow` | Datasets & Supplementary → SciLite tab |
+| `new_corpus_*.tsv` | `NewCorpusRow` | Feeds back into inventory |
 
 The app resolves the **latest** file matching each pattern, checking `tables/final/` first for v1 outputs and falling back to `tables/` root for legacy v0 files.
 

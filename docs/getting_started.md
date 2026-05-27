@@ -157,7 +157,7 @@ crontab -e
 
 | Flag | Default | Description |
 |---|---|---|
-| `--query-method` | `v2` | PubMed query strategy (`original`, `v2`, `v3`) |
+| `--query-method` | `v3` | PubMed query strategy (`original`, `v2`, `v3`) |
 | `--max-results` | `100` | Max PubMed hits per resource |
 | `--skip STAGE [...]` | none | Skip named stages |
 | `--force` | off | Re-run stages even if today's hits file exists |
