@@ -7,6 +7,7 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import { createColumnHelper } from "@tanstack/react-table";
+import { AnalysisPanel } from "../components/AnalysisPanel";
 import { Chips } from "../components/Chips";
 import { DataTable } from "../components/DataTable";
 import { ExportButton } from "../components/ExportButton";
@@ -78,7 +79,6 @@ function SubNav() {
 const DS_FACETS: readonly FacetSpec<PubDataset>[] = [
   { field: "data_repository", label: "Data Repository", multivalue: false },
   { field: "citation_type", label: "Citation Type", multivalue: false },
-  { field: "raw_data_format", label: "Raw Data Format", multivalue: false },
   { field: "dataset_keywords", label: "Keywords", multivalue: true, delimiter: "," },
 ];
 const DS_SEARCH: (keyof PubDataset & string)[] = [
@@ -231,6 +231,21 @@ function DatasetsTab() {
       <PmcBanner />
       {rows ? (
         <>
+          <AnalysisPanel<PubDataset>
+            type="pub_datasets"
+            filtered={filtered}
+            total={scoped.length}
+            prepare={(rs) => rs.map((r) => ({
+              identifier: r.dataset_identifier,
+              webpage: r.dataset_webpage,
+              repository: r.data_repository,
+              citationType: r.citation_type,
+              accessMode: r.access_mode,
+              keywords: r.dataset_keywords,
+              pubTitle: r.pub_title,
+              context: r.dataset_context_from_paper,
+            }))}
+          />
           <div className="mb-3 flex justify-end">
             <ExportButton rows={filtered} filename="pub_datasets" />
           </div>

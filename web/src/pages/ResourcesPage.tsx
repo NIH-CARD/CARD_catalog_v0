@@ -7,6 +7,7 @@ import { FilterRail } from "../components/FilterRail";
 import { GraphControls, buildEdgeFields } from "../components/GraphControls";
 import { InfoList } from "../components/HoverInfo";
 import { KnowledgeGraph } from "../components/KnowledgeGraph";
+import { AnalysisPanel } from "../components/AnalysisPanel";
 import { ExportButton } from "../components/ExportButton";
 import { PageShell } from "../components/PageShell";
 import { matchesFacet, matchesQuery } from "../lib/filter";
@@ -153,6 +154,19 @@ export function ResourcesPage() {
     >
       {rows ? (
         <>
+          <AnalysisPanel<Resource>
+            type="resources"
+            filtered={filtered}
+            total={rows.length}
+            prepare={(rs) => rs.map((r) => ({
+              name: r["Resource Name"],
+              abbreviation: r["Abbreviation"],
+              diseases: r["Diseases Included"],
+              modality: r["Coarse Data Modality"],
+              sampleSize: r["Sample Size"],
+              type: r["Resource Type"],
+            }))}
+          />
           <div className="mb-3 flex items-center justify-between gap-3">
           <div className="inline-flex rounded border border-slate-200 overflow-hidden text-sm">
             {(["table", "browse", "graph"] as const).map((v) => (

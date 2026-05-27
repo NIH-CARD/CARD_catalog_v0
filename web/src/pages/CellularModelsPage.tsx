@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createColumnHelper } from "@tanstack/react-table";
+import { AnalysisPanel } from "../components/AnalysisPanel";
 import { BrowseCard, BrowseGrid, Field, Section } from "../components/BrowseCard";
 import { DataTable } from "../components/DataTable";
 import { ExportButton } from "../components/ExportButton";
@@ -149,6 +150,20 @@ export function CellularModelsPage() {
     >
       {rows ? (
         <>
+          <AnalysisPanel<CellularModel>
+            type="cellular_models"
+            filtered={filtered}
+            total={rows.length}
+            maxRows={30}
+            prepare={(rs) => rs.map((r) => ({
+              productCode: r["Product Code"],
+              gene: r.Gene,
+              geneVariant: r["Gene Variant"],
+              condition: r.Condition,
+              aboutGene: r["About this gene"]?.slice(0, 200),
+              aboutVariant: r["About this variant"]?.slice(0, 200),
+            }))}
+          />
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
             <StatCard label="Cell Lines" value={stats.total} />
             <StatCard label="Unique Genes" value={stats.genes} />

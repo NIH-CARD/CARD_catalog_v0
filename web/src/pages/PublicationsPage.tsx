@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { AnalysisPanel } from "../components/AnalysisPanel";
 import { ExportButton } from "../components/ExportButton";
 import { BrowseCard, BrowseGrid, Field, Section } from "../components/BrowseCard";
 import { createColumnHelper } from "@tanstack/react-table";
@@ -242,6 +243,7 @@ export function PublicationsPage() {
     () => [
       col.accessor("Title", {
         header: "Title",
+        size: 230,
         cell: (info) => {
           const row = info.row.original;
           const pmcLink = row["PubMed Central Link"];
@@ -372,6 +374,19 @@ export function PublicationsPage() {
     >
       {pubs ? (
         <>
+          <AnalysisPanel<GraphPublication>
+            type="publications"
+            filtered={filtered}
+            total={pubs.length}
+            prepare={(ps) => ps.map((p) => ({
+              title: p.Title,
+              authors: p.Authors?.split(";").slice(0, 3).join("; "),
+              study: p["Resource Name"],
+              keywords: p.Keywords,
+              abstract: p.Abstract?.slice(0, 200),
+              diseases: p["Diseases Included"],
+            }))}
+          />
           <div className="mb-3 flex items-center justify-between gap-3">
             <div className="inline-flex rounded border border-slate-200 overflow-hidden text-sm">
               {(["table", "browse", "graph"] as const).map((v) => (

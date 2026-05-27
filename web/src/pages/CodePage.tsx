@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createColumnHelper } from "@tanstack/react-table";
+import { AnalysisPanel } from "../components/AnalysisPanel";
 import { BrowseCard, BrowseGrid, Field, Section } from "../components/BrowseCard";
 import { Chips } from "../components/Chips";
 import { DataTable } from "../components/DataTable";
@@ -123,7 +124,6 @@ export function CodePage() {
       }),
       col.accessor("Owner", {
         header: "Owner",
-        size: 30,
         cell: (info) => (
           <span className="text-xs text-slate-500 font-mono truncate block" title={info.getValue()}>
             {info.getValue()}
@@ -191,6 +191,21 @@ export function CodePage() {
     >
       {rows ? (
         <>
+          <AnalysisPanel<CodeRepo>
+            type="code"
+            filtered={filtered}
+            total={rows.length}
+            maxRows={20}
+            prepare={(rs) => rs.map((r) => ({
+              name: r["Resource Name"],
+              repo: r["Repository Link"],
+              languages: r.Languages,
+              dataTypes: r["Data Types"],
+              tooling: r.Tooling,
+              relevance: r["Biomedical Relevance"],
+              fairScore: r["FAIR Score"],
+            }))}
+          />
           <div className="mb-3 flex items-center justify-between gap-3">
             <div className="inline-flex rounded border border-slate-200 overflow-hidden text-sm">
               {(["table", "browse", "graph"] as const).map((v) => (
