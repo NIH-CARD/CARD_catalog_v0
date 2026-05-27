@@ -143,7 +143,7 @@ function DatasetsTab() {
       }),
       dsCol.accessor("data_repository", {
         header: "Repository",
-        size: 120,
+        size: 100,
         cell: (info) => (
           <span className="text-xs text-slate-700">{info.getValue()}</span>
         ),
@@ -335,7 +335,7 @@ function SupplementaryTab() {
       }),
       spCol.accessor("caption", {
         header: "Caption",
-        size: 120,
+        size: 80,
         cell: (info) => (
           <span
             className="text-xs text-slate-600 line-clamp-3"
@@ -524,10 +524,12 @@ function SciLiteStats({ rows }: { rows: SciLiteAnnotation[] }) {
   );
 }
 
+const SCILITE_TABLE_CAP = 5000;
+
 function SciliteTab() {
   const [rows, setRows] = useState<SciLiteAnnotation[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<"table" | "stats">("table");
+  const [view, setView] = useState<"table" | "stats">("stats");
   const [sp] = useSearchParams();
   const pmcFilter = sp.get("pmc");
 
@@ -642,7 +644,14 @@ function SciliteTab() {
             <ExportButton rows={filtered} filename="scilite_annotations" />
           </div>
           {view === "table" ? (
-            <DataTable<SciLiteAnnotation> rows={filtered} columns={columns} />
+            <>
+              {filtered.length > SCILITE_TABLE_CAP && (
+                <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-2">
+                  Showing first {SCILITE_TABLE_CAP.toLocaleString()} of {filtered.length.toLocaleString()} annotations. Use filters to narrow the set, or switch to Stats view for the full picture.
+                </div>
+              )}
+              <DataTable<SciLiteAnnotation> rows={filtered.slice(0, SCILITE_TABLE_CAP)} columns={columns} />
+            </>
           ) : (
             <SciLiteStats rows={filtered} />
           )}

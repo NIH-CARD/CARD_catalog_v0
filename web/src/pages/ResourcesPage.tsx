@@ -71,6 +71,7 @@ export function ResourcesPage() {
     () => [
       col.accessor("Resource Name", {
         header: "Resource",
+        size: 280,
         cell: (info) => {
           const url = info.row.original["Access URL"];
           const name = info.getValue();
@@ -89,17 +90,20 @@ export function ResourcesPage() {
         },
       }),
       col.accessor("Abbreviation", {
-        header: "Abbreviation",
+        header: "Abbrev.",
+        size: 90,
         cell: (info) => (
           <span className="font-mono text-xs text-slate-600">{info.getValue()}</span>
         ),
       }),
       col.accessor("Resource Type", {
         header: "Type",
+        size: 130,
         cell: (info) => <Chips value={info.getValue()} max={2} delimiter="," />,
       }),
       col.accessor("Diseases Included", {
         header: "Diseases",
+        size: 220,
         cell: (info) => <Chips value={info.getValue()} />,
       }),
       col.accessor("Coarse Data Modality", {

@@ -124,6 +124,7 @@ export function CodePage() {
       }),
       col.accessor("Owner", {
         header: "Owner",
+        size: 110,
         cell: (info) => (
           <span className="text-xs text-slate-500 font-mono truncate block" title={info.getValue()}>
             {info.getValue()}

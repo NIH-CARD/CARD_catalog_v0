@@ -243,7 +243,7 @@ export function PublicationsPage() {
     () => [
       col.accessor("Title", {
         header: "Title",
-        size: 230,
+        size: 320,
         cell: (info) => {
           const row = info.row.original;
           const pmcLink = row["PubMed Central Link"];
@@ -290,22 +290,26 @@ export function PublicationsPage() {
       }),
       col.accessor("Authors", {
         header: "Authors",
+        size: 180,
         cell: (info) => (
-          <span className="text-xs text-slate-600 line-clamp-2" title={info.getValue()}>{info.getValue()}</span>
+          <span className="text-xs text-slate-600 line-clamp-4" title={info.getValue()}>{info.getValue()}</span>
         ),
       }),
       col.accessor("Affiliations", {
         header: "Affiliations",
+        size: 200,
         cell: (info) => (
-          <span className="text-xs text-slate-500 line-clamp-2" title={info.getValue()}>{info.getValue()}</span>
+          <span className="text-xs text-slate-500 line-clamp-4" title={info.getValue()}>{info.getValue()}</span>
         ),
       }),
       col.accessor("Resource Name", {
         header: "Study",
+        size: 160,
         cell: (info) => <span className="text-slate-700">{info.getValue()}</span>,
       }),
       col.accessor("Diseases Included", {
         header: "Diseases",
+        size: 160,
         cell: (info) => <Chips value={info.getValue()} max={3} />,
       }),
       col.accessor("Coarse Data Modality", {
@@ -314,15 +318,17 @@ export function PublicationsPage() {
       }),
       col.accessor("Keywords", {
         header: "Keywords",
-        cell: (info) => <Chips value={info.getValue()} delimiter="," max={3} />,
+        size: 160,
+        cell: (info) => <Chips value={info.getValue()} delimiter=";" max={4} />,
       }),
       col.accessor("Abstract", {
         header: "Abstract",
+        size: 400,
         cell: (info) => {
           const text = info.getValue();
           if (!text) return null;
           return (
-            <p className="text-xs text-slate-700 line-clamp-3 max-w-sm" title={text}>
+            <p className="text-xs text-slate-700 line-clamp-5" title={text}>
               {text}
             </p>
           );

@@ -120,6 +120,19 @@ export function CellularModelsPage() {
       }),
       col.accessor("Parental Line", { header: "Parental" }),
       col.accessor("Genotype", { header: "Genotype" }),
+      col.accessor("dbSNP", {
+        header: "dbSNP",
+        cell: (info) => (
+          <span className="font-mono text-xs text-slate-600">{info.getValue()}</span>
+        ),
+      }),
+      col.accessor("Genome Assembly", { header: "Assembly" }),
+      col.accessor("Other Names", {
+        header: "Other Names",
+        cell: (info) => (
+          <span className="text-xs text-slate-500">{info.getValue()}</span>
+        ),
+      }),
     ],
     [],
   );
