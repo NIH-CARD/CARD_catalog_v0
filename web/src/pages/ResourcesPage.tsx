@@ -7,6 +7,7 @@ import { FilterRail } from "../components/FilterRail";
 import { GraphControls, buildEdgeFields } from "../components/GraphControls";
 import { InfoList } from "../components/HoverInfo";
 import { KnowledgeGraph } from "../components/KnowledgeGraph";
+import { ExportButton } from "../components/ExportButton";
 import { PageShell } from "../components/PageShell";
 import { matchesFacet, matchesQuery } from "../lib/filter";
 import { loadResources } from "../lib/loaders";
@@ -152,7 +153,8 @@ export function ResourcesPage() {
     >
       {rows ? (
         <>
-          <div className="mb-3 inline-flex rounded border border-slate-200 overflow-hidden text-sm">
+          <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="inline-flex rounded border border-slate-200 overflow-hidden text-sm">
             {(["table", "browse", "graph"] as const).map((v) => (
               <button
                 key={v}
@@ -165,6 +167,8 @@ export function ResourcesPage() {
                 {v === "table" ? "📊 Table" : v === "browse" ? "🗂 Browse" : "🕸 Graph"}
               </button>
             ))}
+          </div>
+            <ExportButton rows={filtered} filename="resources" />
           </div>
           {view === "table" ? (
             <DataTable<Resource> rows={filtered} columns={columns} />

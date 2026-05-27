@@ -3,6 +3,7 @@ import { createColumnHelper } from "@tanstack/react-table";
 import { BrowseCard, BrowseGrid, Field, Section } from "../components/BrowseCard";
 import { Chips } from "../components/Chips";
 import { DataTable } from "../components/DataTable";
+import { ExportButton } from "../components/ExportButton";
 import { FilterRail } from "../components/FilterRail";
 import { PageShell } from "../components/PageShell";
 import { matchesFacet, matchesQuery } from "../lib/filter";
@@ -173,19 +174,22 @@ export function CodePage() {
     >
       {rows ? (
         <>
-          <div className="mb-3 inline-flex rounded border border-slate-200 overflow-hidden text-sm">
-            {(["table", "browse"] as const).map((v) => (
-              <button
-                key={v}
-                onClick={() => setView(v)}
-                className={
-                  "px-3 py-1.5 " +
-                  (view === v ? "bg-accent text-white" : "bg-white text-slate-700 hover:bg-slate-100")
-                }
-              >
-                {v === "table" ? "📊 Table" : "🗂 Browse"}
-              </button>
-            ))}
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="inline-flex rounded border border-slate-200 overflow-hidden text-sm">
+              {(["table", "browse"] as const).map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  className={
+                    "px-3 py-1.5 " +
+                    (view === v ? "bg-accent text-white" : "bg-white text-slate-700 hover:bg-slate-100")
+                  }
+                >
+                  {v === "table" ? "📊 Table" : "🗂 Browse"}
+                </button>
+              ))}
+            </div>
+            <ExportButton rows={filtered} filename="code_repos" />
           </div>
           {view === "table" ? (
             <DataTable<CodeRepo> rows={filtered} columns={columns} />

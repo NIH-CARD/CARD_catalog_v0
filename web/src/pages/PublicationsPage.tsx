@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { ExportButton } from "../components/ExportButton";
 import { BrowseCard, BrowseGrid, Field, Section } from "../components/BrowseCard";
 import { createColumnHelper } from "@tanstack/react-table";
 import { Chips } from "../components/Chips";
@@ -347,19 +348,22 @@ export function PublicationsPage() {
     >
       {pubs ? (
         <>
-          <div className="mb-3 inline-flex rounded border border-slate-200 overflow-hidden text-sm">
-            {(["table", "browse", "graph"] as const).map((v) => (
-              <button
-                key={v}
-                onClick={() => setView(v)}
-                className={
-                  "px-3 py-1.5 " +
-                  (view === v ? "bg-accent text-white" : "bg-white text-slate-700 hover:bg-slate-100")
-                }
-              >
-                {v === "table" ? "📊 Table" : v === "browse" ? "🗂 Browse" : "🕸 Graph"}
-              </button>
-            ))}
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="inline-flex rounded border border-slate-200 overflow-hidden text-sm">
+              {(["table", "browse", "graph"] as const).map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  className={
+                    "px-3 py-1.5 " +
+                    (view === v ? "bg-accent text-white" : "bg-white text-slate-700 hover:bg-slate-100")
+                  }
+                >
+                  {v === "table" ? "📊 Table" : v === "browse" ? "🗂 Browse" : "🕸 Graph"}
+                </button>
+              ))}
+            </div>
+            <ExportButton rows={filtered} filename="publications" />
           </div>
           {view === "table" ? (
             <DataTable<GraphPublication> rows={filtered} columns={columns} />

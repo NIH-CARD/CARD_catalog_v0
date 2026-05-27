@@ -9,6 +9,7 @@ import {
 import { createColumnHelper } from "@tanstack/react-table";
 import { Chips } from "../components/Chips";
 import { DataTable } from "../components/DataTable";
+import { ExportButton } from "../components/ExportButton";
 import { FilterRail } from "../components/FilterRail";
 import { PageShell } from "../components/PageShell";
 import { matchesFacet, matchesQuery } from "../lib/filter";
@@ -229,7 +230,12 @@ function DatasetsTab() {
       <SubNav />
       <PmcBanner />
       {rows ? (
-        <DataTable<PubDataset> rows={filtered} columns={columns} />
+        <>
+          <div className="mb-3 flex justify-end">
+            <ExportButton rows={filtered} filename="pub_datasets" />
+          </div>
+          <DataTable<PubDataset> rows={filtered} columns={columns} />
+        </>
       ) : (
         <div className="text-sm text-slate-500">Loading datasets…</div>
       )}
@@ -394,7 +400,12 @@ function SupplementaryTab() {
       <SubNav />
       <PmcBanner />
       {rows ? (
-        <DataTable<Supplementary> rows={filtered} columns={columns} />
+        <>
+          <div className="mb-3 flex justify-end">
+            <ExportButton rows={filtered} filename="supplementary" />
+          </div>
+          <DataTable<Supplementary> rows={filtered} columns={columns} />
+        </>
       ) : (
         <div className="text-sm text-slate-500">Loading supplementary files…</div>
       )}
@@ -598,19 +609,22 @@ function SciliteTab() {
       <PmcBanner />
       {rows ? (
         <>
-          <div className="mb-3 inline-flex rounded border border-slate-200 overflow-hidden text-sm">
-            {(["table", "stats"] as const).map((v) => (
-              <button
-                key={v}
-                onClick={() => setView(v)}
-                className={
-                  "px-3 py-1.5 " +
-                  (view === v ? "bg-accent text-white" : "bg-white text-slate-700 hover:bg-slate-100")
-                }
-              >
-                {v === "table" ? "📊 Table" : "📈 Stats"}
-              </button>
-            ))}
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="inline-flex rounded border border-slate-200 overflow-hidden text-sm">
+              {(["table", "stats"] as const).map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  className={
+                    "px-3 py-1.5 " +
+                    (view === v ? "bg-accent text-white" : "bg-white text-slate-700 hover:bg-slate-100")
+                  }
+                >
+                  {v === "table" ? "📊 Table" : "📈 Stats"}
+                </button>
+              ))}
+            </div>
+            <ExportButton rows={filtered} filename="scilite_annotations" />
           </div>
           {view === "table" ? (
             <DataTable<SciLiteAnnotation> rows={filtered} columns={columns} />
