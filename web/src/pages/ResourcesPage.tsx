@@ -70,8 +70,7 @@ export function ResourcesPage() {
   const columns = useMemo(
     () => [
       col.accessor("Resource Name", {
-        header: "Resource",
-        size: 280,
+        header: "Resource",        size: 280,
         cell: (info) => {
           const url = info.row.original["Access URL"];
           const name = info.getValue();

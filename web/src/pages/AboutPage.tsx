@@ -1,6 +1,9 @@
+import { PageShell } from "../components/PageShell";
+
 export function AboutPage() {
   return (
-    <div className="max-w-4xl mx-auto px-6 py-10 space-y-12 text-slate-800">
+    <PageShell>
+    <div className="max-w-3xl mx-auto space-y-12 text-slate-800">
 
       {/* Overview */}
       <section>
@@ -249,5 +252,6 @@ export function AboutPage() {
         CARD Catalog · Developed by DataTecnica for NIH CARD and NIA LNG
       </div>
     </div>
+    </PageShell>
   );
 }
