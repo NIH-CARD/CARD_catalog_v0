@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { AboutPage } from "./pages/AboutPage";
 import { CellularModelsPage } from "./pages/CellularModelsPage";
 import { CodePage } from "./pages/CodePage";
 import { DatasetsPage } from "./pages/DatasetsPage";
@@ -44,6 +45,7 @@ export default function App() {
         <Route path="/code" element={<CodePage />} />
         <Route path="/datasets/*" element={<DatasetsPage />} />
         <Route path="/cellular-models" element={<CellularModelsPage />} />
+        <Route path="/about" element={<AboutPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

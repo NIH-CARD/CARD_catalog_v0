@@ -7,6 +7,7 @@ const NAV = [
   { to: "/code", label: "Code" },
   { to: "/datasets", label: "Datasets" },
   { to: "/cellular-models", label: "Cellular Models" },
+  { to: "/about", label: "About" },
 ];
 
 interface Props {
