@@ -78,6 +78,8 @@ class PubMetadataStage(PipelineStage):
         self,
         input_path: Path,
         output_path: Path,
+        batch_mode: bool = True,
+        full_document_read: bool = True,
         *,
         anthropic_key: str | None = None,
         verbose: bool = False,
@@ -98,6 +100,7 @@ class PubMetadataStage(PipelineStage):
         supp_path = output_path.parent / output_path.name.replace(
             "pub_datasets", "pub_supplementary"
         )
+        batch_output_path = str(output_path.with_suffix(".batch.tsv"))
 
         # Load PMC links from pubmed hits
         pubs_df = pd.read_csv(input_path, sep="\t")
@@ -119,16 +122,31 @@ class PubMetadataStage(PipelineStage):
         # --- Dataset mentions ---
         if "datasets" in targets:
             logger.info("extracting dataset mentions")
-            dg = DataGatherer(llm_name="claude-haiku-4-5", log_level=log_level, log_file_override=log_file_str, clear_previous_logs=False)
-            datasets_raw = dg.process_articles(
-                pmc_links,
-                response_format=dataset_response_schema_with_use_description_and_short,
-                prompt_name="CLAUDE_FDR_FewShot_shortDescr",
-                full_document_read=True,
-                semantic_retrieval=True,
-                return_df_joint=True,
-                section_filter="data_availability_statement",
-            )
+            dg = DataGatherer(llm_name="claude-haiku-4-5", log_level=log_level, log_file_override=log_file_str, 
+            clear_previous_logs=False, process_entire_document=full_document_read)
+            if batch_mode:
+                datasets_raw = dg.run_integrated_batch_processing(
+                    url_list=pmc_links,
+                    batch_file_path='',
+                    output_file_path=batch_output_path,
+                    section_filter="data_availability_statement",
+                    prompt_name="CLAUDE_FDR_FewShot_shortDescr",
+                    response_format=dataset_response_schema_with_use_description_and_short,
+                    semantic_retrieval=True,
+                    api_provider="anthropic",
+                    wait_for_completion=True,
+                )
+
+            else:
+                datasets_raw = dg.process_articles(
+                    pmc_links,
+                    response_format=dataset_response_schema_with_use_description_and_short,
+                    prompt_name="CLAUDE_FDR_FewShot_shortDescr",
+                    full_document_read=full_document_read,
+                    semantic_retrieval=True,
+                    return_df_joint=True,
+                    section_filter="data_availability_statement",
+                )
             if datasets_raw is not None and not datasets_raw.empty:
                 datasets_raw["_schema"] = "Dataset_w_Context"
                 datasets_raw.to_csv(output_path, sep="\t", index=False)

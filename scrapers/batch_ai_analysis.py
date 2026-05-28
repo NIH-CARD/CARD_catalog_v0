@@ -108,7 +108,7 @@ def create_batch_requests_file(input_df: pd.DataFrame, output_jsonl: str) -> int
                 "params": {
                     "model": "claude-sonnet-4-5-20250929",
                     "max_tokens": 2000,
-                    "temperature": 0.3,
+                    "temperature": 0.0,
                     "messages": [
                         {
                             "role": "user",
