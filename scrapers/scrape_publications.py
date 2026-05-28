@@ -554,7 +554,8 @@ def main():
             "Affiliations",
             "Title",
             "Abstract",
-            "Keywords"
+            "Keywords",
+            "Publication Date",
         ]
 
         results_df = pd.DataFrame(all_results)

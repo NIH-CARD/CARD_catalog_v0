@@ -12,6 +12,7 @@ export interface Publication {
   Abstract: string;
   Keywords: string;
   "Publication Date": string;
+  "Publication Year": string;
   "Data Completeness": string;
   "Diseases (Annotated)": string;
   "Genes / Proteins": string;

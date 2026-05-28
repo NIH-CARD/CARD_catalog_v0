@@ -91,8 +91,9 @@ export function ResourcesPage() {
       col.accessor("Abbreviation", {
         header: "Abbrev.",
         size: 90,
+        maxSize: 90,
         cell: (info) => (
-          <span className="font-mono text-xs text-slate-600">{info.getValue()}</span>
+          <span className="font-mono text-xs text-slate-600 truncate block max-w-[88px]" title={info.getValue()}>{info.getValue()}</span>
         ),
       }),
       col.accessor("Resource Type", {
@@ -106,8 +107,12 @@ export function ResourcesPage() {
         cell: (info) => <Chips value={info.getValue()} />,
       }),
       col.accessor("Coarse Data Modality", {
-        header: "Modality",
+        header: "Coarse Modality",
         cell: (info) => <Chips value={info.getValue()} delimiter="," />,
+      }),
+      col.accessor("Granular Data Modality", {
+        header: "Granular Modality",
+        cell: (info) => <Chips value={info.getValue()} delimiter=";" />,
       }),
       col.accessor("Sample Size", {
         header: "Sample Size",
@@ -122,6 +127,39 @@ export function ResourcesPage() {
           if (!text) return null;
           return (
             <p className="text-xs text-slate-600 line-clamp-3 max-w-sm" title={text}>
+              {text}
+            </p>
+          );
+        },
+      }),
+      col.accessor("Date added to catalog", {
+        header: "Date Added",
+        size: 100,
+        cell: (info) => {
+          const raw = info.getValue();
+          if (!raw) return null;
+          const d = new Date(raw);
+          return (
+            <span className="text-xs text-slate-500 whitespace-nowrap">
+              {isNaN(d.getTime()) ? raw : d.toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+            </span>
+          );
+        },
+      }),
+      col.accessor("Reviewer", {
+        header: "Reviewer",
+        size: 120,
+        cell: (info) => (
+          <span className="text-xs text-slate-500">{info.getValue()}</span>
+        ),
+      }),
+      col.accessor("Alternative URLs", {
+        header: "Alt. URLs",
+        cell: (info) => {
+          const text = info.getValue();
+          if (!text) return null;
+          return (
+            <p className="text-xs text-slate-500 line-clamp-2 max-w-xs" title={text}>
               {text}
             </p>
           );

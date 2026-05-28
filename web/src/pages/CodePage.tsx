@@ -20,11 +20,11 @@ const GRAPH_FIELD_OPTIONS = [
   { field: "Data Types" as const, label: "Data Types", delimiter: ";" },
   { field: "Tooling" as const, label: "Tooling", delimiter: ";" },
   { field: "Diseases Included" as const, label: "Diseases", delimiter: ";" },
-  { field: "Resource Name" as const, label: "Study" },
+  { field: "Resource Name" as const, label: "Resource Name" },
 ];
 
 const FACETS: readonly FacetSpec<CodeRepo>[] = [
-  { field: "Resource Name", label: "Study", multivalue: false },
+  { field: "Resource Name", label: "Resource Name", multivalue: false },
   { field: "Languages", multivalue: true },
   { field: "Diseases Included", multivalue: true },
   { field: "Data Types", multivalue: true },
@@ -71,8 +71,15 @@ export function CodePage() {
   const columns = useMemo(
     () => [
       col.accessor("Resource Name", {
-        header: "Study",
+        header: "Resource Name",
         cell: (info) => <span className="text-slate-700">{info.getValue()}</span>,
+      }),
+      col.accessor("Abbreviation", {
+        header: "Abbrev.",
+        size: 90,
+        cell: (info) => (
+          <span className="font-mono text-xs text-slate-600">{info.getValue()}</span>
+        ),
       }),
       col.accessor("Repository Link", {
         header: "Repo",
@@ -109,6 +116,10 @@ export function CodePage() {
             {info.getValue()}
           </span>
         ),
+      }),
+      col.accessor("Tooling", {
+        header: "Tooling",
+        cell: (info) => <Chips value={info.getValue()} />,
       }),
       col.accessor("Code Summary", {
         header: "Summary",
@@ -283,7 +294,7 @@ export function CodePage() {
                 nodeInfo={(r) => (
                   <InfoList
                     rows={[
-                      { label: "Study", value: r["Resource Name"] },
+                      { label: "Resource Name", value: r["Resource Name"] },
                       { label: "Repo", value: r["Repository Link"] },
                       { label: "Languages", value: r.Languages },
                       { label: "Data Types", value: r["Data Types"] },

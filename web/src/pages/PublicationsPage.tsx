@@ -112,9 +112,15 @@ export function PublicationsPage() {
   }, []);
 
   // Publications already carry annotation columns from the pipeline (staging/join_annotations.py).
-  // Cast to GraphPublication — the type is now identical to Publication.
+  // Derive Publication Year client-side from "Publication Date" (format: "Mon YYYY").
   const allAugmented = useMemo<GraphPublication[]>(
-    () => (pubs as GraphPublication[]) ?? [],
+    () =>
+      (pubs ?? []).map((p) => ({
+        ...p,
+        "Publication Year": p["Publication Date"]
+          ? p["Publication Date"].slice(-4)
+          : "",
+      })) as GraphPublication[],
     [pubs],
   );
 
@@ -179,6 +185,11 @@ export function PublicationsPage() {
         label: "Cited Datasets",
         multivalue: true,
         delimiter: ";",
+      },
+      {
+        field: "Publication Year",
+        label: "Year",
+        multivalue: false,
       },
     ],
     [],
@@ -432,7 +443,7 @@ export function PublicationsPage() {
                     <Field label="Affiliations" value={p.Affiliations} expandable maxChars={120} />
                     <Field label="Diseases" value={p["Diseases Included"]} chips />
                     <Field label="Modality" value={p["Coarse Data Modality"]} chips delimiter="," />
-                    <Field label="Keywords" value={p.Keywords} chips delimiter="," />
+                    <Field label="Keywords" value={p.Keywords} chips delimiter=";" />
                     {p.Abstract && (
                       <Section title="Abstract">
                         <Field label="" value={p.Abstract} expandable maxChars={300} />

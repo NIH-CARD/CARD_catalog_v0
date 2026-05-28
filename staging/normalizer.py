@@ -23,6 +23,7 @@ import logging
 import re
 import sys
 import unicodedata
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -177,6 +178,24 @@ def _join_url_list(value: Any) -> str:
     return s
 
 
+def _fmt_month_year(raw: str) -> str:
+    """Convert any date string to 'Mon YYYY' (e.g. 'Jan 2024'). Returns raw on failure."""
+    if not raw or not raw.strip():
+        return ""
+    s = raw.strip()
+    # "2024-00" — month was empty, padded to "00"; treat as year-only
+    if re.match(r"^\d{4}-00", s):
+        return s[:4]
+    for fmt in ("%Y-%m-%d", "%Y-%m", "%Y/%m/%d", "%Y/%m",
+                "%Y-%b-%d", "%Y-%b",  # month stored as abbrev (e.g. "2026-Apr")
+                "%b %Y", "%Y"):
+        try:
+            return datetime.strptime(s, fmt).strftime("%b %Y")
+        except ValueError:
+            continue
+    return s
+
+
 # ---------------------------------------------------------------------------
 # Per-target normalization
 # ---------------------------------------------------------------------------
@@ -189,6 +208,8 @@ def _normalize_publications(df: pd.DataFrame) -> pd.DataFrame:
     for col in ["Diseases_Included", "Keywords", "Coarse_Data_Modality", "Granular_Data_Modality"]:
         if col in df.columns:
             df[col] = df[col].apply(_normalize_list_field)
+    if "Publication Date" in df.columns:
+        df["Publication Date"] = df["Publication Date"].apply(_fmt_month_year)
     completeness_fields = [
         "PubMed_Central_Link", "Abstract", "Keywords", "Authors", "Affiliations",
     ]
