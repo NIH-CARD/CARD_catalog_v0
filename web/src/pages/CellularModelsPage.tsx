@@ -133,6 +133,50 @@ export function CellularModelsPage() {
           <span className="text-xs text-slate-500">{info.getValue()}</span>
         ),
       }),
+      col.accessor("Protospacer Sequence", {
+        header: "Protospacer",
+        cell: (info) => (
+          <span className="font-mono text-xs text-slate-600 break-all">{info.getValue()}</span>
+        ),
+      }),
+      col.accessor("Genomic Coordinate", {
+        header: "Genomic Coord.",
+        cell: (info) => (
+          <span className="font-mono text-xs text-slate-600 whitespace-nowrap">{info.getValue()}</span>
+        ),
+      }),
+      col.accessor("Genomic Sequence", {
+        header: "Genomic Seq.",
+        cell: (info) => {
+          const text = info.getValue();
+          if (!text) return null;
+          return (
+            <span className="font-mono text-xs text-slate-600 line-clamp-2 max-w-[160px] break-all" title={text}>
+              {text}
+            </span>
+          );
+        },
+      }),
+      col.accessor("About this gene", {
+        header: "About Gene",
+        cell: (info) => {
+          const text = info.getValue();
+          if (!text) return null;
+          return (
+            <p className="text-xs text-slate-700 line-clamp-3 max-w-xs" title={text}>{text}</p>
+          );
+        },
+      }),
+      col.accessor("About this variant", {
+        header: "About Variant",
+        cell: (info) => {
+          const text = info.getValue();
+          if (!text) return null;
+          return (
+            <p className="text-xs text-slate-700 line-clamp-3 max-w-xs" title={text}>{text}</p>
+          );
+        },
+      }),
     ],
     [],
   );
