@@ -36,6 +36,8 @@ class GithubSearchStage(PipelineStage):
             "--output", str(output_path),
             "--github-token", github_token,
             "--batch-call-ai",          # skip inline AI — handled by repo_analysis stage
+            "--request-delay", "0.75",  # 3s default is overly conservative; 0.75s stays well under 5k req/hr limit
+            "--search-rate-limit", "30", # search API cap is 30/min authenticated; matches scraper default
         ]
         if verbose:
             cmd += ["--verbose"]
