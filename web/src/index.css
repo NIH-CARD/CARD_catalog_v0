@@ -7,3 +7,20 @@ body,
 #root {
   height: 100%;
 }
+
+/* Scoped styles for AI analysis markdown output */
+.md-prose h1 { @apply text-base font-bold text-slate-900 mt-4 mb-1; }
+.md-prose h2 { @apply text-sm font-semibold text-slate-900 mt-4 mb-1 border-b border-slate-200 pb-0.5; }
+.md-prose h3 { @apply text-sm font-semibold text-slate-800 mt-3 mb-1; }
+.md-prose p  { @apply mb-2 last:mb-0; }
+.md-prose ul { @apply list-disc list-outside ml-4 my-1 space-y-0.5; }
+.md-prose ol { @apply list-decimal list-outside ml-4 my-1 space-y-0.5; }
+.md-prose strong { @apply font-semibold text-slate-900; }
+.md-prose em { @apply italic; }
+.md-prose hr { @apply my-3 border-slate-300; }
+.md-prose blockquote { @apply border-l-2 border-amber-400 pl-3 my-2 text-slate-600 italic; }
+.md-prose code { @apply bg-slate-200 rounded px-1 font-mono text-xs; }
+.md-prose table { @apply w-full text-xs border-collapse my-2; }
+.md-prose th { @apply text-left font-semibold px-2 py-1 border border-slate-300 bg-slate-100; }
+.md-prose td { @apply px-2 py-1 border border-slate-200; }
+.md-prose tr:nth-child(even) td { @apply bg-slate-50; }

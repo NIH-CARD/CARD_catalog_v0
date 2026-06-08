@@ -1,6 +1,6 @@
 import { useState } from "react";
+import { marked } from "marked";
 import { type AnalysisType, useAnalysis } from "../lib/useAnalysis";
-import { exportRows } from "../lib/export";
 
 const DESCRIPTIONS: Record<AnalysisType, string[]> = {
   resources: [
@@ -34,6 +34,10 @@ const DESCRIPTIONS: Record<AnalysisType, string[]> = {
   ],
 };
 
+function renderMarkdown(md: string): { __html: string } {
+  return { __html: marked(md, { async: false }) as string };
+}
+
 interface Props<T extends object> {
   type: AnalysisType;
   filtered: T[];
@@ -57,24 +61,43 @@ export function AnalysisPanel<T extends object>({
     analyze(type, sample, filtered.length, total);
   };
 
-  const handleDownload = () => {
-    exportRows([{ analysis: text }], `${type}_analysis`, "json");
-    const blob = new Blob([text], { type: "text/plain" });
+  const handleDownload = async () => {
+    const blob = new Blob([text], { type: "text/markdown" });
+    if ("showSaveFilePicker" in window) {
+      try {
+        const handle = await (window as typeof window & { showSaveFilePicker: (o: object) => Promise<FileSystemFileHandle> }).showSaveFilePicker({
+          suggestedName: `${type}_analysis.md`,
+          types: [{ description: "Markdown", accept: { "text/markdown": [".md"] } }],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+      } catch {
+        // user cancelled
+      }
+      return;
+    }
+    // Fallback for browsers without showSaveFilePicker: open in new tab
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${type}_analysis.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+    window.open(url, "_blank");
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
   };
+
 
   return (
     <div className="border border-slate-200 rounded bg-white mb-4">
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => !loading && setOpen((v) => !v)}
         className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
       >
-        <span>🤖 AI Analysis</span>
+        <span>
+          🤖 AI Analysis
+          {loading && (
+            <span className="ml-2 text-xs font-normal text-slate-400 animate-pulse">
+              analyzing…
+            </span>
+          )}
+        </span>
         <span className="text-slate-400 text-xs">{open ? "▲" : "▼"}</span>
       </button>
 
@@ -93,7 +116,7 @@ export function AnalysisPanel<T extends object>({
                 onClick={handleDownload}
                 className="px-3 py-1.5 text-sm rounded border border-slate-200 text-slate-600 hover:bg-slate-50"
               >
-                ↓ Download .txt
+                ↓ Download .md
               </button>
             )}
             <span className="text-xs text-slate-400">
@@ -118,7 +141,11 @@ export function AnalysisPanel<T extends object>({
                 {DESCRIPTIONS[type].map((line, i) => (
                   <li key={i} className="flex gap-2">
                     <span className="text-slate-400 shrink-0">•</span>
-                    <span dangerouslySetInnerHTML={{ __html: line.replace(/^([^:]+:)/, "<strong>$1</strong>") }} />
+                    <span
+                      dangerouslySetInnerHTML={{
+                        __html: line.replace(/^([^:]+:)/, "<strong>$1</strong>"),
+                      }}
+                    />
                   </li>
                 ))}
               </ul>
@@ -126,10 +153,10 @@ export function AnalysisPanel<T extends object>({
           )}
 
           {(text || loading) && (
-            <pre className="whitespace-pre-wrap font-sans text-sm text-slate-700 leading-relaxed bg-slate-50 rounded border border-slate-200 p-4 max-h-[600px] overflow-y-auto">
-              {text}
-              {loading && <span className="animate-pulse">▌</span>}
-            </pre>
+            <div className="bg-slate-50 rounded border border-slate-200 p-4 max-h-[600px] overflow-y-auto text-sm text-slate-700 leading-relaxed">
+              <div className="md-prose" dangerouslySetInnerHTML={renderMarkdown(text)} />
+              {loading && <span className="animate-pulse text-slate-400">▌</span>}
+            </div>
           )}
         </div>
       )}
