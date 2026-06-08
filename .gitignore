@@ -67,3 +67,4 @@ docs/_build/
 tables/hits/
 scrapers/batch_**jsonl
 docs/plans/EUPMC_annotations_anz.ipynb
+tables/table_check.ipynb

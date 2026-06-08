@@ -22,11 +22,14 @@ const GRAPH_FIELD_OPTIONS: readonly { field: keyof Resource & string; label?: st
   { field: "Resource Type", delimiter: "," },
 ];
 
+const PART_OF_SPEC: FacetSpec<Resource> = { field: "Is Part Of", multivalue: true, delimiter: ";" };
+
 const FACETS: readonly FacetSpec<Resource>[] = [
   { field: "Resource Type", multivalue: true, delimiter: "," },
   { field: "Diseases Included", multivalue: true },
   { field: "Coarse Data Modality", multivalue: true, delimiter: "," },
   { field: "Granular Data Modality", multivalue: true },
+  PART_OF_SPEC,
 ];
 
 const SEARCH_FIELDS: (keyof Resource & string)[] = [
@@ -59,8 +62,18 @@ export function ResourcesPage() {
 
   const filtered = useMemo(() => {
     if (!rows) return [];
+    const partOfSel = selections["Is Part Of"] ?? new Set<string>();
     return rows.filter((r) => {
       for (const spec of FACETS) {
+        if (spec.field === "Is Part Of") {
+          // When filtering by parent, include child resources AND the parent itself
+          if (partOfSel.size > 0) {
+            const isChild = matchesFacet(r, PART_OF_SPEC, partOfSel);
+            const isParent = partOfSel.has(r.Abbreviation);
+            if (!isChild && !isParent) return false;
+          }
+          continue;
+        }
         if (!matchesFacet(r, spec, selections[spec.field] ?? new Set())) return false;
       }
       return matchesQuery(r, SEARCH_FIELDS, query);

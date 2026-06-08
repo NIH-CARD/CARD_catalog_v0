@@ -19,6 +19,7 @@ Can be called programmatically (from orchestrator) or as a CLI::
 from __future__ import annotations
 
 import argparse
+import ast
 import logging
 import re
 import sys
@@ -396,6 +397,96 @@ def normalize(
             logger.info(f"Removed old file: {old_file.name}")
 
     return output_path
+
+
+# ---------------------------------------------------------------------------
+
+
+
+
+# Inventory enrichment helpers
+# ---------------------------------------------------------------------------
+
+def _parse_urls(row: "pd.Series", url_col: str, alt_col: str) -> set[str]:
+    """Return the set of non-empty URLs for a row (Access URL + Alternative URLs)."""
+    urls: set[str] = set()
+
+    raw_access = str(row.get(url_col, "") or "").strip()
+    if raw_access:
+        urls.add(raw_access.rstrip("/"))
+
+    raw_alt = str(row.get(alt_col, "") or "").strip()
+    if raw_alt:
+        try:
+            candidates = ast.literal_eval(raw_alt)
+            if isinstance(candidates, (list, tuple)):
+                for u in candidates:
+                    u = str(u).strip().rstrip("/")
+                    if u:
+                        urls.add(u)
+        except (ValueError, SyntaxError):
+            pass
+
+    return urls
+
+
+def compute_part_of(
+    df: "pd.DataFrame",
+    url_col: str = "Access URL",
+    alt_url_col: str = "Alternative URLs",
+    id_col: str = "Abbreviation",
+) -> "pd.Series":
+    """Compute an 'Is Part Of' column for an inventory DataFrame.
+
+    For each row B, finds every row A whose URL set contains a URL that is a
+    proper substring of any URL in B's URL set.  When that holds, B is
+    considered *part of* A (e.g. B is a sub-portal of A's domain).
+
+    The result is a semicolon-delimited string of ``id_col`` values from the
+    matching parent rows, or an empty string when no match is found.
+
+    Args:
+        df: Inventory DataFrame with at least ``url_col``, ``alt_url_col``,
+            and ``id_col`` columns.
+        url_col: Column name for the primary access URL.
+        alt_url_col: Column name for the alternative URLs (stringified list).
+        id_col: Column whose value identifies each resource in the output
+            (e.g. ``"Abbreviation"`` or ``"Resource Name"``).
+
+    Returns:
+        A Series of the same index as ``df``, one entry per row.
+    """
+    import pandas as pd  # local import so the rest of the module stays light
+
+    # Pre-compute URL sets once
+    url_sets: dict[int, set[str]] = {
+        i: _parse_urls(row, url_col, alt_url_col) for i, row in df.iterrows()
+    }
+    ids: dict[int, str] = df[id_col].fillna("").to_dict()
+
+    results: dict[int, str] = {}
+
+    for i in df.index:
+        urls_b = url_sets[i]
+        parents: list[str] = []
+
+        for j in df.index:
+            if i == j:
+                continue
+            urls_a = url_sets[j]
+            # B is part of A if any url_a is a proper substring of any url_b
+            if any(
+                url_a and url_b and url_a in url_b and url_a != url_b
+                for url_a in urls_a
+                for url_b in urls_b
+            ):
+                parent_id = ids[j]
+                if parent_id:
+                    parents.append(parent_id)
+
+        results[i] = "; ".join(sorted(set(parents)))
+
+    return pd.Series(results, name="Is Part Of")
 
 
 # ---------------------------------------------------------------------------

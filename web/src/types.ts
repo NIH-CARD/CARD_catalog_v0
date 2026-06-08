@@ -33,6 +33,7 @@ export interface Resource {
   Reviewer: string;
   "Alternative URLs": string;
   "Resource Type": string;
+  "Is Part Of"?: string;
   Remove?: string;
   Notes?: string;
   new_corpus?: string;
