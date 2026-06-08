@@ -16,6 +16,7 @@ function netlifyFunctionsPlugin(): Plugin {
           req.on("end", () => {
             const body = Buffer.concat(chunks);
 
+            // @ts-ignore — no declaration file; type is asserted below
             import("./netlify/functions/analyze.mjs")
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               .then(({ default: fn }: { default: (r: Request) => Promise<Response> }) => {
