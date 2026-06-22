@@ -11,6 +11,7 @@ import { GraphControls, buildEdgeFields } from "../components/GraphControls";
 import { InfoList } from "../components/HoverInfo";
 import { KnowledgeGraph } from "../components/KnowledgeGraph";
 import { PageShell } from "../components/PageShell";
+import { TrendsChart, type TrendsFilterProps } from "../components/TrendsChart";
 import { matchesFacet, matchesQuery } from "../lib/filter";
 import {
   loadPubDatasets,
@@ -94,7 +95,7 @@ export function PublicationsPage() {
   const [sp, setSp] = useState<Supplementary[]>([]);
   const [sc, setSc] = useState<SciLiteAnnotation[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<"table" | "browse" | "graph">("table");
+  const [view, setView] = useState<"table" | "browse" | "graph" | "trends">("table");
   const [edgeSelected, setEdgeSelected] = useState<(keyof GraphPublication & string)[]>([
     "Diseases (Annotated)",
   ]);
@@ -249,6 +250,24 @@ export function PublicationsPage() {
     const threshold = hubEnabled ? hubThresholdPct / 100 : 1.1;
     return applyToPubs(null, filtered, threshold);
   }, [filtered, hubEnabled, hubThresholdPct]);
+
+  const trendsFilters = useMemo<TrendsFilterProps>(
+    () => ({
+      query,
+      selections: selections as Record<string, Set<string>>,
+      totalSelected,
+      fieldLabels: Object.fromEntries(FACETS.map((f) => [f.field, f.label ?? f.field])),
+      onRemoveFacetValue: (field, value) => {
+        const current = (selections as Record<string, Set<string>>)[field] ?? new Set<string>();
+        const next = new Set(current);
+        next.delete(value);
+        setFacet(field as (typeof FACETS)[number]["field"], next);
+      },
+      onClearQuery: () => setQuery(""),
+      onClearAll: clearAll,
+    }),
+    [query, selections, totalSelected, FACETS, setFacet, setQuery, clearAll],
+  );
 
   const columns = useMemo(
     () => [
@@ -406,7 +425,7 @@ export function PublicationsPage() {
           />
           <div className="mb-3 flex items-center justify-between gap-3">
             <div className="inline-flex rounded border border-slate-200 overflow-hidden text-sm">
-              {(["table", "browse", "graph"] as const).map((v) => (
+              {(["table", "browse", "graph", "trends"] as const).map((v) => (
                 <button
                   key={v}
                   onClick={() => setView(v)}
@@ -415,13 +434,21 @@ export function PublicationsPage() {
                     (view === v ? "bg-accent text-white" : "bg-white text-slate-700 hover:bg-slate-100")
                   }
                 >
-                  {v === "table" ? "📊 Table" : v === "browse" ? "🗂 Browse" : "🕸 Graph"}
+                  {v === "table"
+                    ? "📊 Table"
+                    : v === "browse"
+                      ? "🗂 Browse"
+                      : v === "graph"
+                        ? "🕸 Graph"
+                        : "📈 Trends"}
                 </button>
               ))}
             </div>
             <ExportButton rows={filtered} filename="publications" />
           </div>
-          {view === "table" ? (
+          {view === "trends" ? (
+            <TrendsChart rows={filtered} filters={trendsFilters} />
+          ) : view === "table" ? (
             <DataTable<GraphPublication> rows={filtered} columns={columns} />
           ) : view === "browse" ? (
             <BrowseGrid>
