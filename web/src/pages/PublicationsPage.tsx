@@ -143,7 +143,7 @@ export function PublicationsPage() {
         field: "Coarse Data Modality",
         label: "Coarse Modality",
         multivalue: true,
-        delimiter: ";",
+        delimiter: ",",
       },
       {
         field: "Granular Data Modality",
@@ -447,7 +447,7 @@ export function PublicationsPage() {
             <ExportButton rows={filtered} filename="publications" />
           </div>
           {view === "trends" ? (
-            <TrendsChart rows={filtered} filters={trendsFilters} />
+            <TrendsChart rows={filtered} allRows={allAugmented} filters={trendsFilters} />
           ) : view === "table" ? (
             <DataTable<GraphPublication> rows={filtered} columns={columns} />
           ) : view === "browse" ? (
