@@ -1,6 +1,8 @@
 # CARD Catalog
 
-A data pipeline and Streamlit web application for discovering and connecting research resources — datasets, publications, code repositories, and cellular models — in the Alzheimer's Disease and Related Dementias (ADRD) / Neurodegenerative Diseases (NDD) space.
+A data pipeline and web application for discovering and connecting research resources — datasets, publications, code repositories, and cellular models — in the Alzheimer's Disease and Related Dementias (ADRD) / Neurodegenerative Diseases (NDD) space.
+
+The live app is a React + TypeScript app (in `web/`, deployed to Netlify). The original Streamlit app (`app/`) is the v0 predecessor, kept for reference but no longer deployed.
 
 Maintained by [DataTecnica](https://datatecnica.com) for NIH's [Center for Alzheimer's and Related Dementias (CARD)](https://card.nih.gov) and the NIA Laboratory of Neurogenetics (LNG).
 
@@ -23,22 +25,25 @@ Maintained by [DataTecnica](https://datatecnica.com) for NIH's [Center for Alzhe
 Inventory (.tab)
       │
       ▼
-┌─────────────────────────────────┐
-│          Pipeline               │
-│  1. pubmed_search               │
-│  2. github_search               │
-│  3. repo_analysis   (AI)        │
-│  4. pub_metadata    (AI)        │
-│  5. page_navigation (AI+browser)│
-└───────────┬─────────────────────┘
+┌───────────────────────────────────────────────────┐
+│                     Pipeline                       │
+│  1. pubmed_search                                  │
+│  2. github_search                                  │
+│  3. repo_analysis   (AI)                           │
+│  4. pub_metadata    (AI) — datasets + supplementary │
+│                            files + grants/funding   │
+│  5. page_navigation (AI+browser)                   │
+│  6. scilite         (Europe PMC annotations)        │
+└───────────┬─────────────────────────────────────────┘
             │
        tables/hits/          ← intermediate outputs
             │
-       Normalizer            ← Pydantic validation + field normalization
+       Normalizer            ← field normalization + validation
             │
        tables/final/         ← app-ready validated TSVs
             │
-     Streamlit App (app/)
+   React app (web/) — live, deployed on Netlify
+   (Streamlit app in app/ is the legacy v0 predecessor)
 ```
 
 Full architecture details: [`docs/overview.md`](docs/overview.md)
@@ -59,33 +64,48 @@ pip install -r requirements.txt
 ### 2. Configure secrets
 
 ```bash
-# Streamlit app
-cp .streamlit/secrets.toml.template .streamlit/secrets.toml
-
 # Pipeline
 cp .env.template .env
 # Edit .env — set ANTHROPIC_API_KEY, GITHUB_TOKEN, NCBI_API_KEY
+
+# Streamlit app (legacy, optional)
+cp .streamlit/secrets.toml.template .streamlit/secrets.toml
 ```
 
 ### 3. Run the app
+
+The live app is the React app in `web/` — it reads pre-generated TSVs, no API keys required to browse it:
+
+```bash
+cd web
+npm install
+npm run sync-data   # copies the latest tables/final/*.tsv into web/public/data/
+npm run dev         # http://localhost:5173
+```
+
+Re-run `npm run sync-data` whenever the pipeline writes new outputs.
+
+<details>
+<summary>Legacy Streamlit app (reference only, not deployed)</summary>
 
 ```bash
 streamlit run app/Home.py
 ```
 
-The app works immediately with existing data in `tables/`. Opens at http://localhost:8501.
+Opens at http://localhost:8501.
+</details>
 
 ### 4. Run the pipeline
 
 ```bash
-# Weekly — last 7 days of PubMed
-python orchestrator.py weekly
+# Incremental update — last 7 days of PubMed
+python orchestrator.py update
 
-# Full quarterly rebuild (all 5 stages)
-python orchestrator.py quarterly
+# Full rebuild (all stages, 3-year window)
+python orchestrator.py full_rebuild
 
 # Skip stages you don't need
-python orchestrator.py quarterly --skip page_navigation
+python orchestrator.py full_rebuild --skip page_navigation
 ```
 
 Full pipeline docs: [`docs/getting_started.md`](docs/getting_started.md)
@@ -94,7 +114,10 @@ Full pipeline docs: [`docs/getting_started.md`](docs/getting_started.md)
 
 ## Automation
 
-Both modes run via cron. Weekly every Monday, quarterly on the first Monday of January, April, July, and October. See [`docs/getting_started.md#set-up-the-cron-schedule`](docs/getting_started.md) for the crontab entries.
+The pipeline is designed to run unattended via cron — see
+[`docs/getting_started.md`](docs/getting_started.md) for the intended schedule
+(incremental updates weekly, full rebuilds quarterly) and crontab entries.
+Automated scheduling on a server is a near-term milestone, not yet live.
 
 Stages are independently restartable — if a run fails, re-running skips stages that already produced a today-dated hits file.
 
@@ -107,7 +130,10 @@ Stages are independently restartable — if a run fails, re-running skips stages
 | [`docs/overview.md`](docs/overview.md) | Architecture, pipeline stages, directory layout, design principles |
 | [`docs/getting_started.md`](docs/getting_started.md) | Setup, running the pipeline, cron, troubleshooting |
 | [`docs/api_reference.md`](docs/api_reference.md) | `pipelines/`, `staging/`, `app/utils/` API reference |
-| [`conventions.md`](conventions.md) | Coding conventions for contributors and AI agents |
+| [`docs/conventions.md`](docs/conventions.md) | Coding conventions for contributors and AI agents |
+| [`docs/pipeline_diagram.md`](docs/pipeline_diagram.md) | Visual pipeline diagram |
+| [`docs/CARD_Catalog_Schema.md`](docs/CARD_Catalog_Schema.md) | Table/column schema reference |
+| [`web/README.md`](web/README.md) | React app setup, routes, file layout |
 
 Full Sphinx docs: https://nih-card.github.io/CARD_catalog_v0 *(requires GitHub Pages to be enabled)*
 
@@ -121,13 +147,17 @@ CARD_catalog_v0/
 ├── pipelines/               # One module per pipeline stage
 ├── staging/                 # Pydantic schemas + normalizer
 ├── scrapers/                # Raw scrapers (publications, GitHub)
-├── app/                     # Streamlit application
+├── web/                     # LIVE APP — React + Vite + TypeScript, Netlify-deployed
+│   ├── src/pages/           # PublicationsPage, ResourcesPage, CodePage, DatasetsPage, CellularModelsPage, …
+│   ├── scripts/sync-data.sh # Copies latest tables/final/*.tsv into public/data/
+│   └── backend/             # FastAPI stub proxying Anthropic for AI-analysis features
+├── app/                     # LEGACY — Streamlit v0 app, not deployed
 │   ├── Home.py
 │   ├── pages/
 │   └── utils/
 ├── tables/
 │   ├── hits/                # Intermediate pipeline outputs
-│   ├── final/               # App-ready validated TSVs
+│   ├── final/                # App-ready validated TSVs (source of truth for web/)
 │   └── resources-inventory-*.tab   # Resource inventory (source of truth)
 ├── docs/                    # Sphinx documentation source
 └── logs/                    # Runtime logs (gitignored)
@@ -139,8 +169,7 @@ CARD_catalog_v0/
 
 | Variable | Required by | Notes |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | `repo_analysis`, `pub_metadata`, `page_navigation`, app AI features | Required if using Anthropic models |
-| `OPENAI_API_KEY` | `repo_analysis`, `pub_metadata`, `page_navigation`, app AI features | Required if using OpenAI models |
+| `ANTHROPIC_API_KEY` | `repo_analysis`, `pub_metadata`, `page_navigation`, `web/backend` AI-analysis proxy | All AI stages use Anthropic models |
 | `GITHUB_TOKEN` | `github_search` | Required for GitHub scraping |
 | `NCBI_API_KEY` | `pubmed_search` | Optional; raises rate limit from 3/s to 10/s |
 | `FIREFOX_PROFILE_DIR` | `page_navigation` | Pre-authenticated Firefox profile path |
