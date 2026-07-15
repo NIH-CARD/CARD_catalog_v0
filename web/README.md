@@ -40,6 +40,7 @@ Re-run `npm run sync-data` whenever the pipeline writes new outputs.
 | `/code` | `code_repos.tsv` | |
 | `/datasets` | `pub_datasets.tsv` | Honors `?pmc=PMCxxxx` |
 | `/datasets/supplementary` | `pub_supplementary.tsv` | Honors `?pmc=PMCxxxx` |
+| `/datasets/grants` | `pub_grants.tsv` | Honors `?pmc=PMCxxxx` |
 | `/datasets/scilite` | `scilite_annotations.tsv` | Honors `?pmc=PMCxxxx` |
 | `/cellular-models` | `cellular_models.tsv` | iNDI inventory |
 
@@ -70,7 +71,7 @@ web/
       DatasetsPage.tsx            — 3 nested routes
       CellularModelsPage.tsx
   scripts/
-    sync-data.sh                  — copies all 7 latest TSVs into public/data/
+    sync-data.sh                  — copies all 8 latest TSVs into public/data/
   backend/
     main.py                       — FastAPI; POST /api/analyze proxies Anthropic
     requirements.txt

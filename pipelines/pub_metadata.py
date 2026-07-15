@@ -1,14 +1,16 @@
 """
-Stage 4 — Publication metadata extraction (datasets + supplementary files).
+Stage 4 — Publication metadata extraction (datasets + supplementary files + grants).
 
-Uses ``data_gatherer.DataGatherer.process_articles()`` to extract dataset
-mentions and supplementary file mentions from PMC articles.
+Uses ``data_gatherer.DataGatherer`` to extract dataset mentions, supplementary
+file mentions, and grant/funding mentions from PMC articles.
 
 - Dataset mentions → ``tables/hits/pub_datasets_{ts}.tsv``
 - Supplementary files → ``tables/hits/pub_supplementary_{ts}.tsv``
+- Grant/funding mentions → ``tables/hits/pub_grants_{ts}.tsv``
 
-The ``output_path`` arg is the datasets output; the supplementary path is
-derived by replacing ``pub_datasets`` with ``pub_supplementary`` in the stem.
+The ``output_path`` arg is the datasets output; the supplementary and grants
+paths are derived by replacing ``pub_datasets`` with ``pub_supplementary`` /
+``pub_grants`` in the stem.
 
 Input: ``tables/hits/pubmed_hits_{ts}.tsv`` (reads ``PubMed Central Link`` col)
 """
@@ -84,11 +86,12 @@ class PubMetadataStage(PipelineStage):
         anthropic_key: str | None = None,
         verbose: bool = False,
         log_file: Path | None = None,
-        targets: tuple[str, ...] = ("datasets", "supplementary"),
+        targets: tuple[str, ...] = ("datasets", "supplementary", "grants"),
     ) -> Path:
         from data_gatherer.data_gatherer import DataGatherer
         from data_gatherer.llm.response_schema import (
             supplementary_files_keywords_schema,
+            grant_response_schema_gpt,
         )
 
         if anthropic_key:
@@ -96,9 +99,12 @@ class PubMetadataStage(PipelineStage):
 
         log_level = "DEBUG" if verbose else "INFO"
 
-        # Derive supplementary output path from datasets output path
+        # Derive supplementary/grants output paths from datasets output path
         supp_path = output_path.parent / output_path.name.replace(
             "pub_datasets", "pub_supplementary"
+        )
+        grants_path = output_path.parent / output_path.name.replace(
+            "pub_datasets", "pub_grants"
         )
         batch_output_path = str(output_path.with_suffix(".batch.tsv"))
 
@@ -125,7 +131,7 @@ class PubMetadataStage(PipelineStage):
             dg = DataGatherer(llm_name="claude-haiku-4-5", log_level=log_level, log_file_override=log_file_str, 
             clear_previous_logs=False, process_entire_document=full_document_read)
             if batch_mode:
-                datasets_raw = dg.run_integrated_batch_processing(
+                batch_result = dg.run_integrated_batch_processing(
                     url_list=pmc_links,
                     batch_file_path='',
                     output_file_path=batch_output_path,
@@ -136,6 +142,21 @@ class PubMetadataStage(PipelineStage):
                     api_provider="anthropic",
                     wait_for_completion=True,
                 )
+                # run_integrated_batch_processing returns a dict (not a DataFrame) on the
+                # Anthropic batch path, regardless of wait_for_completion — convert explicitly.
+                if isinstance(batch_result, dict) and batch_result.get("output_file_path"):
+                    datasets_raw = dg.from_batch_resp_file_to_df(
+                        batch_result["output_file_path"], skip_validation=True, expected_key="datasets",
+                    )
+                    if datasets_raw is not None and not datasets_raw.empty:
+                        datasets_raw = datasets_raw.rename(columns={"title": "pub_title"})
+                        datasets_raw = datasets_raw.drop(columns=[
+                            c for c in ("retrieval_stats", "custom_id", "article_id", "page_id", "url")
+                            if c in datasets_raw.columns
+                        ])
+                else:
+                    logger.error(f"Dataset batch did not complete successfully: {batch_result}")
+                    datasets_raw = None
 
             else:
                 datasets_raw = dg.process_articles(
@@ -170,5 +191,44 @@ class PubMetadataStage(PipelineStage):
                 logger.info(f"Supplementary → {supp_path.name} ({len(supp_raw)} rows)")
             else:
                 logger.warning("No supplementary file mentions found")
+
+        # --- Grant / funding mentions ---
+        if "grants" in targets:
+            logger.info("Extracting grant/funding mentions")
+            dg_grants = DataGatherer(
+                llm_name="claude-haiku-4-5-20251001",
+                process_entire_document=False,  # funding sections are short — rule-based retrieval only
+                log_level=log_level, log_file_override=log_file_str, clear_previous_logs=False,
+            )
+            grants_batch_output_path = str(grants_path.with_suffix(".batch.jsonl"))
+            grants_result = dg_grants.run_integrated_batch_processing(
+                url_list=pmc_links,
+                batch_file_path='',
+                output_file_path=grants_batch_output_path,
+                prompt_name="CLAUDE_FDR_FewShot_grant",
+                prompts_subdir="funding_prompts",
+                relevant_content_flag="FUND",
+                relevant_cont_fmt="text",
+                response_format=grant_response_schema_gpt,
+                api_provider="anthropic",
+                wait_for_completion=True,
+            )
+            if isinstance(grants_result, dict) and grants_result.get("output_file_path"):
+                grants_df = dg_grants.from_batch_resp_file_to_df(
+                    grants_result["output_file_path"], skip_validation=True, expected_key="grants",
+                )
+                if grants_df is not None and not grants_df.empty:
+                    grants_df = grants_df.rename(columns={"title": "pub_title"})
+                    grants_df = grants_df.drop(columns=[
+                        c for c in ("retrieval_stats", "custom_id", "article_id", "page_id", "url")
+                        if c in grants_df.columns
+                    ])
+                    grants_df["_schema"] = "GrantRecord"
+                    grants_df.to_csv(grants_path, sep="\t", index=False)
+                    logger.info(f"Grants → {grants_path.name} ({len(grants_df)} rows)")
+                else:
+                    logger.warning("No grant mentions found")
+            else:
+                logger.error(f"Grants batch did not complete successfully: {grants_result}")
 
         return output_path

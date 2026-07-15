@@ -256,6 +256,10 @@ def run_full_rebuild(
         supp_hits = _latest(HITS_DIR, "pub_supplementary_*.tsv")
         if supp_hits:
             run_normalizer(supp_hits, "supplementary", "pub_supplementary_*.tsv", force=force)
+        # Grants is written as side-effect by pub_metadata stage
+        grants_hits = _latest(HITS_DIR, "pub_grants_*.tsv")
+        if grants_hits:
+            run_normalizer(grants_hits, "pub_grants", "pub_grants_*.tsv", force=force)
     else:
         logger.warning("Skipping pub_metadata: no pubmed_hits available")
 

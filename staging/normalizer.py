@@ -270,6 +270,10 @@ def _normalize_supplementary(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _normalize_pub_grants(df: pd.DataFrame) -> pd.DataFrame:
+    return df
+
+
 def _normalize_new_corpus(df: pd.DataFrame) -> pd.DataFrame:
     if "Access_URL" in df.columns:
         df["Access_URL"] = df["Access_URL"].apply(_first_url_from_list)
@@ -337,6 +341,7 @@ _NORMALIZERS = {
     "code": _normalize_code,
     "pub_datasets": _normalize_pub_datasets,
     "supplementary": _normalize_supplementary,
+    "pub_grants": _normalize_pub_grants,
     "new_corpus": _normalize_new_corpus,
     "scilite": _normalize_scilite,
 }

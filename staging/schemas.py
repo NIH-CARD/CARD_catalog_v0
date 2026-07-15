@@ -200,6 +200,38 @@ class SupplementaryRow(_Base):
 
 
 # ---------------------------------------------------------------------------
+# Table: Publication grants   (tables/final/pub_grants_*.tsv)
+# ---------------------------------------------------------------------------
+class PubGrantRow(_Base):
+    Pub_Title: str = ""
+    Source_URL: str = ""
+    Raw_Data_Format: str = ""
+    Funder_Name: str = ""
+    Grant_Number: str = ""
+    Funding_Context_From_Paper: str = ""
+    Recipient: str = ""
+
+    model_config = {
+        "populate_by_name": True,
+        "alias_generator": lambda s: s.replace("_", " "),
+    }
+
+    @field_validator(
+        "Pub_Title", "Source_URL", "Raw_Data_Format", "Funder_Name",
+        "Grant_Number", "Funding_Context_From_Paper", "Recipient",
+        mode="before",
+    )
+    @classmethod
+    def to_str(cls, v: object) -> str:
+        return _coerce_str(v)
+
+    COLUMNS: ClassVar[list[str]] = [
+        "Pub Title", "Source URL", "Raw Data Format", "Funder Name",
+        "Grant Number", "Funding Context From Paper", "Recipient",
+    ]
+
+
+# ---------------------------------------------------------------------------
 # Table: New Corpus   (tables/final/new_corpus_*.tsv)
 # ---------------------------------------------------------------------------
 class NewCorpusRow(_Base):
@@ -312,6 +344,7 @@ SCHEMA_REGISTRY: dict[str, type[_Base]] = {
     "code": CodeRepoRow,
     "pub_datasets": PubDatasetRow,
     "supplementary": SupplementaryRow,
+    "pub_grants": PubGrantRow,
     "new_corpus": NewCorpusRow,
     "scilite": SciLiteAnnotationRow,
 }

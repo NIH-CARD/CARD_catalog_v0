@@ -83,6 +83,16 @@ export interface Supplementary {
   raw_data_format: string;
 }
 
+export interface PubGrant {
+  pub_title: string;
+  source_url: string;
+  raw_data_format: string;
+  funder_name: string;
+  grant_number: string;
+  funding_context_from_paper: string;
+  recipient: string;
+}
+
 export interface SciLiteAnnotation {
   "PMC ID": string;
   Type: string;

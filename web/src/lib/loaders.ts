@@ -4,6 +4,7 @@ import type {
   CodeRepo,
   FairIssue,
   PubDataset,
+  PubGrant,
   Publication,
   Resource,
   SciLiteAnnotation,
@@ -20,6 +21,8 @@ export const loadPubDatasets = () =>
   loadTsv<PubDataset>("/data/pub_datasets.tsv");
 export const loadSupplementary = () =>
   loadTsv<Supplementary>("/data/pub_supplementary.tsv");
+export const loadPubGrants = () =>
+  loadTsv<PubGrant>("/data/pub_grants.tsv");
 export const loadSciLite = () =>
   loadTsv<SciLiteAnnotation>("/data/scilite_annotations.tsv");
 export const loadCellularModels = () =>
