@@ -1,6 +1,8 @@
 # CARD Catalog v0 → v1
 
-Data pipeline + Streamlit app for discovering and connecting research resources (datasets, publications, code repos, cellular models) in the ADRD/NDD space. Maintained by DataTecnica for NIH CARD and NIA LNG.
+Data pipeline + web app for discovering and connecting research resources (datasets, publications, code repos, cellular models) in the ADRD/NDD space. Maintained by DataTecnica for NIH CARD and NIA LNG.
+
+**The live app is the React app in `web/`** (Vite + TypeScript, deployed to Netlify at alzheimersdatahub.org). The Streamlit app in `app/` is the v0 predecessor — kept for reference but no longer deployed; do not add new features there.
 
 ## Directory Layout
 
@@ -10,14 +12,22 @@ CARD_catalog_v0/
 ├── pipelines/               # One module per stage (base.py + 5 stages)
 ├── staging/                 # schemas.py (Pydantic row models) + normalizer.py
 ├── scrapers/                # Raw scrapers called as subprocesses
-├── app/
+├── web/                      # LIVE APP — React + Vite + TypeScript, Netlify-deployed
+│   ├── src/
+│   │   ├── pages/            # PublicationsPage, ResourcesPage, CodePage, DatasetsPage (+3 nested routes), CellularModelsPage, AboutPage, HomePage
+│   │   ├── lib/               # loaders.ts (per-page TSV loaders), loadPublications.ts, filter.ts, useFacets.ts, export.ts, paperGraph.ts
+│   │   └── components/        # DataTable, FilterRail, PageShell, Chips, KnowledgeGraph, AnalysisPanel, ExportButton
+│   ├── scripts/sync-data.sh   # Copies latest tables/final/*.tsv (+ a few tables/ root + logos) into public/data/ — rerun after pipeline outputs change
+│   ├── backend/main.py        # FastAPI stub: POST /api/analyze proxies Anthropic (keeps API key off browser)
+│   └── netlify/functions/     # analyze.mjs — Netlify function alternative to backend/ for the same AI-analysis proxy
+├── app/                       # LEGACY — Streamlit v0 app, not deployed
 │   ├── Home.py
 │   ├── config.py            # DATA_FILES_PTRS, TABLES_DIR, HITS_DIR
 │   ├── pages/               # 1_Resources, 2_Publications, 3_Code, 4_Datasets* (EMPTY), 5_Human_Cellular_Models, 6_About
 │   └── utils/               # data_loader.py, graph_builder.py, llm_utils.py, export_utils.py
 ├── tables/
 │   ├── hits/                # Intermediate outputs (committed)
-│   ├── final/               # App-ready validated TSVs (committed)
+│   ├── final/               # App-ready validated TSVs (committed) — source of truth for web/
 │   └── *.tsv / *.tab        # Legacy v0 files + resource inventory
 └── scripts/                 # Exploratory work
 ```
@@ -25,7 +35,16 @@ CARD_catalog_v0/
 ## Running Things
 
 ```bash
-# App
+# App (React, live) — from web/
+npm install
+npm run sync-data        # copy latest tables/final/*.tsv into web/public/data/
+npm run dev              # http://localhost:5173
+
+# Optional: local AI-analysis backend
+cd web/backend && pip install -r requirements.txt
+ANTHROPIC_API_KEY=sk-ant-... uvicorn main:app --reload --port 8000
+
+# App (Streamlit, legacy — reference only)
 streamlit run app/Home.py
 
 # Pipeline — update (last 7 days of PubMed)
@@ -47,6 +66,8 @@ python -m staging.normalizer --input tables/hits/pubmed_hits_YYYYMMDD.tsv \
 # Firefox profile setup (one-time, for page_navigation)
 python -m pipelines.page_navigation --setup-profile
 ```
+
+After the pipeline writes new `tables/final/` outputs, run `npm run sync-data` (from `web/`) to refresh what the React app serves. Netlify's build (`netlify.toml`) also runs `sync-data` automatically on deploy.
 
 ## Pipeline Stages
 
@@ -161,7 +182,7 @@ Use `ClassVar` for `COLUMNS` — Pydantic v2 treats plain `list[str]` class attr
 - Load TSVs with `dtype=str` and `.fillna("")` — all fields are strings at the boundary.
 - Multi-value fields (diseases, modalities, authors, languages) are **semicolon-delimited**. Normalize with `staging.normalizer._normalize_list_field()`.
 - Never silently drop rows — invalid rows go to `tables/hits/rejected_{target}_{ts}.tsv` with a `_validation_errors` column.
-- App data loaders use `@st.cache_data(ttl=3600)`. Add a "Clear Cache" affordance if a page introduces new loaders.
+- React app loaders (`web/src/lib/loaders.ts`) fetch TSVs from `/data/*.tsv` client-side (via `papaparse`) — no server cache to invalidate; a stale table just means `sync-data` needs a rerun. (Streamlit's `app/` used `@st.cache_data(ttl=3600)` — legacy, not relevant to new work.)
 
 ## What Not To Do
 
@@ -174,13 +195,13 @@ Use `ClassVar` for `COLUMNS` — Pydantic v2 treats plain `list[str]` class attr
 
 ## Gotchas
 
-- **Page 4 (Datasets & Supplementary) is an empty file** — pipeline produces the TSVs, schemas exist, data_loader can load them, but the Streamlit page has not been implemented yet.
+- **`app/` (Streamlit) is legacy** — the live, deployed app is `web/` (React/Vite, on Netlify). Streamlit's Page 4 (Datasets & Supplementary) was never implemented there; the React app's `DatasetsPage.tsx` (with nested Supplementary/SciLite sub-routes) is the real, working implementation. Don't confuse the two when reasoning about "is this feature shipped."
+- **`web/public/data/*.tsv` is gitignored and generated** — it's populated by `web/scripts/sync-data.sh` from `tables/final/` (+ a couple of `tables/` root files and `logos/`). New tables need a `copy_latest` line added there, plus a loader export in `web/src/lib/loaders.ts`, to actually reach the app.
 - **`data_gatherer` is a DataTecnica internal package** — not on PyPI; required by `pub_metadata` and `page_navigation`. Install from the internal repo before running those stages.
 - **Normalizer auto-deletes old files for the same target** — running normalize twice for `publications` keeps only the latest `pubmed_central_*.tsv` in `tables/final/`.
 - **Restartability**: stages skip automatically if a today-dated hits file already exists. Use `--force` to override.
-- **App fallback**: `get_latest_file()` accepts a list of patterns; the app checks `final/` first, falls back to `tables/` root for legacy v0 files.
-- **Page 5 is iNDI** (Human Cellular Models), not a datasets page — numbering matters for navigation.
+- **Streamlit app fallback** (legacy `app/` only): `get_latest_file()` accepts a list of patterns; the app checks `final/` first, falls back to `tables/` root for legacy v0 files.
 
-## Current Status (April 2026)
+## Current Status (July 2026)
 
-Branch `from_v0_to_v1` — active migration. All pipeline stages and normalizer are implemented and producing output in `tables/final/`. App pages 1–3 and 5–6 are functional. Page 4 (Datasets & Supplementary) is next to implement. Next milestone: NDD expansion and automated weekly/quarterly cron on server.
+Branch `from_v0_to_v1` — active migration. All pipeline stages and normalizer are implemented and producing output in `tables/final/`. The React app (`web/`) is the live, deployed frontend — Publications, Resources, Code, Datasets (+ Supplementary/SciLite sub-routes), and Cellular Models pages are functional, with an AI-analysis proxy (FastAPI + Netlify function) and a Publications "Trends" chart tab. The Streamlit app (`app/`) is kept for reference only. Next milestones: NDD expansion and automated weekly/quarterly cron on server.
