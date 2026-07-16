@@ -11,7 +11,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { splitMulti } from "../lib/loadPublications";
 import type { GraphPublication } from "../lib/paperGraph";
 
 type Granularity = "month" | "quarter" | "year";

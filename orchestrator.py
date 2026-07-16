@@ -378,9 +378,9 @@ def run_full_rebuild(
                         pubs_df[["PubMed Central Link", "Resource Name", "Abbreviation", "Diseases Included"]],
                         left_on="source_url", right_on="PubMed Central Link", how="left",
                     )
-                    candidates = joined[["Resource Name", "Abbreviation", "Diseases Included", "url"]].rename(
-                        columns={"url": "Repository Link"}
-                    )
+                    candidates = joined[
+                        ["Resource Name", "Abbreviation", "Diseases Included", "url", "source_url"]
+                    ].rename(columns={"url": "Repository Link", "source_url": "Source"})
                     extra_repos_path = HITS_DIR / f"extra_repos_from_software_{_ts()}.tsv"
                     candidates.to_csv(extra_repos_path, sep="\t", index=False)
                     logger.info(f"{len(candidates)} GitHub repo(s) from pub_software → {extra_repos_path.name}")

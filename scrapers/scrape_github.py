@@ -514,13 +514,17 @@ def get_repo_content(owner: str, repo_name: str, headers: Dict, fair_logger: FAI
 
 def enrich_repo(owner: str, repo_name: str, study_name: str, abbreviation: str, diseases: str,
                  repo_url: str, languages: str, default_branch: str, headers: Dict,
-                 fair_logger: FAIRComplianceLogger, batch_mode: bool = False) -> Optional[Dict]:
+                 fair_logger: FAIRComplianceLogger, batch_mode: bool = False,
+                 source: str = "") -> Optional[Dict]:
     """Enrich a single GitHub repo: FAIR-compliance check, contributors, content, AI analysis.
 
     Shared by search_github_with_query (repos found via Code Search) and
     enrich_known_repos (repos discovered elsewhere, e.g. paper-mined software
     mentions) so both go through identical treatment.
 
+    :param source: How this repo was discovered — e.g. "GitHub search: ADNI
+        alzheimer" or the source publication's PMC link — surfaced in the app
+        as the "Source" column.
     :return: Result dict (same shape as the final output table), or None if
         the repo has insufficient content to analyze.
     """
@@ -560,6 +564,7 @@ def enrich_repo(owner: str, repo_name: str, study_name: str, abbreviation: str, 
         "Abbreviation": abbreviation,
         "Diseases Included": diseases,
         "Repository Link": repo_url,
+        "Source": source,
         "Owner": owner,
         "Contributors": "; ".join(contributors),
         "Languages": languages,
@@ -593,7 +598,8 @@ def enrich_known_repos(repo_candidates: List[Dict], github_token: str, fair_logg
     to one row per (repo, Resource Name) pairing supplied in repo_candidates.
 
     :param repo_candidates: list of dicts with keys 'Resource Name', 'Abbreviation',
-        'Diseases Included', 'Repository Link' (any GitHub URL shape).
+        'Diseases Included', 'Repository Link' (any GitHub URL shape), and
+        'Source' (the source publication's PMC link).
     :return: list of result dicts, same shape as search_github_with_query's output.
     """
     headers = {
@@ -634,7 +640,7 @@ def enrich_known_repos(repo_candidates: List[Dict], github_token: str, fair_logg
         enriched = enrich_repo(
             owner, repo_name, first.get('Resource Name', ''), first.get('Abbreviation', ''),
             first.get('Diseases Included', ''), repo_url, languages, default_branch,
-            headers, fair_logger, batch_mode,
+            headers, fair_logger, batch_mode, source=first.get('Source', ''),
         )
         if enriched is None:
             continue
@@ -644,6 +650,7 @@ def enrich_known_repos(repo_candidates: List[Dict], github_token: str, fair_logg
             row['Resource Name'] = pairing.get('Resource Name', '')
             row['Abbreviation'] = pairing.get('Abbreviation', '')
             row['Diseases Included'] = pairing.get('Diseases Included', '')
+            row['Source'] = pairing.get('Source', '')
             results.append(row)
 
     logger.info(f"  Successfully enriched {len(results)} repo/resource pairing(s) from software mentions")
@@ -725,7 +732,8 @@ def search_github_with_query(query: str, study_name: str, abbreviation: str, dis
                 default_branch = repo.get('default_branch', 'main')
 
                 result = enrich_repo(owner, repo_name, study_name, abbreviation, diseases,
-                                      repo_url, languages, default_branch, headers, fair_logger, batch_mode)
+                                      repo_url, languages, default_branch, headers, fair_logger, batch_mode,
+                                      source=f"GitHub search: {query}")
                 if result is not None:
                     results.append(result)
 

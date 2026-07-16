@@ -44,6 +44,7 @@ export interface CodeRepo {
   Abbreviation: string;
   "Diseases Included": string;
   "Repository Link": string;
+  Source: string;
   Owner: string;
   Contributors: string;
   Languages: string;

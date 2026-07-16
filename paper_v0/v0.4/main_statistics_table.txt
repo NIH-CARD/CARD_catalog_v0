@@ -1,0 +1,203 @@
+================================================================================
+CARD CATALOG - MAIN DESCRIPTIVE STATISTICS TABLE
+================================================================================
+
+Resource Types Distribution:
+  study: 192 (80.3%)
+  data repository: 39 (16.3%)
+  biorepository: 16 (6.7%)
+  data catalog: 7 (2.9%)
+
+DATASETS
+--------------------------------------------------------------------------------
+Total Number of Datasets: 239
+
+Coarse Data Types:
+  clinical: 186 (31.4%)
+  genetics: 89 (15.0%)
+  transcriptomics: 89 (15.0%)
+  longitudinal: 78 (13.2%)
+  proteomics: 53 (9.0%)
+  imaging: 50 (8.4%)
+  epigenomics: 24 (4.1%)
+  metabolomics: 23 (3.9%)
+
+Sample Size Statistics:
+  Mean: 65454
+  Median: 770
+  Min: 1
+  Max: 5897780
+  Std Dev: 487717
+
+FAIR Compliance Levels:
+  Excellent: 126 (52.7%)
+  Strong: 58 (24.3%)
+  Good: 55 (23.0%)
+
+
+PUBLICATIONS
+--------------------------------------------------------------------------------
+Total Publications: 1634
+
+Five Most Prolific Studies:
+  National Alzheimer's Coordinating Center: 150
+  Alzheimer's Disease Neuroimaging Initiative: 149
+  Parkinson's Progression Markers Initiative: 149
+  Memory and Aging Project: 129
+  Religious Orders Study: 93
+
+Five Most Occurring Authors:
+  Oskar Hansson: 148
+  A Bennett David: 130
+  Erik Stomrud: 121
+  Sebastian Palmqvist: 119
+  Niklas Mattsson-Carlgren: 111
+
+Five Most Occurring Affiliations:
+  Rush Alzheimer's Disease Center, Rush University Medical Center, Chicago, Illinois, USA.: 73
+  Department of Radiology, Mayo Clinic, Rochester, Minnesota, USA.: 48
+  Department of Neurology, Mayo Clinic, Rochester, Minnesota, USA.: 48
+  Clinical Memory Research Unit, Department of Clinical Sciences Malmö, Lund University, Lund, Sweden.: 47
+  Department of Quantitative Health Sciences, Mayo Clinic, Rochester, Minnesota, USA.: 33
+
+Top 10 Keywords:
+  disease: 1020 (8.0%)
+  cognitive: 347 (2.7%)
+  dementia: 293 (2.3%)
+  biomarkers: 199 (1.6%)
+  amyloid: 182 (1.4%)
+  learning: 148 (1.2%)
+  impairment: 141 (1.1%)
+  tau: 131 (1.0%)
+  decline: 117 (0.9%)
+  analysis: 109 (0.9%)
+
+Data Completeness Distribution from PubMed API:
+  Mean: 91.0%
+  Median: 100.0%
+  Std Dev: 12.6%
+  Distribution:
+    0-25%: 1
+    26-50%: 10
+    51-75%: 84
+    76-100%: 1539
+
+
+CODE REPOSITORIES
+--------------------------------------------------------------------------------
+Total Repositories: 1008
+
+Top Programming Languages:
+  Python: 289 (28.7%)
+  Jupyter Notebook: 244 (24.2%)
+  R: 117 (11.6%)
+  HTML: 48 (4.8%)
+  JavaScript: 38 (3.8%)
+  MATLAB: 32 (3.2%)
+  TypeScript: 29 (2.9%)
+  C++: 20 (2.0%)
+  Java: 13 (1.3%)
+  Shell: 12 (1.2%)
+
+Top 10 Keywords from Tooling:
+  python: 466 (46.2%)
+  data: 309 (30.7%)
+  learning: 208 (20.6%)
+  programming: 173 (17.2%)
+  language: 165 (16.4%)
+  visualization: 133 (13.2%)
+  machine: 133 (13.2%)
+  packages: 137 (13.6%)
+  model: 125 (12.4%)
+  specific: 136 (13.5%)
+
+Top 10 Keywords from Data Types:
+  data: 822 (81.5%)
+  clinical: 400 (39.7%)
+  brain: 318 (31.5%)
+  mri: 220 (21.8%)
+  imaging: 212 (21.0%)
+  disease: 201 (19.9%)
+  neuroimaging: 146 (14.5%)
+  format: 121 (12.0%)
+  genetic: 120 (11.9%)
+  images: 95 (9.4%)
+
+Top 10 Keywords from Code Summary:
+  data: 471 (46.8%)
+  brain: 359 (35.7%)
+  disease: 386 (38.3%)
+  code: 409 (40.6%)
+  learning: 289 (28.7%)
+  project: 257 (25.5%)
+  system: 199 (19.8%)
+  uses: 210 (20.9%)
+  models: 171 (17.0%)
+  provides: 204 (20.3%)
+
+FAIR Component Completeness (% with component):
+  README: 98.8%
+  Dependencies: 26.8%
+  Container: 6.9%
+  Environment Spec: 5.0%
+  Version Info: 3.8%
+
+Mean FAIR Score by Language (0-10 scale):
+  Python: 6.51/10 (n=289 repos)
+  Jupyter Notebook: 6.11/10 (n=244 repos)
+  R: 5.83/10 (n=117 repos)
+
+
+HUMAN CELLULAR MODELS
+--------------------------------------------------------------------------------
+Total Cell Models: 626
+
+Cell Models per Condition:
+  Parkinson's disease: 60 (9.6%)
+  Alzheimer's disease: 55 (8.8%)
+  Frontotemporal dementia: 21 (3.4%)
+  Alzheimer's disease, late onset: 12 (1.9%)
+  Frontotemporal dementia with parkinsonism: 11 (1.8%)
+  Parkinson's disease, early onset: 9 (1.4%)
+  Spastic paraplegia: 9 (1.4%)
+  Leukoencephalopathy with vanishing white matter: 9 (1.4%)
+  Inclusion body myopathy with Paget disease and frontotemporal dementia (IBMPFD): 8 (1.3%)
+  Alzheimer's disease, early onset: 8 (1.3%)
+
+Most Common Genes:
+  LRRK2: 24
+  MAPT: 21
+  APP: 20
+  FUS: 17
+  SNCA: 17
+  APOE: 17
+  TREM2: 17
+  CHMP2B: 14
+  PRKN: 12
+  PSEN1: 11
+
+Top Themes from Gene Descriptions:
+  mutations: 539 (86.1%)
+  protein: 486 (77.6%)
+  neurodegenerative: 582 (93.0%)
+  function: 472 (75.4%)
+  dysfunction: 472 (75.4%)
+  therapeutic: 549 (87.7%)
+  neuronal: 361 (57.7%)
+  onset: 344 (55.0%)
+  neurodegeneration: 360 (57.5%)
+  diseases: 332 (53.0%)
+
+Top Themes from Variant Descriptions:
+  risk: 245 (56.1%)
+  apoe: 159 (36.4%)
+  nucleotide: 335 (76.7%)
+  mutation: 171 (39.1%)
+  protein: 226 (51.7%)
+  functional: 207 (47.4%)
+  pathogenic: 182 (41.6%)
+  lipid: 148 (33.9%)
+  increased: 171 (39.1%)
+  clinical: 192 (43.9%)
+
+================================================================================

@@ -14,7 +14,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 # Paths
 TABLES_DIR = Path(__file__).parent.parent / "tables"
-OUTPUT_DIR = Path(__file__).parent / "v0.3"
+OUTPUT_DIR = Path(__file__).parent / "v0.4"
 
 # Common stopwords to exclude
 STOPWORDS = {
@@ -40,8 +40,14 @@ CELL_MODEL_STOPWORDS = STOPWORDS | {
 
 
 def load_latest_file(pattern):
-    """Load the most recent file matching pattern."""
-    files = list(TABLES_DIR.glob(pattern))
+    """Load the most recent file matching pattern.
+
+    Current pipeline outputs live in tables/final/; resources-inventory and
+    iNDI_inventory are standalone inputs that live at the tables/ root instead.
+    Search both and take the overall newest match so this doesn't silently
+    fall back to a stale legacy copy sitting in tables/ root.
+    """
+    files = [f for d in (TABLES_DIR / "final", TABLES_DIR) for f in d.glob(pattern)]
     if not files:
         raise FileNotFoundError(f"No files found matching {pattern}")
     latest = max(files, key=lambda p: p.stat().st_mtime)
@@ -112,7 +118,7 @@ def extract_keywords(text_series, top_n=10, min_length=3, custom_stopwords=None,
 def analyze_datasets():
     """Analyze datasets and return statistics."""
     print("Analyzing Datasets...")
-    df = load_latest_file("dataset-inventory-*.tab")
+    df = load_latest_file("resources-inventory-*.tab")
 
     print(f"Loaded {len(df)} datasets for analysis, columns: {df.columns.tolist()}")
 
@@ -264,9 +270,16 @@ def analyze_code_repos(git_scrape_output_path=None):
     """Analyze code repositories and return statistics."""
     print("Analyzing Code Repositories...")
 
-    # Load all git batch files
+    # gits_to_reannotate_completed_*.tsv is always a single full snapshot (the
+    # normalizer replaces it wholesale each run), not incremental batches — so
+    # take only the single newest match, never concatenate multiple runs
+    # together. Current pipeline output lives in tables/final/; also check
+    # tables/ root for legacy v0 files.
     if git_scrape_output_path is None:
-        git_files = list(TABLES_DIR.glob("gits_batch*.tsv")) + list(TABLES_DIR.glob("gits_to_reannotate*.tsv"))
+        search_dirs = (TABLES_DIR / "final", TABLES_DIR)
+        candidates = [f for d in search_dirs for f in d.glob("gits_batch*.tsv")]
+        candidates += [f for d in search_dirs for f in d.glob("gits_to_reannotate*.tsv")]
+        git_files = [max(candidates, key=lambda p: p.stat().st_mtime)] if candidates else []
     else:
         git_files = [git_scrape_output_path] if isinstance(git_scrape_output_path, str) else []
 
@@ -286,9 +299,14 @@ def analyze_code_repos(git_scrape_output_path=None):
 
     df = pd.concat(dfs, ignore_index=True).drop_duplicates(subset=['Repository Link'], keep='first')
 
-    # Load and merge FAIR compliance data
-    scrapers_dir = TABLES_DIR.parent / "scrapers"
-    fair_files = list(scrapers_dir.glob("fair_compliance_log_*.tsv"))
+    # Load and merge FAIR compliance data — current pipeline output already
+    # carries FAIR Issues/FAIR Score from the normalizer's own merge step, so
+    # only do this manual merge for older files that predate that (otherwise
+    # the merge collides and pandas silently renames both to _x/_y suffixes).
+    hits_dir = TABLES_DIR / "hits"
+    fair_files = list(hits_dir.glob("fair_compliance_log_*.tsv"))
+    if 'FAIR Issues' in df.columns and 'FAIR Score' in df.columns:
+        fair_files = []
     if fair_files:
         fair_dfs = []
         for f in fair_files:
@@ -635,7 +653,7 @@ def main():
     # Run all analyses
     datasets_stats = analyze_datasets()
     pubs_stats = analyze_publications()
-    code_stats = analyze_code_repos(git_scrape_output_path='../tables/gits_to_reannotate_completed_20260312_015100.tsv')
+    code_stats = analyze_code_repos()
     cell_stats = analyze_cell_models()
 
     # Format output

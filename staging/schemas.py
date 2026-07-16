@@ -90,6 +90,7 @@ class CodeRepoRow(_Base):
     Abbreviation: str = ""
     Diseases_Included: str = ""
     Repository_Link: str = ""
+    Source: str = ""
     Owner: str = ""
     Contributors: str = ""
     Languages: str = ""
@@ -107,7 +108,7 @@ class CodeRepoRow(_Base):
 
     @field_validator(
         "Resource_Name", "Abbreviation", "Diseases_Included", "Repository_Link",
-        "Owner", "Contributors", "Languages", "Biomedical_Relevance",
+        "Source", "Owner", "Contributors", "Languages", "Biomedical_Relevance",
         "Code_Summary", "Data_Types", "Tooling", "FAIR_Score", "FAIR_Issues",
         mode="before",
     )
@@ -117,7 +118,7 @@ class CodeRepoRow(_Base):
 
     COLUMNS: ClassVar[list[str]] = [
         "Resource Name", "Abbreviation", "Diseases Included",
-        "Repository Link", "Owner", "Contributors", "Languages",
+        "Repository Link", "Source", "Owner", "Contributors", "Languages",
         "Biomedical Relevance", "Code Summary", "Data Types", "Tooling",
         "FAIR Score", "FAIR Issues",
     ]

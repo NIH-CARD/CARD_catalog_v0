@@ -18,16 +18,24 @@ from scipy.stats import gaussian_kde
 
 # Paths
 TABLES_DIR = Path(__file__).parent.parent / "tables"
-SCRAPERS_DIR = Path(__file__).parent.parent / "scrapers"
-OUTPUT_DIR = Path(__file__).parent / "v0.3"
+HITS_DIR = TABLES_DIR / "hits"
+OUTPUT_DIR = Path(__file__).parent / "v0.4"
 
 
 def load_latest_file(pattern, directory=TABLES_DIR):
-    """Load the most recent file matching pattern."""
-    files = list(directory.glob(pattern))
+    """Load the most recent file matching pattern.
+
+    Current pipeline outputs live in tables/final/; resources-inventory and
+    iNDI_inventory are standalone inputs that live at the tables/ root instead.
+    Search both and take the overall newest match so this doesn't silently
+    fall back to a stale legacy copy sitting in tables/ root.
+    """
+    search_dirs = [directory / "final", directory] if directory == TABLES_DIR else [directory]
+    files = [f for d in search_dirs for f in d.glob(pattern)]
     if not files:
-        raise FileNotFoundError(f"No files found matching {pattern}")
+        raise FileNotFoundError(f"No files found matching {pattern} in {search_dirs}")
     latest = max(files, key=lambda p: p.stat().st_mtime)
+    print(f"  Loading: {latest.relative_to(TABLES_DIR.parent)}")
     return pd.read_csv(latest, sep='\t', low_memory=False)
 
 
@@ -61,13 +69,13 @@ def create_figure():
 
     # Load data
     print("Loading data...")
-    datasets_df = load_latest_file("dataset-inventory-*.tab")
+    datasets_df = load_latest_file("resources-inventory-*.tab")
 
     # Load code repos
     code_df = load_latest_file("gits_to_reannotate_completed_*.tsv")
 
     # Load FAIR compliance log (single authoritative file)
-    fair_file = max(SCRAPERS_DIR.glob("fair_compliance_log_*.tsv"), key=lambda p: p.stat().st_mtime)
+    fair_file = max(HITS_DIR.glob("fair_compliance_log_*.tsv"), key=lambda p: p.stat().st_mtime)
     print(f"Loading FAIR compliance log: {fair_file.name}")
     fair_df = pd.read_csv(fair_file, sep='\t', low_memory=False)
     print(f"  {len(fair_df)} rows, {fair_df['Repository'].nunique()} unique repos")
@@ -120,7 +128,7 @@ def create_figure():
     ax1.set_yticks(range(len(sorted_datatypes)))
     ax1.set_yticklabels(sorted_datatypes, fontsize=11, rotation=15, ha='right')
     ax1.set_xlabel('Number of Datasets', fontsize=12, fontweight='bold')
-    ax1.set_title('A. Coarse Data Modality by FAIR Compliance\n(n=236 datasets)',
+    ax1.set_title(f'A. Coarse Data Modality by FAIR Compliance\n(n={len(datasets_df)} datasets)',
                   fontsize=13, fontweight='bold', pad=10)
     ax1.legend(title='FAIR Level', loc='upper right', fontsize=10)
     ax1.grid(axis='x', alpha=0.3)

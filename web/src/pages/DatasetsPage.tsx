@@ -17,7 +17,6 @@ import { matchesFacet, matchesQuery } from "../lib/filter";
 import {
   loadPubDatasets,
   loadPubGrants,
-  loadPubSoftware,
   loadSciLite,
   loadSupplementary,
 } from "../lib/loaders";
@@ -27,7 +26,6 @@ import type {
   FacetSpec,
   PubDataset,
   PubGrant,
-  PubSoftware,
   SciLiteAnnotation,
   Supplementary,
 } from "../types";
@@ -71,9 +69,6 @@ function SubNav() {
       </NavLink>
       <NavLink to="/datasets/grants" className={itemCls}>
         💰 Grants
-      </NavLink>
-      <NavLink to="/datasets/software" className={itemCls}>
-        🧩 Software
       </NavLink>
       <NavLink to="/datasets/scilite" className={itemCls}>
         🏷️ SciLite Annotations
