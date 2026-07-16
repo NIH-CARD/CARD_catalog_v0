@@ -25,16 +25,23 @@ Maintained by [DataTecnica](https://datatecnica.com) for NIH's [Center for Alzhe
 Inventory (.tab)
       │
       ▼
-┌───────────────────────────────────────────────────┐
-│                     Pipeline                       │
-│  1. pubmed_search                                  │
-│  2. github_search                                  │
-│  3. repo_analysis   (AI)                           │
-│  4. pub_metadata    (AI) — datasets + supplementary │
-│                            files + grants/funding   │
-│  5. page_navigation (AI+browser)                   │
-│  6. scilite         (Europe PMC annotations)        │
-└───────────┬─────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                          Pipeline                            │
+│  1. pubmed_search                                            │
+│  2. prefetch_articles — shared PMC full-text cache            │
+│     (tables/cache/pub_fulltext_cache.parquet), read-and-      │
+│     update in place across runs, before the 4 stages below    │
+│  3. pub_datasets / pub_supplementary / pub_grants /            │
+│     pub_software  (AI, run CONCURRENTLY — each independently   │
+│     caches against its own tables/final/ output; --no-cache    │
+│     forces a full reprocess)                                   │
+│  4. scilite         (Europe PMC annotations)                   │
+│  5. github_search   — also enriches GitHub repos discovered     │
+│     by pub_software (--extra-repos), same FAIR/tree-walk        │
+│     treatment as Code-Search-discovered repos                   │
+│  6. repo_analysis   (AI, cache-aware)                           │
+│  7. page_navigation (AI+browser, cache-aware)                   │
+└───────────┬───────────────────────────────────────────────────┘
             │
        tables/hits/          ← intermediate outputs
             │
@@ -46,7 +53,7 @@ Inventory (.tab)
    (Streamlit app in app/ is the legacy v0 predecessor)
 ```
 
-Full architecture details: [`docs/overview.md`](docs/overview.md)
+Full architecture details: [`docs/overview.md`](docs/overview.md), [`docs/api_reference.md`](docs/api_reference.md)
 
 ---
 
@@ -106,9 +113,14 @@ python orchestrator.py full_rebuild
 
 # Skip stages you don't need
 python orchestrator.py full_rebuild --skip page_navigation
+
+# Force a full reprocess, ignoring per-item caches (pub_datasets/pub_supplementary/
+# pub_grants/pub_software/repo_analysis/page_navigation all normally skip items
+# already present in tables/final/)
+python orchestrator.py full_rebuild --no-cache
 ```
 
-Full pipeline docs: [`docs/getting_started.md`](docs/getting_started.md)
+Full pipeline docs: [`docs/getting_started.md`](docs/getting_started.md), [`docs/api_reference.md`](docs/api_reference.md)
 
 ---
 
@@ -120,6 +132,8 @@ The pipeline is designed to run unattended via cron — see
 Automated scheduling on a server is a near-term milestone, not yet live.
 
 Stages are independently restartable — if a run fails, re-running skips stages that already produced a today-dated hits file.
+
+`pub_datasets`/`pub_supplementary`/`pub_grants`/`pub_software`/`repo_analysis`/`page_navigation` additionally cache per-item, diffing against what's already in `tables/final/` — so even within a fresh, non-skipped stage run, only genuinely new items (new PMC articles, new repos, new URLs) get reprocessed. `--no-cache` bypasses this for a true full reprocess.
 
 ---
 
@@ -156,7 +170,8 @@ CARD_catalog_v0/
 │   ├── pages/
 │   └── utils/
 ├── tables/
-│   ├── hits/                # Intermediate pipeline outputs
+│   ├── hits/                # Intermediate pipeline outputs (gitignored)
+│   ├── cache/               # Shared PMC full-text parquet cache (gitignored)
 │   ├── final/                # App-ready validated TSVs (source of truth for web/)
 │   └── resources-inventory-*.tab   # Resource inventory (source of truth)
 ├── docs/                    # Sphinx documentation source
@@ -169,7 +184,7 @@ CARD_catalog_v0/
 
 | Variable | Required by | Notes |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | `repo_analysis`, `pub_metadata`, `page_navigation`, `web/backend` AI-analysis proxy | All AI stages use Anthropic models |
+| `ANTHROPIC_API_KEY` | `repo_analysis`, `pub_datasets`, `pub_supplementary`, `pub_grants`, `pub_software`, `page_navigation`, `web/backend` AI-analysis proxy | All AI stages use Anthropic models |
 | `GITHUB_TOKEN` | `github_search` | Required for GitHub scraping |
 | `NCBI_API_KEY` | `pubmed_search` | Optional; raises rate limit from 3/s to 10/s |
 | `FIREFOX_PROFILE_DIR` | `page_navigation` | Pre-authenticated Firefox profile path |

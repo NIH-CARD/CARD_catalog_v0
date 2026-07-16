@@ -1,9 +1,11 @@
 CARD Catalog - DRAFT
 ============
 
-**CARD Catalog** is a data pipeline and Streamlit web application for discovering
-and connecting research resources in Alzheimer's Disease / Neurodegenerative Disease
-research, maintained by DataTecnica for NIH CARD and NIA LNG.
+**CARD Catalog** is a data pipeline and React web application (``web/``) for
+discovering and connecting research resources in Alzheimer's Disease /
+Neurodegenerative Disease research, maintained by DataTecnica for NIH CARD and
+NIA LNG. The original Streamlit app (``app/``) is the v0 predecessor, kept for
+reference but no longer deployed.
 
 .. toctree::
    :maxdepth: 2

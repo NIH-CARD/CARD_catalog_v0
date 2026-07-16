@@ -41,6 +41,7 @@ Re-run `npm run sync-data` whenever the pipeline writes new outputs.
 | `/datasets` | `pub_datasets.tsv` | Honors `?pmc=PMCxxxx` |
 | `/datasets/supplementary` | `pub_supplementary.tsv` | Honors `?pmc=PMCxxxx` |
 | `/datasets/grants` | `pub_grants.tsv` | Honors `?pmc=PMCxxxx` |
+| `/datasets/software` | `pub_software.tsv` (synced, unused) | Nav link exists but no route/tab is wired up yet — falls through to `/datasets` |
 | `/datasets/scilite` | `scilite_annotations.tsv` | Honors `?pmc=PMCxxxx` |
 | `/cellular-models` | `cellular_models.tsv` | iNDI inventory |
 
@@ -68,10 +69,11 @@ web/
       PublicationsPage.tsx
       ResourcesPage.tsx
       CodePage.tsx
-      DatasetsPage.tsx            — 3 nested routes
+      DatasetsPage.tsx            — 3 nested routes (supplementary, grants, scilite);
+                                     "Software" sub-nav link has no route yet
       CellularModelsPage.tsx
   scripts/
-    sync-data.sh                  — copies all 8 latest TSVs into public/data/
+    sync-data.sh                  — copies all 10 latest TSVs into public/data/
   backend/
     main.py                       — FastAPI; POST /api/analyze proxies Anthropic
     requirements.txt

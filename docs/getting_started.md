@@ -24,18 +24,6 @@ pip install -r requirements.txt
 
 ## 2. Configure secrets
 
-### Streamlit app
-
-```bash
-cp .streamlit/secrets.toml.template .streamlit/secrets.toml
-```
-
-Edit `.streamlit/secrets.toml`:
-
-```toml
-ANTHROPIC_API_KEY = "sk-ant-..."
-```
-
 ### Pipeline (scrapers)
 
 ```bash
@@ -57,15 +45,42 @@ Load into your terminal session:
 set -a && source .env && set +a
 ```
 
+### Legacy Streamlit app (optional, reference only)
+
+```bash
+cp .streamlit/secrets.toml.template .streamlit/secrets.toml
+```
+
+Edit `.streamlit/secrets.toml`:
+
+```toml
+ANTHROPIC_API_KEY = "sk-ant-..."
+```
+
 ---
 
-## 3. Run the Streamlit app
+## 3. Run the app
+
+The live app is the React app in `web/` — it's read-only against pre-generated TSVs, no API keys required to browse it:
+
+```bash
+cd web
+npm install
+npm run sync-data   # copies the latest tables/final/*.tsv into public/data/
+npm run dev         # http://localhost:5173
+```
+
+Re-run `npm run sync-data` whenever the pipeline writes new outputs. See [`web/README.md`](../web/README.md) for routes and file layout.
+
+<details>
+<summary>Legacy Streamlit app (reference only, not deployed)</summary>
 
 ```bash
 streamlit run app/Home.py
 ```
 
 Opens at http://localhost:8501. Works immediately with existing data in `tables/`.
+</details>
 
 ---
 
@@ -86,13 +101,21 @@ Fetches papers from the past 7 days, validates, and writes a new
 python orchestrator.py full_rebuild
 ```
 
-Runs all 5 stages: pubmed_search → publication metadata → GitHub search → AI repo analysis → study page navigation.
+Runs pubmed_search → (shared full-text prefetch) → pub_datasets / pub_supplementary / pub_grants / pub_software (concurrent) → scilite → GitHub search (also enriching any GitHub repos `pub_software` found) → AI repo analysis → study page navigation → join_annotations.
 
 ### Skip stages you don't need
 
 ```bash
 python orchestrator.py full_rebuild --skip page_navigation
-python orchestrator.py full_rebuild --skip repo_analysis pub_metadata page_navigation
+python orchestrator.py full_rebuild --skip repo_analysis pub_software page_navigation
+```
+
+### Force a full reprocess, ignoring per-item caches
+
+`pub_datasets`, `pub_supplementary`, `pub_grants`, `pub_software`, `repo_analysis`, and `page_navigation` normally skip items already present in `tables/final/`. To reprocess everything:
+
+```bash
+python orchestrator.py full_rebuild --no-cache
 ```
 
 ### Resume a failed run
@@ -132,7 +155,7 @@ python -m staging.normalizer \
     --output tables/final/pubmed_central_20260329.tsv
 ```
 
-Available targets: `publications`, `code`, `pub_datasets`, `supplementary`, `new_corpus`.
+Available targets: `publications`, `code`, `pub_datasets`, `supplementary`, `pub_grants`, `pub_software`, `new_corpus`, `scilite`.
 
 ---
 
@@ -161,6 +184,7 @@ crontab -e
 | `--max-results` | `100` | Max PubMed hits per resource |
 | `--skip STAGE [...]` | none | Skip named stages |
 | `--force` | off | Re-run stages even if today's hits file exists |
+| `--no-cache` | off | Disable per-item caching for pub_datasets/pub_supplementary/pub_grants/pub_software/repo_analysis/page_navigation; reprocess everything |
 | `--verbose` | off | Pass `--verbose` to scraper subprocesses |
 | `--inventory` | auto-detected | Override path to resource inventory `.tab` file |
 
@@ -180,5 +204,8 @@ Run `python -m pipelines.page_navigation --setup-profile`.
 **Rejected rows in `tables/hits/rejected_*.tsv`**
 Inspect the `_validation_errors` column. Common cause: unexpected column names from a scraper update.
 
-**App shows stale data after a pipeline run**
+**React app shows stale data after a pipeline run**
+Re-run `npm run sync-data` in `web/` to refresh `public/data/` from the latest `tables/final/*.tsv`.
+
+**Legacy Streamlit app shows stale data after a pipeline run**
 Streamlit caches for 1 hour. Use the **Clear Cache** button in the sidebar.

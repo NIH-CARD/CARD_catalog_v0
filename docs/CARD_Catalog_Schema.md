@@ -1,7 +1,7 @@
 # CARD Catalog — Data Schema
 
-> A reference for the tables behind the [CARD Catalog Streamlit app](https://card-catalog-v0.streamlit.app/), aimed at readers new to the project.
-> Cardinalities and value examples are taken from the export snapshot dated **2026-03-16**.
+> A reference for the tables behind the CARD Catalog app — a React app (`web/`, deployed on Netlify at alzheimersdatahub.org) as of this writing; the Streamlit app this doc originally referenced is the legacy v0 predecessor, kept for reference but no longer deployed — aimed at readers new to the project.
+> Cardinalities and value examples are taken from the export snapshot dated **2026-03-16**, except the `pub_grants`/`pub_software` sections which reflect real exports from July 2026 (see each section for specifics).
 
 ---
 
@@ -25,7 +25,7 @@ The workbook documents two schema generations:
 | Version | Tables | Notes |
 |---|---|---|
 | **v0** (`db`) | 4 tables | Original schema. Publications and code were single flat tables. |
-| **v1** (`v1.db`) | 7 tables | Splits publication enrichment into three dedicated tables (`pub_datasets`, `pub_supplementary`, `new_corpus`) and formalizes typed row models (`PublicationRow`, `CodeRepoRow`, etc.). |
+| **v1** (`v1.db`) | 9 tables | Splits publication enrichment into dedicated tables (`pub_datasets`, `pub_supplementary`, `pub_grants`, `pub_software`, `new_corpus`) and formalizes typed row models (`PublicationRow`, `CodeRepoRow`, etc.). `pub_grants` and `pub_software` were added most recently — see their sections below. |
 
 The rest of this document describes **v1**, which is current.
 
@@ -34,28 +34,36 @@ The rest of this document describes **v1**, which is current.
 ## Table map
 
 ```
-                       ┌─────────────────────────┐
-                       │  resources-inventory    │  ← manually curated
-                       │  (~236 rows)            │
-                       └───────────┬─────────────┘
-                                   │  Resource Name / Abbreviation
-                  ┌────────────────┼────────────────┐
-                  ▼                ▼                ▼
-         ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-         │ publications │  │     code     │  │  new_corpus  │
-         │ (~1.6k rows) │  │ (~700 repos) │  │ (discovered) │
-         └──────┬───────┘  └──────────────┘  └──────────────┘
-                │ Source PMID
-        ┌───────┴────────┐
-        ▼                ▼
-┌──────────────┐  ┌──────────────────┐
-│ pub_datasets │  │ pub_supplementary│
-└──────────────┘  └──────────────────┘
+                         ┌─────────────────────────┐
+                         │   resources-inventory   │  ← manually curated
+                         │       (~236 rows)       │
+                         └─────────────────────────┘
+                                      │
+                  ┌───────────────────┴───────────────────┐
+                  ▼                   ▼                   ▼
+         ┌────────────────┐  ┌────────────────┐  ┌────────────────┐
+         │  publications  │  │      code      │  │   new_corpus   │
+         │  (~1.6k rows)  │  │  (~700 repos)  │  │  (discovered)  │
+         └────────────────┘  └────────────────┘  └────────────────┘
+                  │  source_url (≈ PMC link)
+          ┌───────┴───────────┴───────────────────┴───────────────────┐
+          ▼                   ▼                   ▼                   ▼
+┌──────────────────┐┌──────────────────┐┌──────────────────┐┌──────────────────┐
+│   pub_datasets   ││pub_supplementary ││    pub_grants    ││   pub_software   │
+└──────────────────┘└──────────────────┘└──────────────────┘└──────────────────┘
+
+                                                                      │
+                                                                      └─▶ GitHub-hosted mentions are routed through github_search/
+                                                                          repo_analysis and end up in `code` above too.
 
       ┌──────────────────┐
       │  iNDI_inventory  │  ← standalone (~626 cell lines)
       └──────────────────┘
 ```
+
+`pub_datasets`/`pub_supplementary`/`pub_grants`/`pub_software` all join back
+to `publications` via `source_url` (the PMC link), not `PMID` — see the
+Conventions section at the bottom.
 
 ---
 
@@ -163,10 +171,17 @@ The rest of this document describes **v1**, which is current.
 ### `pub_datasets` (`PubDatasetRow`) — *v1 only*
 
 **File pattern:** `pub_datasets_*.tsv`
-**Role:** Datasets cited *inside* publications. Joins back via `Source PMID`.
-*No export provided in this batch — fields below are from the schema sheet.*
+**Role:** Datasets cited *inside* publications. Joins back via `source_url` (the PMC link).
 
-| Field | Notes |
+> **Schema drift:** the fields below are from the schema sheet / `PubDatasetRow`'s
+> aspirational `COLUMNS`, but the live pipeline output uses different, lowercase
+> `snake_case` columns straight from `data_gatherer`: `pub_title, source_url,
+> raw_data_format, dataset_identifier, data_repository,
+> dataset_context_from_paper, dataset_keywords, citation_type`. The
+> `_normalize_pub_datasets` normalizer is currently a no-op (passes these
+> through unchanged) rather than renaming to the schema-sheet names below.
+
+| Field (schema sheet) | Notes |
 |---|---|
 | `Source PMID` | Links back to `publications`. |
 | `Source Resource Name` | |
@@ -184,10 +199,14 @@ The rest of this document describes **v1**, which is current.
 ### `pub_supplementary` (`SupplementaryRow`) — *v1 only*
 
 **File pattern:** `pub_supplementary_*.tsv`
-**Role:** Supplementary files attached to publications. Joins back via `Source PMID`.
-*No export provided in this batch — fields below are from the schema sheet.*
+**Role:** Supplementary files attached to publications. Joins back via `source_url` (the PMC link).
 
-| Field | Notes |
+> **Schema drift** (same situation as `pub_datasets` above): live output columns
+> are `link, source_url, download_link, title, content_type, caption,
+> description, context_description, source_section, file_extension, pub_title,
+> raw_data_format`, passed through unchanged by a no-op normalizer.
+
+| Field (schema sheet) | Notes |
 |---|---|
 | `Source PMID` | Links back to `publications`. |
 | `Source Resource Name` | |
@@ -199,6 +218,62 @@ The rest of this document describes **v1**, which is current.
 | `Data Repository` | |
 | `Number Of Files` | |
 | `File License` | |
+
+---
+
+### `pub_grants` (`PubGrantRow`) — *v1 only, added most recently*
+
+**File pattern:** `pub_grants_*.tsv`
+**Role:** Grant/funding mentions extracted from the funding/acknowledgments
+section of each publication (`data_gatherer`'s `CLAUDE_FDR_FewShot_grant`
+prompt + `grant_response_schema_gpt`, rule-based `FUND`-flagged retrieval —
+see `pipelines.pub_grants` in [`api_reference.md`](api_reference.md)). Joins
+back via `source_url` (the PMC link).
+
+**Live output columns** (lowercase `snake_case`, straight from `data_gatherer`
+— no schema-sheet equivalent exists yet since this table is new):
+
+| Field | Notes |
+|---|---|
+| `pub_title` | Publication title. |
+| `source_url` | PMC link — join key back to `publications`. |
+| `raw_data_format` | Format the source article was fetched as (`XML`/`HTML`). |
+| `funder_name` | Funding organization, **canonicalized** by `staging.normalizer._normalize_funder_name()` — a set of regex patterns collapsing known variant clusters (e.g. `National Institute on Aging`, `NIA`, `National Institute of Aging` [typo], `NIA/NIH`, `National Institute on Aging (NIA)/National Institutes of Health (NIH)` → one canonical `National Institute on Aging (NIA)`). Not exhaustive — only the high-frequency clusters found in real data are covered; the long tail of ~1500 one-off funder names passes through unchanged. |
+| `grant_number` | One row per grant number — `data_gatherer`'s `process_grants_response()` explodes a `grant_numbers` array into one row each, so a paper with 3 grant numbers from the same funder produces 3 rows. |
+| `funding_context_from_paper` | The text passage from the paper mentioning this funder/grant. |
+| `recipient` | The author/institution that received the grant, if stated (`"n/a"` otherwise). |
+
+---
+
+### `pub_software` (`PubSoftwareRow`) — *v1 only, added most recently*
+
+**File pattern:** `pub_software_*.tsv`
+**Role:** Software/tool mentions extracted from each publication — rule-based
+retrieval of the code-availability + references sections plus regex-matched
+code-hosting URLs, combined with an LLM pass for unlinked mentions
+(`CLAUDE_RTR_FewShot_software` prompt + `software_mention_response_schema_gpt`
+— see `pipelines.pub_software` in [`api_reference.md`](api_reference.md)).
+Joins back via `source_url` (the PMC link).
+
+**Live output columns:**
+
+| Field | Notes |
+|---|---|
+| `pub_title` | Publication title. |
+| `source_url` | PMC link — join key back to `publications`. |
+| `raw_data_format` | Format the source article was fetched as. |
+| `software_name` | Name of the software/tool/package as written in the paper (e.g. `Python`, `Scanpy`). Not yet canonicalized — no normalizer pass exists for this field (unlike `pub_grants.funder_name`). |
+| `version` | Version number if stated, else `"n/a"`. |
+| `mention_type` | `created` (paper's own new tool), `used` (existing third-party tool), or `n/a`. |
+| `url` | The software's **own** URL (GitHub/GitLab/Bitbucket/Zenodo/PyPI/CRAN/etc.), if given — *not* the source article's URL, despite the similar name to `source_url`. |
+| `context_from_paper` | The text passage mentioning this software. |
+
+GitHub-hosted rows from this table (`url` matching `github.com/owner/repo`)
+are separately routed into `github_search`/`repo_analysis` and end up in the
+`code` table too, with full tree-walk/README/FAIR-compliance enrichment — see
+`scrapers.scrape_github.enrich_known_repos` in
+[`api_reference.md`](api_reference.md). They aren't removed from
+`pub_software` — the same GitHub repo can legitimately appear in both tables.
 
 ---
 
@@ -232,8 +307,9 @@ The rest of this document describes **v1**, which is current.
   - `Diseases Included`, `Granular Data Modality`, `Authors`, `Keywords`, `Languages`, `Contributors`, `FAIR Issues` → **semicolon** (`;`)
   - `Diseases Included` in `publications` may contain commas *inside* semicolon-delimited terms — split on `;` only.
 - **`Resource Name` and `Abbreviation`** are the de facto join keys from enrichment tables back to `resources-inventory`.
-- **`PMID`** is the join key from `pub_datasets` and `pub_supplementary` back to `publications`.
-- **LLM-generated fields** (`Code Summary`, `Biomedical Relevance`, `Data Types`, `Tooling`, `FAIR Issues`/`FAIR Score`, `About this gene`/`About this variant`, `Decision Rationale`) carry that provenance explicitly so downstream users know to treat them as machine annotations, not human curation.
+- **`source_url`** (the PMC link), not `PMID`, is the real join key from `pub_datasets`/`pub_supplementary`/`pub_grants`/`pub_software` back to `publications` (`PubMed Central Link`) — the schema sheet documents `Source PMID`/`PMID` for the first two, but live pipeline output never populates that field; it uses `source_url` throughout.
+- **Funder-name canonicalization** (`pub_grants.funder_name` only): the LLM extracts funder names as written per-paper, which vary a lot for the same real funder. `staging.normalizer._normalize_funder_name()` collapses known high-frequency variant clusters via regex (see the `pub_grants` table section above) — treat `funder_name` as "mostly canonical for common NIH institutes and a handful of other large funders," not fully normalized.
+- **LLM-generated fields** (`Code Summary`, `Biomedical Relevance`, `Data Types`, `Tooling`, `FAIR Issues`/`FAIR Score`, `About this gene`/`About this variant`, `Decision Rationale`, `pub_grants`/`pub_software`'s extracted fields) carry that provenance explicitly so downstream users know to treat them as machine annotations, not human curation.
 - **`.tab` vs `.tsv`** — both are tab-separated; the `.tab` extension is reserved for the human-curated inventory while pipeline outputs use `.tsv`. The `iNDI_inventory` export is `.csv` (comma-separated).
 - **Nested values appear as Python literals** in `resources-inventory`: `Alternative URLs` is a list-literal string, `new_corpus` is a dict-literal string. Both need `ast.literal_eval` to round-trip into native structures.
 - **Constant fields in iNDI** (`Parental Line=KOLF2.1J`, `Genome Assembly=GRCh38`, `Procurement link=jax.org`) reflect the catalog's current single-source, single-background scope. Treat them as defaults rather than join keys.
