@@ -439,6 +439,7 @@ function SupplementaryTab() {
 
 const GR_FACETS: readonly FacetSpec<PubGrant>[] = [
   { field: "funder_name", label: "Funder", multivalue: false },
+  { field: "grant_number", label: "Grant Number", multivalue: false },
   { field: "recipient", label: "Recipient", multivalue: false },
 ];
 const GR_SEARCH: (keyof PubGrant & string)[] = [
