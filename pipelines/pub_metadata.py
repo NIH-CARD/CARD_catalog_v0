@@ -21,6 +21,7 @@ from pathlib import Path
 import pandas as pd
 
 from pipelines.base import PipelineStage
+from staging.cache_utils import combine_cached_and_new, latest_final
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +88,7 @@ class PubMetadataStage(PipelineStage):
         verbose: bool = False,
         log_file: Path | None = None,
         targets: tuple[str, ...] = ("datasets", "supplementary", "grants"),
+        use_cache: bool = True,
     ) -> Path:
         from data_gatherer.data_gatherer import DataGatherer
         from data_gatherer.llm.response_schema import (
@@ -128,107 +130,162 @@ class PubMetadataStage(PipelineStage):
         # --- Dataset mentions ---
         if "datasets" in targets:
             logger.info("extracting dataset mentions")
-            dg = DataGatherer(llm_name="claude-haiku-4-5", log_level=log_level, log_file_override=log_file_str, 
-            clear_previous_logs=False, process_entire_document=full_document_read)
-            if batch_mode:
-                batch_result = dg.run_integrated_batch_processing(
-                    url_list=pmc_links,
-                    batch_file_path='',
-                    output_file_path=batch_output_path,
-                    section_filter="data_availability_statement",
-                    prompt_name="CLAUDE_FDR_FewShot_shortDescr",
-                    response_format=dataset_response_schema_with_use_description_and_short,
-                    semantic_retrieval=True,
-                    api_provider="anthropic",
-                    wait_for_completion=True,
+            cached_datasets_df = None
+            if use_cache:
+                prev = latest_final("pub_datasets_*.tsv")
+                if prev:
+                    cached_datasets_df = pd.read_csv(prev, sep="\t", dtype=str).fillna("")
+            known_urls = set(cached_datasets_df["source_url"].unique()) if cached_datasets_df is not None else set()
+            new_pmc_links = [u for u in pmc_links if u not in known_urls]
+            if cached_datasets_df is not None:
+                logger.info(
+                    f"datasets: {len(pmc_links) - len(new_pmc_links)} PMC links already cached, "
+                    f"{len(new_pmc_links)} new"
                 )
-                # run_integrated_batch_processing returns a dict (not a DataFrame) on the
-                # Anthropic batch path, regardless of wait_for_completion — convert explicitly.
-                if isinstance(batch_result, dict) and batch_result.get("output_file_path"):
-                    datasets_raw = dg.from_batch_resp_file_to_df(
-                        batch_result["output_file_path"], skip_validation=True, expected_key="datasets",
-                    )
-                    if datasets_raw is not None and not datasets_raw.empty:
-                        datasets_raw = datasets_raw.rename(columns={"title": "pub_title"})
-                        datasets_raw = datasets_raw.drop(columns=[
-                            c for c in ("retrieval_stats", "custom_id", "article_id", "page_id", "url")
-                            if c in datasets_raw.columns
-                        ])
-                else:
-                    logger.error(f"Dataset batch did not complete successfully: {batch_result}")
-                    datasets_raw = None
 
-            else:
-                datasets_raw = dg.process_articles(
-                    pmc_links,
-                    response_format=dataset_response_schema_with_use_description_and_short,
-                    prompt_name="CLAUDE_FDR_FewShot_shortDescr",
-                    full_document_read=full_document_read,
-                    semantic_retrieval=True,
-                    return_df_joint=True,
-                    section_filter="data_availability_statement",
-                )
-            if datasets_raw is not None and not datasets_raw.empty:
-                datasets_raw["_schema"] = "Dataset_w_Context"
-                datasets_raw.to_csv(output_path, sep="\t", index=False)
-                logger.info(f"Datasets → {output_path.name} ({len(datasets_raw)} rows)")
+            datasets_raw = None
+            if new_pmc_links:
+                dg = DataGatherer(llm_name="claude-haiku-4-5", log_level=log_level, log_file_override=log_file_str,
+                clear_previous_logs=False, process_entire_document=full_document_read)
+                if batch_mode:
+                    batch_result = dg.run_integrated_batch_processing(
+                        url_list=new_pmc_links,
+                        batch_file_path='',
+                        output_file_path=batch_output_path,
+                        section_filter="data_availability_statement",
+                        prompt_name="CLAUDE_FDR_FewShot_shortDescr",
+                        response_format=dataset_response_schema_with_use_description_and_short,
+                        semantic_retrieval=True,
+                        api_provider="anthropic",
+                        wait_for_completion=True,
+                    )
+                    # run_integrated_batch_processing returns a dict (not a DataFrame) on the
+                    # Anthropic batch path, regardless of wait_for_completion — convert explicitly.
+                    if isinstance(batch_result, dict) and batch_result.get("output_file_path"):
+                        datasets_raw = dg.from_batch_resp_file_to_df(
+                            batch_result["output_file_path"], skip_validation=True, expected_key="datasets",
+                        )
+                        if datasets_raw is not None and not datasets_raw.empty:
+                            datasets_raw = datasets_raw.rename(columns={"title": "pub_title"})
+                            datasets_raw = datasets_raw.drop(columns=[
+                                c for c in ("retrieval_stats", "custom_id", "article_id", "page_id", "url")
+                                if c in datasets_raw.columns
+                            ])
+                    else:
+                        logger.error(f"Dataset batch did not complete successfully: {batch_result}")
+                        datasets_raw = None
+
+                else:
+                    datasets_raw = dg.process_articles(
+                        new_pmc_links,
+                        response_format=dataset_response_schema_with_use_description_and_short,
+                        prompt_name="CLAUDE_FDR_FewShot_shortDescr",
+                        full_document_read=full_document_read,
+                        semantic_retrieval=True,
+                        return_df_joint=True,
+                        section_filter="data_availability_statement",
+                    )
+                if datasets_raw is not None and not datasets_raw.empty:
+                    datasets_raw["_schema"] = "Dataset_w_Context"
+
+            combined_datasets = combine_cached_and_new(cached_datasets_df, datasets_raw)
+            if combined_datasets is not None:
+                combined_datasets.to_csv(output_path, sep="\t", index=False)
+                logger.info(f"Datasets → {output_path.name} ({len(combined_datasets)} rows)")
             else:
                 logger.warning("No dataset mentions found")
 
         # --- Supplementary files ---
         if "supplementary" in targets:
             logger.info("Extracting supplementary file mentions")
-            dg_supp = DataGatherer(llm_name="claude-haiku-4-5", log_level=log_level, log_file_override=log_file_str, clear_previous_logs=False)
-            supp_raw = dg_supp.process_articles(
-                pmc_links,
-                response_format=supplementary_files_keywords_schema,
-                section_filter="supplementary_material",
-                return_df_joint=True,
-            )
-            if supp_raw is not None and not supp_raw.empty:
-                supp_raw["_schema"] = "SupplementaryFileKeywords"
-                supp_raw.to_csv(supp_path, sep="\t", index=False)
-                logger.info(f"Supplementary → {supp_path.name} ({len(supp_raw)} rows)")
+            cached_supp_df = None
+            if use_cache:
+                prev = latest_final("pub_supplementary_*.tsv")
+                if prev:
+                    cached_supp_df = pd.read_csv(prev, sep="\t", dtype=str).fillna("")
+            known_urls = set(cached_supp_df["source_url"].unique()) if cached_supp_df is not None else set()
+            new_pmc_links_supp = [u for u in pmc_links if u not in known_urls]
+            if cached_supp_df is not None:
+                logger.info(
+                    f"supplementary: {len(pmc_links) - len(new_pmc_links_supp)} PMC links already cached, "
+                    f"{len(new_pmc_links_supp)} new"
+                )
+
+            supp_raw = None
+            if new_pmc_links_supp:
+                dg_supp = DataGatherer(llm_name="claude-haiku-4-5", log_level=log_level, log_file_override=log_file_str, clear_previous_logs=False)
+                supp_raw = dg_supp.process_articles(
+                    new_pmc_links_supp,
+                    response_format=supplementary_files_keywords_schema,
+                    section_filter="supplementary_material",
+                    return_df_joint=True,
+                )
+                if supp_raw is not None and not supp_raw.empty:
+                    supp_raw["_schema"] = "SupplementaryFileKeywords"
+
+            combined_supp = combine_cached_and_new(cached_supp_df, supp_raw)
+            if combined_supp is not None:
+                combined_supp.to_csv(supp_path, sep="\t", index=False)
+                logger.info(f"Supplementary → {supp_path.name} ({len(combined_supp)} rows)")
             else:
                 logger.warning("No supplementary file mentions found")
 
         # --- Grant / funding mentions ---
         if "grants" in targets:
             logger.info("Extracting grant/funding mentions")
-            dg_grants = DataGatherer(
-                llm_name="claude-haiku-4-5-20251001",
-                process_entire_document=False,  # funding sections are short — rule-based retrieval only
-                log_level=log_level, log_file_override=log_file_str, clear_previous_logs=False,
-            )
-            grants_batch_output_path = str(grants_path.with_suffix(".batch.jsonl"))
-            grants_result = dg_grants.run_integrated_batch_processing(
-                url_list=pmc_links,
-                batch_file_path='',
-                output_file_path=grants_batch_output_path,
-                prompt_name="CLAUDE_FDR_FewShot_grant",
-                prompts_subdir="funding_prompts",
-                relevant_content_flag="FUND",
-                relevant_cont_fmt="text",
-                response_format=grant_response_schema_gpt,
-                api_provider="anthropic",
-                wait_for_completion=True,
-            )
-            if isinstance(grants_result, dict) and grants_result.get("output_file_path"):
-                grants_df = dg_grants.from_batch_resp_file_to_df(
-                    grants_result["output_file_path"], skip_validation=True, expected_key="grants",
+            cached_grants_df = None
+            if use_cache:
+                prev = latest_final("pub_grants_*.tsv")
+                if prev:
+                    cached_grants_df = pd.read_csv(prev, sep="\t", dtype=str).fillna("")
+            known_urls = set(cached_grants_df["source_url"].unique()) if cached_grants_df is not None else set()
+            new_pmc_links_grants = [u for u in pmc_links if u not in known_urls]
+            if cached_grants_df is not None:
+                logger.info(
+                    f"grants: {len(pmc_links) - len(new_pmc_links_grants)} PMC links already cached, "
+                    f"{len(new_pmc_links_grants)} new"
                 )
-                if grants_df is not None and not grants_df.empty:
-                    grants_df = grants_df.rename(columns={"title": "pub_title"})
-                    grants_df = grants_df.drop(columns=[
-                        c for c in ("retrieval_stats", "custom_id", "article_id", "page_id", "url")
-                        if c in grants_df.columns
-                    ])
-                    grants_df["_schema"] = "GrantRecord"
-                    grants_df.to_csv(grants_path, sep="\t", index=False)
-                    logger.info(f"Grants → {grants_path.name} ({len(grants_df)} rows)")
+
+            grants_df = None
+            if new_pmc_links_grants:
+                dg_grants = DataGatherer(
+                    llm_name="claude-haiku-4-5-20251001",
+                    process_entire_document=False,  # funding sections are short — rule-based retrieval only
+                    log_level=log_level, log_file_override=log_file_str, clear_previous_logs=False,
+                )
+                grants_batch_output_path = str(grants_path.with_suffix(".batch.jsonl"))
+                grants_result = dg_grants.run_integrated_batch_processing(
+                    url_list=new_pmc_links_grants,
+                    batch_file_path='',
+                    output_file_path=grants_batch_output_path,
+                    prompt_name="CLAUDE_FDR_FewShot_grant",
+                    prompts_subdir="funding_prompts",
+                    relevant_content_flag="FUND",
+                    relevant_cont_fmt="text",
+                    response_format=grant_response_schema_gpt,
+                    api_provider="anthropic",
+                    wait_for_completion=True,
+                )
+                if isinstance(grants_result, dict) and grants_result.get("output_file_path"):
+                    grants_df = dg_grants.from_batch_resp_file_to_df(
+                        grants_result["output_file_path"], skip_validation=True, expected_key="grants",
+                    )
+                    if grants_df is not None and not grants_df.empty:
+                        grants_df = grants_df.rename(columns={"title": "pub_title"})
+                        grants_df = grants_df.drop(columns=[
+                            c for c in ("retrieval_stats", "custom_id", "article_id", "page_id", "url")
+                            if c in grants_df.columns
+                        ])
+                        grants_df["_schema"] = "GrantRecord"
                 else:
-                    logger.warning("No grant mentions found")
+                    logger.error(f"Grants batch did not complete successfully: {grants_result}")
+                    grants_df = None
+
+            combined_grants = combine_cached_and_new(cached_grants_df, grants_df)
+            if combined_grants is not None:
+                combined_grants.to_csv(grants_path, sep="\t", index=False)
+                logger.info(f"Grants → {grants_path.name} ({len(combined_grants)} rows)")
             else:
-                logger.error(f"Grants batch did not complete successfully: {grants_result}")
+                logger.warning("No grant mentions found")
 
         return output_path

@@ -214,6 +214,7 @@ def run_full_rebuild(
     skip_stages: list[str],
     force: bool = False,
     log_file: Path | None = None,
+    use_cache: bool = True,
 ) -> None:
     logger.info("=" * 60)
     logger.info("FULL REBUILD")
@@ -246,7 +247,7 @@ def run_full_rebuild(
             "pub_metadata", PubMetadataStage(),
             input_path=pubmed_hits,
             hits_pattern="pub_datasets_*.tsv",
-            stage_kwargs=dict(anthropic_key=anthropic_key, verbose=verbose, log_file=log_file),
+            stage_kwargs=dict(anthropic_key=anthropic_key, verbose=verbose, log_file=log_file, use_cache=use_cache),
             skip_stages=skip_stages,
             force=force,
         )
@@ -301,7 +302,7 @@ def run_full_rebuild(
                 "repo_analysis", RepoAnalysisStage(),
                 input_path=github_hits,
                 hits_pattern="github_analyzed_*.tsv",
-                stage_kwargs=dict(anthropic_key=anthropic_key, verbose=verbose, log_file=log_file),
+                stage_kwargs=dict(anthropic_key=anthropic_key, verbose=verbose, log_file=log_file, use_cache=use_cache),
                 skip_stages=skip_stages,
                 force=force,
             )
@@ -337,6 +338,7 @@ def run_full_rebuild(
                     anthropic_key=anthropic_key,
                     verbose=verbose,
                     log_file=log_file,
+                    use_cache=use_cache,
                 ),
                 skip_stages=skip_stages,
                 force=force,
@@ -407,6 +409,11 @@ def main() -> None:
         help="Re-run stages even if today's hits file already exists",
     )
     parser.add_argument(
+        "--no-cache", action="store_true",
+        help="Reprocess every item in pub_metadata/repo_analysis/page_navigation, "
+             "ignoring what's already in tables/final/ (a true full rebuild)",
+    )
+    parser.add_argument(
         "--verbose", "-v", action="store_true",
         help="Enable verbose (DEBUG) logging in scrapers",
     )
@@ -455,6 +462,7 @@ def main() -> None:
             inventory, args.query_method, args.max_results,
             ncbi_key, github_token, anthropic_key, firefox_profile,
             args.verbose, skip_stages, force=args.force, log_file=log_file,
+            use_cache=not args.no_cache,
         )
 
 
