@@ -36,6 +36,7 @@ PROJECT_ROOT = Path(__file__).parent
 TABLES_DIR = PROJECT_ROOT / "tables"
 HITS_DIR = TABLES_DIR / "hits"
 FINAL_DIR = TABLES_DIR / "final"
+CACHE_DIR = TABLES_DIR / "cache"
 LOGS_DIR = PROJECT_ROOT / "logs"
 
 logging.basicConfig(
@@ -321,7 +322,10 @@ def run_full_rebuild(
         # Fetch each article's full text once, up front, so the four stages below
         # (which all need the same PMC full text) read from a shared cache instead
         # of each independently re-fetching the same ~1000 articles over the network.
-        fetch_cache_path = HITS_DIR / f"pub_fulltext_cache_{_ts()}.parquet"
+        # Stable filename (no per-run timestamp) — prefetch_articles reads-and-updates
+        # this same file every run, so already-fetched articles are never refetched.
+        CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        fetch_cache_path = CACHE_DIR / "pub_fulltext_cache.parquet"
         prefetch_articles(
             load_pmc_links(pubmed_hits), fetch_cache_path,
             log_level="DEBUG" if verbose else "INFO",
@@ -501,8 +505,8 @@ def main() -> None:
         help="PubMed query method (default: v3)",
     )
     parser.add_argument(
-        "--max-results", "-m", type=int, default=100,
-        help="Max PubMed results per resource (default: 100)",
+        "--max-results", "-m", type=int, default=150,
+        help="Max PubMed results per resource (default: 150)",
     )
     parser.add_argument(
         "--ncbi-api-key", default=None,
