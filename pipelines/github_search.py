@@ -29,6 +29,7 @@ class GithubSearchStage(PipelineStage):
         github_token: str,
         verbose: bool = False,
         log_file: Path | None = None,
+        extra_repos_path: Path | None = None,
     ) -> Path:
         cmd = [
             sys.executable, str(SCRAPERS_DIR / "scrape_github.py"),
@@ -43,6 +44,8 @@ class GithubSearchStage(PipelineStage):
             cmd += ["--verbose"]
         if log_file:
             cmd += ["--log-file", str(log_file)]
+        if extra_repos_path:
+            cmd += ["--extra-repos", str(extra_repos_path)]
 
         logger.info(f"running scraper → {output_path.name}")
         result = subprocess.run(cmd, cwd=str(SCRAPERS_DIR))

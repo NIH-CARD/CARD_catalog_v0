@@ -93,6 +93,17 @@ export interface PubGrant {
   recipient: string;
 }
 
+export interface PubSoftware {
+  pub_title: string;
+  source_url: string;
+  raw_data_format: string;
+  software_name: string;
+  version: string;
+  mention_type: string;
+  url: string;
+  context_from_paper: string;
+}
+
 export interface SciLiteAnnotation {
   "PMC ID": string;
   Type: string;

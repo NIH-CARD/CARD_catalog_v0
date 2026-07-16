@@ -232,6 +232,39 @@ class PubGrantRow(_Base):
 
 
 # ---------------------------------------------------------------------------
+# Table: Publication software mentions   (tables/final/pub_software_*.tsv)
+# ---------------------------------------------------------------------------
+class PubSoftwareRow(_Base):
+    Pub_Title: str = ""
+    Source_URL: str = ""
+    Raw_Data_Format: str = ""
+    Software_Name: str = ""
+    Version: str = ""
+    Mention_Type: str = ""
+    Software_URL: str = ""
+    Context_From_Paper: str = ""
+
+    model_config = {
+        "populate_by_name": True,
+        "alias_generator": lambda s: s.replace("_", " "),
+    }
+
+    @field_validator(
+        "Pub_Title", "Source_URL", "Raw_Data_Format", "Software_Name",
+        "Version", "Mention_Type", "Software_URL", "Context_From_Paper",
+        mode="before",
+    )
+    @classmethod
+    def to_str(cls, v: object) -> str:
+        return _coerce_str(v)
+
+    COLUMNS: ClassVar[list[str]] = [
+        "Pub Title", "Source URL", "Raw Data Format", "Software Name",
+        "Version", "Mention Type", "Software URL", "Context From Paper",
+    ]
+
+
+# ---------------------------------------------------------------------------
 # Table: New Corpus   (tables/final/new_corpus_*.tsv)
 # ---------------------------------------------------------------------------
 class NewCorpusRow(_Base):
@@ -345,6 +378,7 @@ SCHEMA_REGISTRY: dict[str, type[_Base]] = {
     "pub_datasets": PubDatasetRow,
     "supplementary": SupplementaryRow,
     "pub_grants": PubGrantRow,
+    "pub_software": PubSoftwareRow,
     "new_corpus": NewCorpusRow,
     "scilite": SciLiteAnnotationRow,
 }

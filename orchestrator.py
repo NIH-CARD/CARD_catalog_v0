@@ -9,7 +9,8 @@ Coordinates two run modes:
 
   full_rebuild  — Full rebuild from scratch:
                     PubMed (3-year window) + publication metadata (datasets +
-                    supplementary) + SciLite annotations (Europe PMC) +
+                    supplementary + grants + software mentions, run
+                    concurrently) + SciLite annotations (Europe PMC) +
                     GitHub search + AI repo analysis + study page navigation.
 
 Usage:
@@ -27,6 +28,7 @@ import argparse
 import logging
 import os
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, date
 from pathlib import Path
 
@@ -122,6 +124,70 @@ def run_stage(
     except Exception as e:
         logger.error(f"[{stage_name}] failed: {e}")
         return None
+
+
+def run_stages_concurrently(
+    specs: list[tuple[str, object, str, dict]],
+    input_path: Path,
+    skip_stages: list[str],
+    force: bool = False,
+) -> dict[str, Path | None]:
+    """
+    Run several independent stages concurrently via a thread pool.
+
+    Each stage here just blocks on its own network I/O (submitting an
+    Anthropic Batch job and polling for completion), so threads give real
+    wall-clock savings — three stages waiting on their own batches in
+    parallel instead of one after another — without needing subprocess or
+    asyncio machinery.
+
+    Args:
+        specs: list of (stage_name, stage_instance, hits_pattern, stage_kwargs),
+            one tuple per stage to run — same shape as individual run_stage() calls.
+        input_path: shared input file passed to every stage.
+        skip_stages: stage names to skip (same semantics as run_stage).
+        force: re-run even if today's hits file exists (same semantics as run_stage).
+
+    Returns:
+        dict mapping stage_name -> output Path, or None if skipped/failed.
+    """
+    results: dict[str, Path | None] = {}
+    to_run: list[tuple[str, object, Path, dict]] = []
+
+    for stage_name, stage, hits_pattern, stage_kwargs in specs:
+        if stage_name in skip_stages:
+            logger.info(f"[{stage_name}] skipped (--skip flag)")
+            results[stage_name] = _latest(HITS_DIR, hits_pattern)
+            continue
+
+        if not force:
+            existing = _today_file(HITS_DIR, hits_pattern)
+            if existing:
+                logger.info(f"[{stage_name}] today's hits file exists — skipping: {existing.name}")
+                results[stage_name] = existing
+                continue
+
+        timestamp = _ts()
+        ext = Path(hits_pattern).suffix or ".tsv"
+        stem = hits_pattern.replace("*", "").replace(ext, "")
+        output_path = HITS_DIR / f"{stem}{timestamp}{ext}"
+        to_run.append((stage_name, stage, output_path, stage_kwargs))
+
+    if to_run:
+        with ThreadPoolExecutor(max_workers=len(to_run)) as executor:
+            future_to_name = {
+                executor.submit(stage.run, input_path, output_path, **stage_kwargs): stage_name
+                for stage_name, stage, output_path, stage_kwargs in to_run
+            }
+            for future in as_completed(future_to_name):
+                stage_name = future_to_name[future]
+                try:
+                    results[stage_name] = future.result()
+                except Exception as e:
+                    logger.error(f"[{stage_name}] failed: {e}")
+                    results[stage_name] = None
+
+    return results
 
 
 # ---------------------------------------------------------------------------
@@ -240,29 +306,82 @@ def run_full_rebuild(
     if pubmed_hits and pubmed_hits.exists():
         run_normalizer(pubmed_hits, "publications", "pubmed_central_*.tsv", force=force)
 
-    # --- Stage 4: Publication metadata (needs pubmed_hits) ---
+    # --- Stage 4: Publication metadata — datasets/supplementary/grants/software (needs pubmed_hits) ---
+    # These four are fully independent (separate DataGatherer calls, separate
+    # output files, separate caches) and each just blocks on its own Anthropic
+    # Batch job, so they run concurrently rather than one after another.
+    extra_repos_path: Path | None = None  # GitHub repos discovered via pub_software, fed to github_search below
     if pubmed_hits and pubmed_hits.exists():
-        from pipelines.pub_metadata import PubMetadataStage
-        pub_datasets_hits = run_stage(
-            "pub_metadata", PubMetadataStage(),
+        from pipelines.pub_datasets import PubDatasetsStage
+        from pipelines.pub_supplementary import PubSupplementaryStage
+        from pipelines.pub_grants import PubGrantsStage
+        from pipelines.pub_software import PubSoftwareStage
+        from pipelines.pub_metadata_shared import load_pmc_links, prefetch_articles
+
+        # Fetch each article's full text once, up front, so the four stages below
+        # (which all need the same PMC full text) read from a shared cache instead
+        # of each independently re-fetching the same ~1000 articles over the network.
+        fetch_cache_path = HITS_DIR / f"pub_fulltext_cache_{_ts()}.parquet"
+        prefetch_articles(
+            load_pmc_links(pubmed_hits), fetch_cache_path,
+            log_level="DEBUG" if verbose else "INFO",
+            log_file_str=str(log_file) if log_file else None,
+        )
+
+        pub_metadata_kwargs = dict(
+            anthropic_key=anthropic_key, verbose=verbose, log_file=log_file,
+            use_cache=use_cache, fetch_cache_path=fetch_cache_path,
+        )
+        pub_metadata_results = run_stages_concurrently(
+            specs=[
+                ("pub_datasets", PubDatasetsStage(), "pub_datasets_*.tsv", pub_metadata_kwargs),
+                ("pub_supplementary", PubSupplementaryStage(), "pub_supplementary_*.tsv", pub_metadata_kwargs),
+                ("pub_grants", PubGrantsStage(), "pub_grants_*.tsv", pub_metadata_kwargs),
+                ("pub_software", PubSoftwareStage(), "pub_software_*.tsv", pub_metadata_kwargs),
+            ],
             input_path=pubmed_hits,
-            hits_pattern="pub_datasets_*.tsv",
-            stage_kwargs=dict(anthropic_key=anthropic_key, verbose=verbose, log_file=log_file, use_cache=use_cache),
             skip_stages=skip_stages,
             force=force,
         )
+
+        pub_datasets_hits = pub_metadata_results["pub_datasets"]
         if pub_datasets_hits and pub_datasets_hits.exists():
             run_normalizer(pub_datasets_hits, "pub_datasets", "pub_datasets_*.tsv", force=force)
-        # Supplementary is written as side-effect by pub_metadata stage
-        supp_hits = _latest(HITS_DIR, "pub_supplementary_*.tsv")
-        if supp_hits:
+
+        supp_hits = pub_metadata_results["pub_supplementary"]
+        if supp_hits and supp_hits.exists():
             run_normalizer(supp_hits, "supplementary", "pub_supplementary_*.tsv", force=force)
-        # Grants is written as side-effect by pub_metadata stage
-        grants_hits = _latest(HITS_DIR, "pub_grants_*.tsv")
-        if grants_hits:
+
+        grants_hits = pub_metadata_results["pub_grants"]
+        if grants_hits and grants_hits.exists():
             run_normalizer(grants_hits, "pub_grants", "pub_grants_*.tsv", force=force)
+
+        software_hits = pub_metadata_results["pub_software"]
+        if software_hits and software_hits.exists():
+            run_normalizer(software_hits, "pub_software", "pub_software_*.tsv", force=force)
+
+            # GitHub repos mentioned in papers (found by pub_software) don't go straight
+            # into "code" — they need the same tree-walk/README/FAIR-check enrichment as
+            # repos found via GitHub Code Search, so they're handed to github_search
+            # (via --extra-repos) and get concatenated in before repo_analysis runs.
+            import pandas as pd
+            sw_df = pd.read_csv(software_hits, sep="\t", dtype=str).fillna("")
+            if "url" in sw_df.columns:
+                gh_matches = sw_df[sw_df["url"].str.contains(r"github\.com/[\w.-]+/[\w.-]+", regex=True, na=False)]
+                if not gh_matches.empty:
+                    pubs_df = pd.read_csv(pubmed_hits, sep="\t", dtype=str).fillna("")
+                    joined = gh_matches.merge(
+                        pubs_df[["PubMed Central Link", "Resource Name", "Abbreviation", "Diseases Included"]],
+                        left_on="source_url", right_on="PubMed Central Link", how="left",
+                    )
+                    candidates = joined[["Resource Name", "Abbreviation", "Diseases Included", "url"]].rename(
+                        columns={"url": "Repository Link"}
+                    )
+                    extra_repos_path = HITS_DIR / f"extra_repos_from_software_{_ts()}.tsv"
+                    candidates.to_csv(extra_repos_path, sep="\t", index=False)
+                    logger.info(f"{len(candidates)} GitHub repo(s) from pub_software → {extra_repos_path.name}")
     else:
-        logger.warning("Skipping pub_metadata: no pubmed_hits available")
+        logger.warning("Skipping pub_datasets/pub_supplementary/pub_grants/pub_software: no pubmed_hits available")
 
     # --- Stage 6: SciLite annotations (Europe PMC) ---
     if pubmed_hits and pubmed_hits.exists():
@@ -290,7 +409,10 @@ def run_full_rebuild(
             "github_search", GithubSearchStage(),
             input_path=inventory,
             hits_pattern="github_hits_*.tsv",
-            stage_kwargs=dict(github_token=github_token, verbose=verbose, log_file=log_file),
+            stage_kwargs=dict(
+                github_token=github_token, verbose=verbose, log_file=log_file,
+                extra_repos_path=extra_repos_path,
+            ),
             skip_stages=skip_stages,
             force=force,
         )
@@ -410,8 +532,9 @@ def main() -> None:
     )
     parser.add_argument(
         "--no-cache", action="store_true",
-        help="Reprocess every item in pub_metadata/repo_analysis/page_navigation, "
-             "ignoring what's already in tables/final/ (a true full rebuild)",
+        help="Reprocess every item in pub_datasets/pub_supplementary/pub_grants/"
+             "pub_software/repo_analysis/page_navigation, ignoring what's already "
+             "in tables/final/ (a true full rebuild)",
     )
     parser.add_argument(
         "--verbose", "-v", action="store_true",
