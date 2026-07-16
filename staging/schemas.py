@@ -90,6 +90,7 @@ class CodeRepoRow(_Base):
     Abbreviation: str = ""
     Diseases_Included: str = ""
     Repository_Link: str = ""
+    Source: str = ""
     Owner: str = ""
     Contributors: str = ""
     Languages: str = ""
@@ -107,7 +108,7 @@ class CodeRepoRow(_Base):
 
     @field_validator(
         "Resource_Name", "Abbreviation", "Diseases_Included", "Repository_Link",
-        "Owner", "Contributors", "Languages", "Biomedical_Relevance",
+        "Source", "Owner", "Contributors", "Languages", "Biomedical_Relevance",
         "Code_Summary", "Data_Types", "Tooling", "FAIR_Score", "FAIR_Issues",
         mode="before",
     )
@@ -117,7 +118,7 @@ class CodeRepoRow(_Base):
 
     COLUMNS: ClassVar[list[str]] = [
         "Resource Name", "Abbreviation", "Diseases Included",
-        "Repository Link", "Owner", "Contributors", "Languages",
+        "Repository Link", "Source", "Owner", "Contributors", "Languages",
         "Biomedical Relevance", "Code Summary", "Data Types", "Tooling",
         "FAIR Score", "FAIR Issues",
     ]
@@ -196,6 +197,71 @@ class SupplementaryRow(_Base):
         "Source PMID", "Source Resource Name", "File URL", "File Name",
         "File Extension", "File Format", "Keywords", "Data Repository",
         "Number Of Files", "File License",
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Table: Publication grants   (tables/final/pub_grants_*.tsv)
+# ---------------------------------------------------------------------------
+class PubGrantRow(_Base):
+    Pub_Title: str = ""
+    Source_URL: str = ""
+    Raw_Data_Format: str = ""
+    Funder_Name: str = ""
+    Grant_Number: str = ""
+    Funding_Context_From_Paper: str = ""
+    Recipient: str = ""
+
+    model_config = {
+        "populate_by_name": True,
+        "alias_generator": lambda s: s.replace("_", " "),
+    }
+
+    @field_validator(
+        "Pub_Title", "Source_URL", "Raw_Data_Format", "Funder_Name",
+        "Grant_Number", "Funding_Context_From_Paper", "Recipient",
+        mode="before",
+    )
+    @classmethod
+    def to_str(cls, v: object) -> str:
+        return _coerce_str(v)
+
+    COLUMNS: ClassVar[list[str]] = [
+        "Pub Title", "Source URL", "Raw Data Format", "Funder Name",
+        "Grant Number", "Funding Context From Paper", "Recipient",
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Table: Publication software mentions   (tables/final/pub_software_*.tsv)
+# ---------------------------------------------------------------------------
+class PubSoftwareRow(_Base):
+    Pub_Title: str = ""
+    Source_URL: str = ""
+    Raw_Data_Format: str = ""
+    Software_Name: str = ""
+    Version: str = ""
+    Mention_Type: str = ""
+    Software_URL: str = ""
+    Context_From_Paper: str = ""
+
+    model_config = {
+        "populate_by_name": True,
+        "alias_generator": lambda s: s.replace("_", " "),
+    }
+
+    @field_validator(
+        "Pub_Title", "Source_URL", "Raw_Data_Format", "Software_Name",
+        "Version", "Mention_Type", "Software_URL", "Context_From_Paper",
+        mode="before",
+    )
+    @classmethod
+    def to_str(cls, v: object) -> str:
+        return _coerce_str(v)
+
+    COLUMNS: ClassVar[list[str]] = [
+        "Pub Title", "Source URL", "Raw Data Format", "Software Name",
+        "Version", "Mention Type", "Software URL", "Context From Paper",
     ]
 
 
@@ -312,6 +378,8 @@ SCHEMA_REGISTRY: dict[str, type[_Base]] = {
     "code": CodeRepoRow,
     "pub_datasets": PubDatasetRow,
     "supplementary": SupplementaryRow,
+    "pub_grants": PubGrantRow,
+    "pub_software": PubSoftwareRow,
     "new_corpus": NewCorpusRow,
     "scilite": SciLiteAnnotationRow,
 }

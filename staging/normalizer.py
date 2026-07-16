@@ -270,6 +270,67 @@ def _normalize_supplementary(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+# Ordered (pattern, canonical) pairs for collapsing funder_name variants — the LLM
+# extracts funder names as written in each paper, which vary a lot for the same real
+# funder (typos, acronym vs spelled-out, "/NIH" suffixes, etc.). Specific institutes
+# are listed before the generic "National Institutes of Health" pattern so a compound
+# mention (e.g. "...Institute of Biomedical Imaging and Bioengineering of the National
+# Institutes of Health") attributes to the specific institute, not the generic parent.
+# Not exhaustive — only the high-frequency variant clusters found in the real data;
+# unmatched names pass through unchanged rather than being forced into a bucket.
+_FUNDER_NAME_PATTERNS: list[tuple[str, str]] = [
+    (r"\bnational\s+institutes?\s+(on|of)\s+aging\b", "National Institute on Aging (NIA)"),
+    (r"\bnational\s+institutes?\s+of\s+neurological\s+(disorders|diseases)\s+and\s+stroke\b",
+     "National Institute of Neurological Disorders and Stroke (NINDS)"),
+    (r"\bnational\s+institutes?\s+of\s+mental\s+health\b", "National Institute of Mental Health (NIMH)"),
+    (r"\bnational\s+heart,?\s+lung,?\s+and\s+blood\s+institute\b",
+     "National Heart, Lung, and Blood Institute (NHLBI)"),
+    (r"\bnational\s+institutes?\s+of\s+biomedical\s+imaging\s+and\s+bioengineering\b",
+     "National Institute of Biomedical Imaging and Bioengineering (NIBIB)"),
+    (r"\bnational\s+human\s+genome\s+research\s+institute\b", "National Human Genome Research Institute (NHGRI)"),
+    (r"\bnational\s+institutes?\s+of\s+general\s+medical\s+sciences\b",
+     "National Institute of General Medical Sciences (NIGMS)"),
+    (r"\bnational\s+center\s+for\s+advancing\s+translational\s+sciences\b",
+     "National Center for Advancing Translational Sciences (NCATS)"),
+    (r"\bnational\s+cancer\s+institute\b", "National Cancer Institute (NCI)"),
+    (r"\bnational\s+center\s+for\s+research\s+resources\b", "National Center for Research Resources (NCRR)"),
+    (r"\bnational\s+institutes?\s+of\s+health\b(?!\s*\(?nia)", "National Institutes of Health (NIH)"),
+    (r"\bmichael\s+j\.?\s*fox\s+foundation\b", "Michael J. Fox Foundation for Parkinson's Research"),
+    (r"\bcure\s+alzheimer'?s\s+fund\b", "Cure Alzheimer's Fund"),
+    (r"\bknut\s+and\s+alice\s+wallenberg\s+foundation\b", "Knut and Alice Wallenberg Foundation"),
+    (r"\baligning\s+science\s+across\s+parkinson'?s\b", "Aligning Science Across Parkinson's (ASAP)"),
+    (r"\binstituto\s+de\s+salud\s+carlos\s+iii\b", "Instituto de Salud Carlos III (ISCIII)"),
+    (r"\bnational\s+health\s+and\s+medical\s+research\s+council\b",
+     "National Health and Medical Research Council (NHMRC)"),
+    (r"\balzheimer'?s?\s+drug\s+discovery\s+foundation\b", "Alzheimer's Drug Discovery Foundation"),
+    (r"\bnational\s+institute\s+for\s+health\s+(and\s+care\s+)?research\b",
+     "National Institute for Health and Care Research (NIHR)"),
+    (r"^nihr$", "National Institute for Health and Care Research (NIHR)"),
+    (r"^hj[aä]rnfonden\b", "Hjärnfonden"),
+    (r"\bparkinson\s+foundation\s+of\s+sweden\b", "Parkinson Foundation of Sweden"),
+]
+_COMPILED_FUNDER_PATTERNS = [(re.compile(p, re.IGNORECASE), canon) for p, canon in _FUNDER_NAME_PATTERNS]
+
+
+def _normalize_funder_name(name: str) -> str:
+    """Collapse known funder-name variants to one canonical form; passes through unmatched names."""
+    n = str(name).strip()
+    for pattern, canonical in _COMPILED_FUNDER_PATTERNS:
+        if pattern.search(n):
+            return canonical
+    return n
+
+
+def _normalize_pub_grants(df: pd.DataFrame) -> pd.DataFrame:
+    if "funder_name" in df.columns:
+        df["funder_name"] = df["funder_name"].apply(_normalize_funder_name)
+    return df
+
+
+def _normalize_pub_software(df: pd.DataFrame) -> pd.DataFrame:
+    return df
+
+
 def _normalize_new_corpus(df: pd.DataFrame) -> pd.DataFrame:
     if "Access_URL" in df.columns:
         df["Access_URL"] = df["Access_URL"].apply(_first_url_from_list)
@@ -337,6 +398,8 @@ _NORMALIZERS = {
     "code": _normalize_code,
     "pub_datasets": _normalize_pub_datasets,
     "supplementary": _normalize_supplementary,
+    "pub_grants": _normalize_pub_grants,
+    "pub_software": _normalize_pub_software,
     "new_corpus": _normalize_new_corpus,
     "scilite": _normalize_scilite,
 }

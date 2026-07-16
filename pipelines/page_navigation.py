@@ -21,6 +21,7 @@ from pathlib import Path
 import pandas as pd
 
 from pipelines.base import PipelineStage
+from staging.cache_utils import combine_cached_and_new, latest_final
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +55,7 @@ class PageNavigationStage(PipelineStage):
         anthropic_key: str | None = None,
         verbose: bool = False,
         log_file: Path | None = None,
+        use_cache: bool = True,
     ) -> Path:
         from data_gatherer.data_gatherer import DataGatherer
         from data_gatherer.llm.response_schema import study_sanity_check_w_rationale_schema_claude
@@ -94,29 +96,45 @@ class PageNavigationStage(PipelineStage):
         expanded_df["download_link"] = None
         logger.info(f"{len(expanded_df)} URLs to visit")
 
-        dg = DataGatherer(llm_name="claude-haiku-4-5", log_level=log_level, log_file_override=str(log_file) if log_file else None, clear_previous_logs=False)
-        outputs = dg.process_metadata(
-            expanded_df,
-            pass_cols_to_prompt=[
-                "Resource Name", "Abbreviation", "Diseases Included",
-                "Sample Size", "FAIR Compliance Notes", "Notes",
-                "Resource Type", "Coarse Data Modality", "Granular Data Modality",
-            ],
-            display_type="console",
-            interactive=False,
-            return_metadata=True,
-            use_portkey=False,
-            prompt_name="Claude_StudyPage_SanityCheck_rationale",
-            response_format=study_sanity_check_w_rationale_schema_claude,
-            profile_dir=profile_dir,
-            timeout=20,
-            add_sitemap_to_prompt=True,
-            from_metadata_to_publication_corpus=True,
-        )
+        cached_df = None
+        if use_cache:
+            prev = latest_final("new_corpus_*.tsv")
+            if prev:
+                cached_df = pd.read_csv(prev, sep="\t", dtype=str).fillna("")
+        known_urls = set(cached_df["source_url_for_metadata"].unique()) if cached_df is not None else set()
+        new_expanded_df = expanded_df[~expanded_df["dataset_webpage"].isin(known_urls)]
+        if cached_df is not None:
+            logger.info(
+                f"{len(expanded_df) - len(new_expanded_df)} URLs already cached, {len(new_expanded_df)} new"
+            )
 
-        if outputs:
-            out_df = pd.DataFrame(outputs)
-            out_df["_schema"] = "study_sanity_check_w_rationale"
+        new_out_df = None
+        if not new_expanded_df.empty:
+            dg = DataGatherer(llm_name="claude-haiku-4-5", log_level=log_level, log_file_override=str(log_file) if log_file else None, clear_previous_logs=False)
+            outputs = dg.process_metadata(
+                new_expanded_df,
+                pass_cols_to_prompt=[
+                    "Resource Name", "Abbreviation", "Diseases Included",
+                    "Sample Size", "FAIR Compliance Notes", "Notes",
+                    "Resource Type", "Coarse Data Modality", "Granular Data Modality",
+                ],
+                display_type="console",
+                interactive=False,
+                return_metadata=True,
+                use_portkey=False,
+                prompt_name="Claude_StudyPage_SanityCheck_rationale",
+                response_format=study_sanity_check_w_rationale_schema_claude,
+                profile_dir=profile_dir,
+                timeout=20,
+                add_sitemap_to_prompt=True,
+                from_metadata_to_publication_corpus=True,
+            )
+            if outputs:
+                new_out_df = pd.DataFrame(outputs)
+                new_out_df["_schema"] = "study_sanity_check_w_rationale"
+
+        out_df = combine_cached_and_new(cached_df, new_out_df)
+        if out_df is not None:
             out_df.to_csv(output_path, sep="\t", index=False)
             logger.info(f"→ {output_path.name} ({len(out_df)} rows)")
         else:

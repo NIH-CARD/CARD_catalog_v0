@@ -16,6 +16,7 @@ import { PageShell } from "../components/PageShell";
 import { matchesFacet, matchesQuery } from "../lib/filter";
 import {
   loadPubDatasets,
+  loadPubGrants,
   loadSciLite,
   loadSupplementary,
 } from "../lib/loaders";
@@ -24,6 +25,7 @@ import { useFacets } from "../lib/useFacets";
 import type {
   FacetSpec,
   PubDataset,
+  PubGrant,
   SciLiteAnnotation,
   Supplementary,
 } from "../types";
@@ -64,6 +66,9 @@ function SubNav() {
       </NavLink>
       <NavLink to="/datasets/supplementary" className={itemCls}>
         📎 Supplementary
+      </NavLink>
+      <NavLink to="/datasets/grants" className={itemCls}>
+        💰 Grants
       </NavLink>
       <NavLink to="/datasets/scilite" className={itemCls}>
         🏷️ SciLite Annotations
@@ -429,6 +434,155 @@ function SupplementaryTab() {
 }
 
 // ---------------------------------------------------------------------------
+// Grants sub-page
+// ---------------------------------------------------------------------------
+
+const GR_FACETS: readonly FacetSpec<PubGrant>[] = [
+  { field: "funder_name", label: "Funder", multivalue: false },
+  { field: "recipient", label: "Recipient", multivalue: false },
+];
+const GR_SEARCH: (keyof PubGrant & string)[] = [
+  "funder_name",
+  "grant_number",
+  "recipient",
+  "funding_context_from_paper",
+  "pub_title",
+];
+const grCol = createColumnHelper<PubGrant>();
+
+function GrantsTab() {
+  const [rows, setRows] = useState<PubGrant[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [sp] = useSearchParams();
+  const pmcFilter = sp.get("pmc");
+
+  useEffect(() => {
+    loadPubGrants().then(setRows).catch((e: Error) => setError(e.message));
+  }, []);
+
+  const fields = useMemo(() => GR_FACETS.map((f) => f.field), []);
+  const { selections, query, setFacet, setQuery, clearAll, totalSelected } =
+    useFacets(fields as readonly (keyof PubGrant & string)[]);
+
+  const scoped = useMemo(() => {
+    if (!rows) return [];
+    if (!pmcFilter) return rows;
+    return rows.filter((r) => pmcidFrom(r.source_url) === pmcFilter);
+  }, [rows, pmcFilter]);
+
+  const filtered = useMemo(() => {
+    return scoped.filter((r) => {
+      for (const spec of GR_FACETS) {
+        if (!matchesFacet(r, spec, selections[spec.field] ?? new Set())) return false;
+      }
+      return matchesQuery(r, GR_SEARCH, query);
+    });
+  }, [scoped, selections, query]);
+
+  const columns = useMemo(
+    () => [
+      grCol.accessor("funder_name", {
+        header: "Funder",
+        size: 180,
+        cell: (info) => (
+          <span className="text-xs text-slate-700">{info.getValue()}</span>
+        ),
+      }),
+      grCol.accessor("grant_number", {
+        header: "Grant #",
+        size: 120,
+        cell: (info) => (
+          <span className="font-mono text-xs break-all">{info.getValue()}</span>
+        ),
+      }),
+      grCol.accessor("recipient", {
+        header: "Recipient",
+        size: 160,
+        cell: (info) => (
+          <span className="text-xs text-slate-600">{info.getValue()}</span>
+        ),
+      }),
+      grCol.accessor("funding_context_from_paper", {
+        header: "Context",
+        size: 480,
+        cell: (info) => {
+          const text = info.getValue();
+          if (!text) return null;
+          return (
+            <p className="text-xs text-slate-700 line-clamp-6" title={text}>
+              {text}
+            </p>
+          );
+        },
+      }),
+      grCol.accessor("pub_title", {
+        header: "Publication",
+        cell: (info) => {
+          const url = info.row.original.source_url;
+          const title = info.getValue();
+          if (!title && !url) return null;
+          return url ? (
+            <a
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-accent hover:underline line-clamp-2 max-w-md"
+              title={title}
+            >
+              {title || url}
+            </a>
+          ) : (
+            <span className="text-xs text-slate-600 line-clamp-2 max-w-md">
+              {title}
+            </span>
+          );
+        },
+      }),
+    ],
+    [],
+  );
+
+  return (
+    <PageShell
+      query={query}
+      onQueryChange={setQuery}
+      title="Datasets & Supplementary Files"
+      count={
+        rows
+          ? `${filtered.length.toLocaleString()} of ${scoped.length.toLocaleString()}`
+          : "Loading…"
+      }
+      rail={
+        <FilterRail<PubGrant>
+          specs={GR_FACETS}
+          rows={scoped}
+          selections={selections as Record<string, Set<string>>}
+          onFacetChange={(field, next) =>
+            setFacet(field as (typeof GR_FACETS)[number]["field"], next)
+          }
+          totalSelected={totalSelected}
+          onClearAll={clearAll}
+          error={error}
+        />
+      }
+    >
+      <SubNav />
+      <PmcBanner />
+      {rows ? (
+        <>
+          <div className="mb-3 flex justify-end">
+            <ExportButton rows={filtered} filename="pub_grants" />
+          </div>
+          <DataTable<PubGrant> rows={filtered} columns={columns} />
+        </>
+      ) : (
+        <div className="text-sm text-slate-500">Loading grants…</div>
+      )}
+    </PageShell>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // SciLite annotations sub-page
 // ---------------------------------------------------------------------------
 
@@ -672,6 +826,7 @@ export function DatasetsPage() {
     <Routes>
       <Route index element={<DatasetsTab />} />
       <Route path="supplementary" element={<SupplementaryTab />} />
+      <Route path="grants" element={<GrantsTab />} />
       <Route path="scilite" element={<SciliteTab />} />
       <Route path="*" element={<Navigate to="" replace />} />
     </Routes>

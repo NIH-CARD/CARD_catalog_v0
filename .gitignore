@@ -65,6 +65,7 @@ docs/_build/
 
 # stage files
 tables/hits/
+tables/cache/
 scrapers/batch_**jsonl
 docs/plans/EUPMC_annotations_anz.ipynb
 tables/table_check.ipynb

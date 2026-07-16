@@ -44,6 +44,7 @@ export interface CodeRepo {
   Abbreviation: string;
   "Diseases Included": string;
   "Repository Link": string;
+  Source: string;
   Owner: string;
   Contributors: string;
   Languages: string;
@@ -81,6 +82,27 @@ export interface Supplementary {
   file_extension: string;
   pub_title: string;
   raw_data_format: string;
+}
+
+export interface PubGrant {
+  pub_title: string;
+  source_url: string;
+  raw_data_format: string;
+  funder_name: string;
+  grant_number: string;
+  funding_context_from_paper: string;
+  recipient: string;
+}
+
+export interface PubSoftware {
+  pub_title: string;
+  source_url: string;
+  raw_data_format: string;
+  software_name: string;
+  version: string;
+  mention_type: string;
+  url: string;
+  context_from_paper: string;
 }
 
 export interface SciLiteAnnotation {

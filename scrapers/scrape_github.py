@@ -512,6 +512,151 @@ def get_repo_content(owner: str, repo_name: str, headers: Dict, fair_logger: FAI
 
     return "\n\n".join(content_parts)
 
+def enrich_repo(owner: str, repo_name: str, study_name: str, abbreviation: str, diseases: str,
+                 repo_url: str, languages: str, default_branch: str, headers: Dict,
+                 fair_logger: FAIRComplianceLogger, batch_mode: bool = False,
+                 source: str = "") -> Optional[Dict]:
+    """Enrich a single GitHub repo: FAIR-compliance check, contributors, content, AI analysis.
+
+    Shared by search_github_with_query (repos found via Code Search) and
+    enrich_known_repos (repos discovered elsewhere, e.g. paper-mined software
+    mentions) so both go through identical treatment.
+
+    :param source: How this repo was discovered — e.g. "GitHub search: ADNI
+        alzheimer" or the source publication's PMC link — surfaced in the app
+        as the "Source" column.
+    :return: Result dict (same shape as the final output table), or None if
+        the repo has insufficient content to analyze.
+    """
+    fair_logger.increment_stat('total_repos')
+
+    compliance_info = check_fair_compliance(owner, repo_name, default_branch, headers, fair_logger, repo_url, study_name)
+
+    contributors = []
+    contributors_url = f"https://api.github.com/repos/{owner}/{repo_name}/contributors"
+    contributors_response = github_request_with_retry(contributors_url, headers)
+    if contributors_response and contributors_response.status_code == 200:
+        try:
+            contributors_data = contributors_response.json()
+            if contributors_data:
+                contributors = [c['login'] for c in contributors_data[:10] if isinstance(c, dict) and 'login' in c]
+        except Exception as e:
+            logger.warning(f"  Error parsing contributors: {str(e)}")
+
+    logger.info(f"  Analyzing: {repo_url}")
+    repo_content = get_repo_content(owner, repo_name, headers, fair_logger, repo_url, study_name)
+
+    if not repo_content or len(repo_content) < 50:
+        logger.info(f"  Skipping {repo_url} - insufficient content")
+        fair_logger.increment_stat('insufficient_content')
+        fair_logger.log_issue(repo_url, study_name, 'Insufficient Content',
+                             'Repository content too short (<50 chars), may be incomplete or non-functional')
+        return None
+
+    if batch_mode:
+        logger.info("  Batch mode: Saving content for later AI analysis")
+        ai_analysis = {"biomedical_relevance": "", "summary": "", "data_types": "", "tools": ""}
+    else:
+        ai_analysis = get_ai_analysis(repo_content, repo_name)
+
+    return {
+        "Resource Name": study_name,
+        "Abbreviation": abbreviation,
+        "Diseases Included": diseases,
+        "Repository Link": repo_url,
+        "Source": source,
+        "Owner": owner,
+        "Contributors": "; ".join(contributors),
+        "Languages": languages,
+        "Content_For_Analysis": repo_content if batch_mode else "",
+        "Biomedical Relevance": ai_analysis["biomedical_relevance"],
+        "Code Summary": ai_analysis["summary"],
+        "Data Types": ai_analysis["data_types"],
+        "Tooling": ai_analysis["tools"]
+    }
+
+
+_GITHUB_REPO_URL_RE = re.compile(r'github\.com/([\w.-]+)/([\w.-]+)', re.IGNORECASE)
+
+
+def _normalize_github_repo_url(url: str) -> Optional[str]:
+    """Extract a canonical https://github.com/owner/repo URL from any GitHub link."""
+    match = _GITHUB_REPO_URL_RE.search(url)
+    if not match:
+        return None
+    owner, repo = match.group(1), match.group(2)
+    repo = re.sub(r'\.git$', '', repo)
+    return f"https://github.com/{owner}/{repo}"
+
+
+def enrich_known_repos(repo_candidates: List[Dict], github_token: str, fair_logger: FAIRComplianceLogger,
+                        rate_limiter: SearchRateLimiter, batch_mode: bool = False) -> List[Dict]:
+    """
+    Enrich externally-discovered repo URLs (e.g. GitHub links mentioned in papers,
+    not found via GitHub Code Search) with the same tree-walk/README/FAIR-compliance
+    treatment as search-discovered repos, then fan the single enrichment result out
+    to one row per (repo, Resource Name) pairing supplied in repo_candidates.
+
+    :param repo_candidates: list of dicts with keys 'Resource Name', 'Abbreviation',
+        'Diseases Included', 'Repository Link' (any GitHub URL shape), and
+        'Source' (the source publication's PMC link).
+    :return: list of result dicts, same shape as search_github_with_query's output.
+    """
+    headers = {
+        'Authorization': f'token {github_token}',
+        'Accept': 'application/vnd.github.v3+json'
+    }
+
+    # Group candidate resource-pairings by normalized repo URL so each unique repo
+    # only gets fetched/enriched once, regardless of how many papers/resources cite it.
+    by_repo: Dict[str, List[Dict]] = {}
+    for cand in repo_candidates:
+        repo_url = _normalize_github_repo_url(str(cand.get('Repository Link', '')))
+        if not repo_url:
+            continue
+        by_repo.setdefault(repo_url, []).append(cand)
+
+    logger.info(f"Enriching {len(by_repo)} unique repo(s) discovered via software mentions")
+
+    results = []
+    for repo_url, pairings in by_repo.items():
+        match = _GITHUB_REPO_URL_RE.search(repo_url)
+        owner, repo_name = match.group(1), match.group(2)
+
+        rate_limiter.wait_if_needed()
+        meta_response = github_request_with_retry(f"https://api.github.com/repos/{owner}/{repo_name}", headers)
+        if not meta_response or meta_response.status_code != 200:
+            logger.warning(f"  Could not fetch repo metadata for {repo_url} — skipping")
+            continue
+        try:
+            meta = meta_response.json()
+        except Exception as e:
+            logger.warning(f"  Error parsing repo metadata for {repo_url}: {e}")
+            continue
+        languages = meta.get('language', '') or ''
+        default_branch = meta.get('default_branch', 'main')
+
+        first = pairings[0]
+        enriched = enrich_repo(
+            owner, repo_name, first.get('Resource Name', ''), first.get('Abbreviation', ''),
+            first.get('Diseases Included', ''), repo_url, languages, default_branch,
+            headers, fair_logger, batch_mode, source=first.get('Source', ''),
+        )
+        if enriched is None:
+            continue
+
+        for pairing in pairings:
+            row = dict(enriched)
+            row['Resource Name'] = pairing.get('Resource Name', '')
+            row['Abbreviation'] = pairing.get('Abbreviation', '')
+            row['Diseases Included'] = pairing.get('Diseases Included', '')
+            row['Source'] = pairing.get('Source', '')
+            results.append(row)
+
+    logger.info(f"  Successfully enriched {len(results)} repo/resource pairing(s) from software mentions")
+    return results
+
+
 def search_github(study_name: str, abbreviation: str, diseases: str, github_token: str, fair_logger: FAIRComplianceLogger, rate_limiter: SearchRateLimiter, batch_mode: bool = False) -> List[Dict]:
     """Search GitHub for repositories related to the study"""
     logger.debug(f"Starting GitHub search for study: {study_name} ({abbreviation})")
@@ -580,67 +725,17 @@ def search_github_with_query(query: str, study_name: str, abbreviation: str, dis
                     continue
 
                 seen_repos.add(repo_url)
-                fair_logger.increment_stat('total_repos')
 
                 owner = repo['owner']['login']
                 repo_name = repo['name']
                 languages = repo.get('language', '')
                 default_branch = repo.get('default_branch', 'main')
 
-                # Check FAIR compliance
-                compliance_info = check_fair_compliance(owner, repo_name, default_branch, headers, fair_logger, repo_url, study_name)
-
-                # Get contributors
-                contributors = []
-                contributors_url = repo['contributors_url']
-                contributors_response = github_request_with_retry(contributors_url, headers)
-
-                if contributors_response and contributors_response.status_code == 200:
-                    try:
-                        contributors_data = contributors_response.json()
-                        if contributors_data:
-                            contributors = [c['login'] for c in contributors_data[:10] if isinstance(c, dict) and 'login' in c]
-                    except Exception as e:
-                        logger.warning(f"  Error parsing contributors: {str(e)}")
-
-                # Get repository content
-                logger.info(f"  Analyzing: {repo_url}")
-                repo_content = get_repo_content(owner, repo_name, headers, fair_logger, repo_url, study_name)
-
-                # Skip if no content could be analyzed
-                if not repo_content or len(repo_content) < 50:
-                    logger.info(f"  Skipping {repo_url} - insufficient content")
-                    fair_logger.increment_stat('insufficient_content')
-                    fair_logger.log_issue(repo_url, study_name, 'Insufficient Content',
-                                         f'Repository content too short (<50 chars), may be incomplete or non-functional')
-                    continue
-
-                # Get AI analysis (or skip if in batch mode)
-                if batch_mode:
-                    logger.info(f"  Batch mode: Saving content for later AI analysis")
-                    ai_analysis = {
-                        "biomedical_relevance": "",
-                        "summary": "",
-                        "data_types": "",
-                        "tools": ""
-                    }
-                else:
-                    ai_analysis = get_ai_analysis(repo_content, repo_name)
-
-                results.append({
-                    "Resource Name": study_name,
-                    "Abbreviation": abbreviation,
-                    "Diseases Included": diseases,
-                    "Repository Link": repo_url,
-                    "Owner": owner,
-                    "Contributors": "; ".join(contributors),
-                    "Languages": languages,
-                    "Content_For_Analysis": repo_content if batch_mode else "",
-                    "Biomedical Relevance": ai_analysis["biomedical_relevance"],
-                    "Code Summary": ai_analysis["summary"],
-                    "Data Types": ai_analysis["data_types"],
-                    "Tooling": ai_analysis["tools"]
-                })
+                result = enrich_repo(owner, repo_name, study_name, abbreviation, diseases,
+                                      repo_url, languages, default_branch, headers, fair_logger, batch_mode,
+                                      source=f"GitHub search: {query}")
+                if result is not None:
+                    results.append(result)
 
             except Exception as e:
                 logger.error(f"  Error processing repository: {str(e)}")
@@ -682,6 +777,11 @@ def main():
                        help='Maximum search API requests per minute (default: 25 for standard GitHub API)')
     parser.add_argument('--request-delay', type=float, default=3.0,
                        help='Delay in seconds between GitHub API requests (default: 3.0, set to 0.72 for 5000/hour limit)')
+    parser.add_argument('--extra-repos', default=None,
+                       help='Optional TSV of externally-discovered repo candidates (columns: '
+                            'Resource Name, Abbreviation, Diseases Included, Repository Link) '
+                            'to enrich the same way as search-discovered repos and concatenate '
+                            'in, e.g. GitHub repos discovered via paper-mining (pub_software).')
 
     args = parser.parse_args()
 
@@ -752,6 +852,18 @@ def main():
         logger.info(f"[{idx+1}/{len(studies_df)}] Searching GitHub for repositories related to {study_name} ({abbreviation})...")
         results = search_github(study_name, abbreviation, diseases, github_token, fair_logger, rate_limiter, args.batch_call_ai)
         all_results.extend(results)
+
+    # Enrich externally-discovered repos (e.g. GitHub links mentioned in papers,
+    # surfaced by pub_software) and concatenate them in before dedup/save.
+    if args.extra_repos:
+        try:
+            extra_df = pd.read_csv(args.extra_repos, sep="\t", dtype=str).fillna("")
+            extra_candidates = extra_df.to_dict('records')
+            logger.info(f"Enriching {len(extra_candidates)} externally-discovered repo candidate(s) from {args.extra_repos}")
+            extra_results = enrich_known_repos(extra_candidates, github_token, fair_logger, rate_limiter, args.batch_call_ai)
+            all_results.extend(extra_results)
+        except Exception as e:
+            logger.error(f"Error processing --extra-repos file {args.extra_repos}: {str(e)}")
 
     # Remove duplicates
     logger.info("Removing duplicate repositories...")

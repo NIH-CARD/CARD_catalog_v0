@@ -101,6 +101,31 @@ export function CodePage() {
           );
         },
       }),
+      col.accessor("Source", {
+        header: "Source",
+        size: 140,
+        cell: (info) => {
+          const value = info.getValue();
+          if (!value) return null;
+          if (/^https?:\/\//.test(value)) {
+            return (
+              <a
+                href={value}
+                target="_blank"
+                rel="noreferrer"
+                className="text-accent hover:underline text-xs"
+              >
+                📄 Source paper
+              </a>
+            );
+          }
+          return (
+            <span className="text-xs text-slate-500" title={value}>
+              {value}
+            </span>
+          );
+        },
+      }),
       col.accessor("Languages", {
         header: "Languages",
         cell: (info) => <Chips value={info.getValue()} />,
@@ -253,6 +278,11 @@ export function CodePage() {
                     }
                     subtitle={r["Resource Name"]}
                   >
+                    <Field
+                      label="Source"
+                      value={/^https?:\/\//.test(r.Source ?? "") ? "📄 Source paper" : r.Source}
+                      href={/^https?:\/\//.test(r.Source ?? "") ? r.Source : undefined}
+                    />
                     <Field label="Languages" value={r.Languages} chips />
                     <Field label="Data Types" value={r["Data Types"]} chips />
                     <Field label="Tooling" value={r.Tooling} chips />

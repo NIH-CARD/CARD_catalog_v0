@@ -32,6 +32,8 @@ copy_latest "pubmed_central_*.tsv"             publications.tsv         "$FINAL_
 copy_latest "gits_to_reannotate_completed_*.tsv" code_repos.tsv         "$FINAL_DIR"
 copy_latest "pub_datasets_*.tsv"               pub_datasets.tsv         "$FINAL_DIR"
 copy_latest "pub_supplementary_*.tsv"          pub_supplementary.tsv    "$FINAL_DIR"
+copy_latest "pub_grants_*.tsv"                 pub_grants.tsv           "$FINAL_DIR"
+copy_latest "pub_software_*.tsv"               pub_software.tsv         "$FINAL_DIR"
 copy_latest "scilite_annotations_*.tsv"        scilite_annotations.tsv  "$FINAL_DIR"
 
 # Resources inventory & iNDI live at the tables/ root, not in final/
