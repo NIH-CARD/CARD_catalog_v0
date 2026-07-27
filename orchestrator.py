@@ -330,6 +330,7 @@ def run_full_rebuild(
             load_pmc_links(pubmed_hits), fetch_cache_path,
             log_level="DEBUG" if verbose else "INFO",
             log_file_str=str(log_file) if log_file else None,
+            sects_required=[],
         )
 
         pub_metadata_kwargs = dict(

@@ -55,7 +55,7 @@ class PageNavigationStage(PipelineStage):
         anthropic_key: str | None = None,
         verbose: bool = False,
         log_file: Path | None = None,
-        use_cache: bool = True,
+        use_cache: bool = False,
     ) -> Path:
         from data_gatherer.data_gatherer import DataGatherer
         from data_gatherer.llm.response_schema import study_sanity_check_w_rationale_schema_claude

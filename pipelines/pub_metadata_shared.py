@@ -41,7 +41,7 @@ def prefetch_articles(
     cache_path: Path,
     log_level: str = "INFO",
     log_file_str: str | None = None,
-    sects_required: int = 5,
+    sects_required=5,
 ) -> None:
     """Fetch every PMC article once and read/update a shared parquet cache.
 
