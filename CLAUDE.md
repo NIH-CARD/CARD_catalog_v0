@@ -132,7 +132,7 @@ Log files go in `logs/` at project root. Use `logging_config.get_default_log_fil
 
 ## Docstrings
 
-Google style for all public functions, classes, and modules.
+Google style for all public functions, classes, and modules. Keep it very concise (1 line max for each arg and caption).
 
 ```python
 def normalize(input_path: Path, target: str, output_path: Path) -> Path:
