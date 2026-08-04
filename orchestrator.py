@@ -502,7 +502,7 @@ def main() -> None:
         help="Path to resource inventory file (default: latest resources-inventory-* in tables/)",
     )
     parser.add_argument(
-        "--query-method", choices=["original", "v2", "v3"], default="v3",
+        "--query-method", choices=["original", "v2", "v3", "v4"], default="v3",
         help="PubMed query method (default: v3)",
     )
     parser.add_argument(

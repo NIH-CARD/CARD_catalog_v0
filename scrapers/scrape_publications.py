@@ -374,8 +374,216 @@ def build_search_query_v3(study_name: str, abbreviation: str, diseases: str, dat
     return final_query
 
 
+# Generic ADRD abbreviation <-> full-phrase pairs used to expand a concept to keywords liekly to appear
+_ADRD_ABBREVIATION_PAIRS = [
+    ("alzheimer's disease", "AD"),
+    ("parkinson's disease", "PD"),
+    ("mild cognitive impairment", "MCI"),
+    ("frontotemporal dementia", "FTD"),
+    ("amyotrophic lateral sclerosis", "ALS"),
+    ("dementia with lewy bodies", "DLB"),
+    ("lewy body dementia", "DLB"),
+    ("progressive supranuclear palsy", "PSP"),
+    ("corticobasal degeneration", "CBD"),
+    ("multiple system atrophy", "MSA"),
+    ("traumatic brain injury", "TBI"),
+    ("frontotemporal lobar degeneration", "FTLD"),
+    ("cerebral amyloid angiopathy", "CAA"),
+    ("alzheimer's disease and related dementias", "ADRD"),
+    ("apolipoprotein e", "APOE"),
+    ("cerebrospinal fluid", "CSF"),
+    ("positron emission tomography", "PET"),
+    ("magnetic resonance imaging", "MRI"),
+    ("induced pluripotent stem cell", "iPSC"),
+]
+
+_GENERIC_CONCEPT_STOPWORDS = frozenset({
+    "controls", "control", "not specified", "biosamples", "model systems",
+    "aging", "normal aging", "healthy controls", "healthy aging",
+    "normal controls", "elderly controls", "cognitively unimpaired",
+    "multiple conditions", "cognitively normal", "biomarker", "biomarkers",
+    "resilience", "prodromal", "dementia",
+})
+
+
+def _split_concept_cell(value: str) -> List[str]:
+    """ Split a Diseases/Modality cell into atomic concept strings. """
+    if not value or pd.isna(value):
+        return []
+    concepts = []
+    for part in re.split(r"[;,]", str(value)):
+        term = part.strip()
+        if len(term) < 3 or term.lower() in _GENERIC_CONCEPT_STOPWORDS:
+            continue
+        concepts.append(term)
+    return concepts
+
+
+def _generate_term_variants(term: str) -> List[str]:
+    """Generate spelling/acronym OR-variants for a search term."""
+    base = re.sub(r'\s*\([^)]*\)\s*$', '', term).strip()
+    variants = {base}
+
+    if "'" in base:
+        variants.add(base.replace("'s", "s"))
+        variants.add(re.sub(r'\s+', ' ', base.replace("'s", "")).strip())
+
+    lower = base.lower()
+    for phrase, acronym in _ADRD_ABBREVIATION_PAIRS:
+        if lower == phrase:
+            variants.add(acronym)
+        elif lower == acronym.lower():
+            variants.add(phrase)
+
+    return sorted(v for v in variants if v)
+
+
+def build_search_queries_v4(study_name: str, abbreviation: str, diseases: str, data_modalities: str,
+                             years: float = 3, concepts_per_query: int = 5) -> List[str]:
+    """Build PubMed queries batching disease/modality concepts as OR-groups per study.
+
+    Args:
+        study_name: Resource Name from the inventory.
+        abbreviation: Abbreviation from the inventory.
+        diseases: Diseases Included cell (semicolon/comma-delimited).
+        data_modalities: Combined Coarse+Granular Data Modality string.
+        years: Date range in years to search back from today.
+        concepts_per_query: How many concepts to OR together per batched query.
+
+    Returns:
+        List of query strings; always includes a base name+date query (no concept restriction)
+    """
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=365 * years)
+    date_range = f"{start_date.strftime('%Y/%m/%d')}:{end_date.strftime('%Y/%m/%d')}"
+    date_clause = f'({date_range}[Date - Publication])'
+
+    name_terms = []
+    if study_name and pd.notna(study_name):
+        clean_name = re.sub(r'\s*\([^)]*\)\s*$', '', str(study_name)).strip()
+        if clean_name:
+            name_terms.extend(_generate_term_variants(clean_name))
+
+    abbrev_str = str(abbreviation).strip() if pd.notna(abbreviation) else ""
+    if abbrev_str and abbrev_str != str(study_name) and abbrev_str.lower() not in _NOISY_ABBREVIATIONS:
+        name_terms.extend(_generate_term_variants(abbrev_str))
+    elif abbrev_str and abbrev_str.lower() in _NOISY_ABBREVIATIONS:
+        logger.info(f"Skipping noisy abbreviation '{abbrev_str}' (common word)")
+
+    name_terms = sorted(set(name_terms))
+    if not name_terms:
+        logger.warning(f"No usable study name/abbreviation for v4 query on '{study_name}' — skipping")
+        return []
+    name_clause = "(" + " OR ".join(f'"{t}"[tiab]' for t in name_terms) + ")"
+
+    concepts = []
+    seen_lower = set()
+    for cell in (diseases, data_modalities):
+        for token in _split_concept_cell(cell):
+            key = token.lower()
+            if key in seen_lower:
+                continue
+            seen_lower.add(key)
+            concepts.append(token)
+
+    queries = [f'{name_clause} AND {date_clause}']
+    for i in range(0, len(concepts), concepts_per_query):
+        batch = concepts[i:i + concepts_per_query]
+        variant_terms = []
+        for concept in batch:
+            variant_terms.extend(_generate_term_variants(concept))
+        concept_clause = "(" + " OR ".join(f'"{v}"[tiab]' for v in sorted(set(variant_terms))) + ")"
+        queries.append(f'{name_clause} AND {concept_clause} AND {date_clause}')
+
+    logger.debug(f"Built {len(queries)} v4 queries for '{study_name}' ({len(concepts)} concepts in batches of {concepts_per_query})")
+    return queries
+
+
+def _fetch_and_parse_batch(pubmed_ids: List[str], ncbi_api_key_suffix: str) -> List[Dict]:
+    """Fetch and parse PubMed article XML for a list of PMIDs, in batches of 20."""
+    results = []
+    batch_size = 20
+    for i in range(0, len(pubmed_ids), batch_size):
+        batch_ids = pubmed_ids[i:i + batch_size]
+        ids_str = ",".join(batch_ids)
+        fetch_url = f'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id={ids_str}&retmode=xml{ncbi_api_key_suffix}'
+        fetch_response = search_pubmed_with_retry(fetch_url)
+        if not fetch_response:
+            continue
+        try:
+            root = ET.fromstring(fetch_response.text)
+            articles = root.findall('.//PubmedArticle')
+            for article in articles:
+                article_data = extract_article_details(article)
+                if article_data:
+                    results.append(article_data)
+        except Exception as e:
+            logger.error(f"Error parsing batch: {str(e)}")
+            continue
+    return results
+
+
+def _search_pubmed_fanout(study_name: str, abbreviation: str, diseases: str, search_data_modalities: str,
+                           max_results: int, ncbi_api_key_suffix: str, years: float) -> List[Dict]:
+    """v4: issue one esearch per (name, concept) query and union the resulting PMIDs.
+
+    See build_search_queries_v4 for why this fans out instead of ANDing
+    every facet into a single query.
+    """
+    queries = build_search_queries_v4(study_name, abbreviation, diseases, search_data_modalities, years=years)
+    if not queries:
+        return []
+
+    base_url = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi'
+    seen_ids = {}
+    for query in queries:
+        encoded_query = urllib.parse.quote(query, safe='')
+        search_url = f'{base_url}?db=pubmed&term={encoded_query}&retmax={max_results}&retmode=json{ncbi_api_key_suffix}'
+        logger.info(f"[v4] Sub-query: {query[:120]}..." if len(query) > 120 else f"[v4] Sub-query: {query}")
+
+        response = search_pubmed_with_retry(search_url)
+        if not response:
+            continue
+        try:
+            data = response.json()
+            ids = data.get('esearchresult', {}).get('idlist', [])
+            logger.info(f"[v4] Sub-query returned {len(ids)} PMIDs")
+            for pid in ids:
+                seen_ids.setdefault(pid, None)
+        except Exception as e:
+            logger.error(f"[v4] Error processing sub-query results: {str(e)}")
+            continue
+
+    pubmed_ids = list(seen_ids.keys())
+    logger.info(f"[v4] {len(queries)} sub-queries -> {len(pubmed_ids)} unique PMIDs for '{study_name}'")
+
+    if len(pubmed_ids) > max_results:
+        logger.warning(f"[v4] Union of {len(pubmed_ids)} PMIDs exceeds max_results={max_results}; truncating (dropped {len(pubmed_ids) - max_results})")
+        pubmed_ids = pubmed_ids[:max_results]
+
+    if not pubmed_ids:
+        logger.info("[v4] No results found")
+        return []
+
+    results = _fetch_and_parse_batch(pubmed_ids, ncbi_api_key_suffix)
+    for r in results:
+        r.update({
+            "Resource Name": study_name,
+            "Abbreviation": abbreviation,
+            "Diseases Included": diseases,
+            "Data Modalities": search_data_modalities,
+        })
+
+    logger.info(f"[v4] Successfully processed {len(results)} articles")
+    return results
+
+
 def search_pubmed(study_name: str, abbreviation: str, diseases: str, search_data_modalities: str, max_results: int = 100, ncbi_api_key_suffix: str = "", query_method: str = "original", years: float = 3) -> List[Dict]:
     """Search PubMed for articles related to the study"""
+    if query_method == "v4":
+        return _search_pubmed_fanout(study_name, abbreviation, diseases, search_data_modalities,
+                                      max_results, ncbi_api_key_suffix, years)
+
     # Build search query
     if query_method == "v2":
         query = build_search_query_v2(study_name, abbreviation, diseases, search_data_modalities, years=years)
@@ -411,44 +619,14 @@ def search_pubmed(study_name: str, abbreviation: str, diseases: str, search_data
 
         logger.info(f"Found {len(pubmed_ids)} articles")
 
-        results = []
-        # Fetch articles in batches to improve efficiency
-        batch_size = 20
-        logger.debug(f"Processing {len(pubmed_ids)} IDs in batches of {batch_size}")
-        for i in range(0, len(pubmed_ids), batch_size):
-            batch_ids = pubmed_ids[i:i+batch_size]
-            ids_str = ",".join(batch_ids)
-            
-            logger.debug(f"Fetching batch {i//batch_size + 1}: IDs {i} to {i+len(batch_ids)}")
-
-            fetch_url = f'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id={ids_str}&retmode=xml{ncbi_api_key_suffix}'
-            fetch_response = search_pubmed_with_retry(fetch_url)
-
-            if not fetch_response:
-                continue
-
-            try:
-                # Parse XML
-                root = ET.fromstring(fetch_response.text)
-                articles = root.findall('.//PubmedArticle')
-                logger.debug(f"Parsed XML, found {len(articles)} articles in batch")
-
-                for article in articles:
-                    article_data = extract_article_details(article)
-                    if article_data:
-                        logger.debug(f"Successfully extracted article: {article_data.get('PMID', 'unknown')}")
-                        # Add study information
-                        article_data.update({
-                            "Resource Name": study_name,
-                            "Abbreviation": abbreviation,
-                            "Diseases Included": diseases,
-                            "Data Modalities": search_data_modalities
-                        })
-                        results.append(article_data)
-
-            except Exception as e:
-                logger.error(f"Error parsing batch: {str(e)}")
-                continue
+        results = _fetch_and_parse_batch(pubmed_ids, ncbi_api_key_suffix)
+        for r in results:
+            r.update({
+                "Resource Name": study_name,
+                "Abbreviation": abbreviation,
+                "Diseases Included": diseases,
+                "Data Modalities": search_data_modalities,
+            })
 
         logger.info(f"Successfully processed {len(results)} articles")
         return results
@@ -475,10 +653,11 @@ def main():
                        help='Log file path (default: publications_{timestamp}.log)')
     parser.add_argument('--clear-log', action='store_true',
                        help='Clear log file before writing (default: append)')
-    parser.add_argument('--query-method', choices=['original', 'v2', 'v3'], default='original',
+    parser.add_argument('--query-method', choices=['original', 'v2', 'v3', 'v4'], default='original',
                        help='Query construction method: "original" uses [All Fields] with disease+modality '
                             'terms; "v2" uses [tiab] with no disease/modality terms; '
-                            '"v3" uses [tiab] + disease + modality terms (v2 precision + original recall) '
+                            '"v3" uses [tiab] + disease + modality terms (v2 precision + original recall); '
+                            '"v4" fans out one esearch per disease/modality concept and unions PMIDs, instead of ANDing every facet;'
                             '(default: original)')
     parser.add_argument('--years', type=float, default=3,
                        help='Date range in years to search back from today (default: 3, use 0.02 for ~7 days)')
