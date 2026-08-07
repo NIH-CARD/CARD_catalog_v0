@@ -549,7 +549,7 @@ def _search_pubmed_fanout(study_name: str, abbreviation: str, diseases: str, sea
             ids = data.get('esearchresult', {}).get('idlist', [])
             logger.info(f"[v4] Sub-query returned {len(ids)} PMIDs")
             for pid in ids:
-                seen_ids.setdefault(pid, None)
+                seen_ids.setdefault(pid, query)
         except Exception as e:
             logger.error(f"[v4] Error processing sub-query results: {str(e)}")
             continue
@@ -572,6 +572,7 @@ def _search_pubmed_fanout(study_name: str, abbreviation: str, diseases: str, sea
             "Abbreviation": abbreviation,
             "Diseases Included": diseases,
             "Data Modalities": search_data_modalities,
+            "Fetched With": seen_ids.get(r.get("PMID"), ""),
         })
 
     logger.info(f"[v4] Successfully processed {len(results)} articles")
@@ -626,6 +627,7 @@ def search_pubmed(study_name: str, abbreviation: str, diseases: str, search_data
                 "Abbreviation": abbreviation,
                 "Diseases Included": diseases,
                 "Data Modalities": search_data_modalities,
+                "Fetched With": query,
             })
 
         logger.info(f"Successfully processed {len(results)} articles")
@@ -735,6 +737,7 @@ def main():
             "Abstract",
             "Keywords",
             "Publication Date",
+            "Fetched With",
         ]
 
         results_df = pd.DataFrame(all_results)
