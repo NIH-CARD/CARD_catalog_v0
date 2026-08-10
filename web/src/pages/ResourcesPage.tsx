@@ -12,6 +12,7 @@ import { ExportButton } from "../components/ExportButton";
 import { PageShell } from "../components/PageShell";
 import { matchesFacet, matchesQuery } from "../lib/filter";
 import { loadResources } from "../lib/loaders";
+import { useDiseaseCanonicalizer, useModalityCanonicalizer } from "../lib/synonyms";
 import { useFacets } from "../lib/useFacets";
 import type { FacetSpec, Resource } from "../types";
 
@@ -24,13 +25,15 @@ const GRAPH_FIELD_OPTIONS: readonly { field: keyof Resource & string; label?: st
 
 const PART_OF_SPEC: FacetSpec<Resource> = { field: "Is Part Of", multivalue: true, delimiter: ";" };
 
-const FACETS: readonly FacetSpec<Resource>[] = [
-  { field: "Resource Type", multivalue: true, delimiter: "," },
-  { field: "Diseases Included", multivalue: true },
-  { field: "Coarse Data Modality", multivalue: true, delimiter: "," },
-  { field: "Granular Data Modality", multivalue: true },
-  PART_OF_SPEC,
-];
+// Field names only, for useFacets — stable regardless of when the synonym
+// tables (used below to build the real FACETS specs) finish loading.
+const FACET_FIELDS = [
+  "Resource Type",
+  "Diseases Included",
+  "Coarse Data Modality",
+  "Granular Data Modality",
+  "Is Part Of",
+] as const;
 
 const SEARCH_FIELDS: (keyof Resource & string)[] = [
   "Resource Name",
@@ -56,9 +59,21 @@ export function ResourcesPage() {
     loadResources().then(setRows).catch((e: Error) => setError(e.message));
   }, []);
 
-  const fields = useMemo(() => FACETS.map((f) => f.field), []);
   const { selections, query, setFacet, setQuery, clearAll, totalSelected } =
-    useFacets(fields as readonly (keyof Resource & string)[]);
+    useFacets(FACET_FIELDS as unknown as readonly (keyof Resource & string)[]);
+
+  const canonicalizeModality = useModalityCanonicalizer();
+  const canonicalizeDisease = useDiseaseCanonicalizer();
+  const FACETS: readonly FacetSpec<Resource>[] = useMemo(
+    () => [
+      { field: "Resource Type", multivalue: true, delimiter: "," },
+      { field: "Diseases Included", multivalue: true, canonicalize: canonicalizeDisease },
+      { field: "Coarse Data Modality", multivalue: true, delimiter: "," },
+      { field: "Granular Data Modality", multivalue: true, canonicalize: canonicalizeModality },
+      PART_OF_SPEC,
+    ],
+    [canonicalizeDisease, canonicalizeModality],
+  );
 
   const filtered = useMemo(() => {
     if (!rows) return [];

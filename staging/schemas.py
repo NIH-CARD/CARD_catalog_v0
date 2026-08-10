@@ -56,6 +56,11 @@ class PublicationRow(_Base):
     Publication_Date: str = ""
     Data_Completeness: str = ""
     Fetched_With: str = ""
+    # paperclip-only fields (query_method="paperclip"); blank for original/v2/v3/v4 rows.
+    DOI: str = ""
+    Verification_Status: str = ""
+    Claim_Text: str = ""
+    Rationale: str = ""
 
     # Map from scraper column names (with spaces) to model field names
     model_config = {
@@ -68,6 +73,7 @@ class PublicationRow(_Base):
         "Coarse_Data_Modality", "Granular_Data_Modality", "PubMed_Central_Link",
         "Authors", "Affiliations", "Title", "Abstract", "Keywords",
         "Publication_Date", "Data_Completeness", "Fetched_With",
+        "DOI", "Verification_Status", "Claim_Text", "Rationale",
         mode="before",
     )
     @classmethod
@@ -76,10 +82,11 @@ class PublicationRow(_Base):
 
     # App-facing column order
     COLUMNS: ClassVar[list[str]] = [
-        "PMID", "Resource Name", "Abbreviation",
+        "PMID", "DOI", "Resource Name", "Abbreviation",
         "Diseases Included", "Coarse Data Modality", "Granular Data Modality",
         "PubMed Central Link", "Authors", "Affiliations",
         "Title", "Abstract", "Keywords", "Publication Date", "Data Completeness",
+        "Verification Status", "Claim Text", "Rationale",
         "Fetched With",
     ]
 

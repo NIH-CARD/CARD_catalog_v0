@@ -25,6 +25,7 @@ import {
   PAPER_GRAPH_FIELD_OPTIONS,
   type GraphPublication,
 } from "../lib/paperGraph";
+import { useDiseaseCanonicalizer, useModalityCanonicalizer } from "../lib/synonyms";
 import { useFacets } from "../lib/useFacets";
 import type {
   FacetSpec,
@@ -125,6 +126,9 @@ export function PublicationsPage() {
     [pubs],
   );
 
+  const canonicalizeModality = useModalityCanonicalizer();
+  const canonicalizeDisease = useDiseaseCanonicalizer();
+
   // Paper-grounded facets: SciLite types + cited datasets + publication metadata
   const FACETS: readonly FacetSpec<GraphPublication>[] = useMemo(
     () => [
@@ -138,6 +142,7 @@ export function PublicationsPage() {
         label: "Diseases",
         multivalue: true,
         delimiter: ";",
+        canonicalize: canonicalizeDisease,
       },
       {
         field: "Coarse Data Modality",
@@ -150,6 +155,7 @@ export function PublicationsPage() {
         label: "Granular Modality",
         multivalue: true,
         delimiter: ";",
+        canonicalize: canonicalizeModality,
       },
       {
         field: "Keywords",
@@ -193,7 +199,7 @@ export function PublicationsPage() {
         multivalue: false,
       },
     ],
-    [],
+    [canonicalizeDisease, canonicalizeModality],
   );
 
   const fieldNames = useMemo(() => FACETS.map((f) => f.field), [FACETS]);

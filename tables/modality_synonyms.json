@@ -1,0 +1,1517 @@
+[
+  {
+    "canonical": "16S/Metagenomic Microbiome Sequencing",
+    "synonyms": [
+      "16S microbiome sequencing",
+      "Gut Microbiome",
+      "Metagenomics (16S rRNA sequencing)"
+    ]
+  },
+  {
+    "canonical": "ADAS-Cog Questionnaire",
+    "synonyms": [
+      "ADAS-COG questionnaire"
+    ]
+  },
+  {
+    "canonical": "ADCS-ADL Questionnaire",
+    "synonyms": [
+      "ADCS-ADL questionnaire"
+    ]
+  },
+  {
+    "canonical": "APOE Genotyping",
+    "synonyms": [
+      "APOE Genotype",
+      "APOE Genotyping",
+      "APOE genotyping",
+      "APOE isoform analysis",
+      "Plasma biomarkers (APOE Genotype"
+    ]
+  },
+  {
+    "canonical": "ATAC-seq (Chromatin Accessibility)",
+    "synonyms": [
+      "ATAC-seq",
+      "Chromatin accessibility",
+      "Epigenetic - Chromatin Accessibility (ATAC-seq)"
+    ]
+  },
+  {
+    "canonical": "Alpha-synuclein Seed Amplification Assay",
+    "synonyms": [
+      "Alpha-synuclein seed amplification assay"
+    ]
+  },
+  {
+    "canonical": "Amino Acid Profiling",
+    "synonyms": [
+      "Amino acids"
+    ]
+  },
+  {
+    "canonical": "Amyloid Beta ELISA",
+    "synonyms": [
+      "A\u03b2 ELISA measurements",
+      "Biomarkers (Amyloid beta 42/40",
+      "Biomarkers (A\u03b242/40",
+      "amyloid-\u03b2 ELISA"
+    ]
+  },
+  {
+    "canonical": "Amyloid Biomarkers",
+    "synonyms": [
+      "Amyloid biomarkers",
+      "Amyloid testing",
+      "Anti-amyloid antibody"
+    ]
+  },
+  {
+    "canonical": "Amyloid-PET",
+    "synonyms": [
+      "Amyloid PET",
+      "Amyloid-PET",
+      "Florbetapir-PET",
+      "PET-amyloid",
+      "PiB PET"
+    ]
+  },
+  {
+    "canonical": "Annotation",
+    "synonyms": [
+      "Annotation"
+    ]
+  },
+  {
+    "canonical": "Arterial Spin Labeling (ASL) MRI",
+    "synonyms": [
+      "ASL"
+    ]
+  },
+  {
+    "canonical": "Behavioral Assessments",
+    "synonyms": [
+      "Behavioral assessments",
+      "Behavioral measures",
+      "Behavioural assessments",
+      "Mental health assessments",
+      "Psychological Assessments"
+    ]
+  },
+  {
+    "canonical": "Biofluid Samples (Blood)",
+    "synonyms": [
+      "Biofluid - Blood",
+      "Blood samples",
+      "Blood serum samples",
+      "Peripheral blood samples",
+      "Plasma",
+      "Plasma metabolites",
+      "Serum"
+    ]
+  },
+  {
+    "canonical": "Biofluid Samples (CSF)",
+    "synonyms": [
+      "Biofluid - CSF"
+    ]
+  },
+  {
+    "canonical": "Biospecimens (General)",
+    "synonyms": [
+      "Biospecimens",
+      "Body tissue samples",
+      "Fecal samples",
+      "Frozen and fixed specimens"
+    ]
+  },
+  {
+    "canonical": "Blood-based Biomarkers",
+    "synonyms": [
+      "Blood biomarkers",
+      "Blood-based biomarkers",
+      "Blood-based screening"
+    ]
+  },
+  {
+    "canonical": "Body Composition Data",
+    "synonyms": [
+      "Body composition data"
+    ]
+  },
+  {
+    "canonical": "Braak Staging",
+    "synonyms": [
+      "Braak AD-staging scores",
+      "Braak staging"
+    ]
+  },
+  {
+    "canonical": "Brain Proteomics",
+    "synonyms": [
+      "Brain proteomics"
+    ]
+  },
+  {
+    "canonical": "Brain Tissue Samples",
+    "synonyms": [
+      "Anterior cingulate cortex",
+      "Brain Tissue",
+      "Brain Tissue Samples",
+      "Brain specimens",
+      "Brain tissue",
+      "Brain tissue analysis",
+      "Brain tissue autopsy",
+      "Brain tissue molecular data",
+      "Brain tissue samples",
+      "Cortical biopsies",
+      "Frontal cortex",
+      "Multi-region brain sampling",
+      "Postmortem brain tissue"
+    ]
+  },
+  {
+    "canonical": "Bulk RNA Sequencing",
+    "synonyms": [
+      "Bulk RNA sequencing",
+      "Bulk RNA-seq",
+      "Bulk sorted microglia transcriptomics",
+      "Bulk tissue transcriptomics",
+      "Whole cell transcriptome",
+      "bulk transcriptomics"
+    ]
+  },
+  {
+    "canonical": "C9orf72 Repeat Expansion Status",
+    "synonyms": [
+      "C9orf72 expansion carriers"
+    ]
+  },
+  {
+    "canonical": "CERAD Criteria",
+    "synonyms": [
+      "CERAD criteria",
+      "CERAD scores"
+    ]
+  },
+  {
+    "canonical": "CRISPR Screening",
+    "synonyms": [
+      "CRISPR guide RNA sequencing",
+      "CRISPR-Cas9 gene editing",
+      "CRISPR-edited variants"
+    ]
+  },
+  {
+    "canonical": "Camouflaged Variant Analysis",
+    "synonyms": [
+      "Camouflaged Variants"
+    ]
+  },
+  {
+    "canonical": "Cancer Registry Data",
+    "synonyms": [
+      "Cancer registry"
+    ]
+  },
+  {
+    "canonical": "Cardiovascular Assessments",
+    "synonyms": [
+      "Cardiovascular data",
+      "Cardiovascular measures",
+      "Cardiovascular risk"
+    ]
+  },
+  {
+    "canonical": "Caregiver Assessments",
+    "synonyms": [
+      "Caregiver assessments",
+      "Caregiver burden",
+      "Caregiver burden measures",
+      "Informant questionnaires",
+      "Participant and informant questionnaires"
+    ]
+  },
+  {
+    "canonical": "Cell Line Phenotyping",
+    "synonyms": [
+      "Cell Line Phenotyping"
+    ]
+  },
+  {
+    "canonical": "Cerebrospinal Fluid (CSF) Biomarkers",
+    "synonyms": [
+      "CSF",
+      "CSF biomarkers",
+      "CSF metabolites",
+      "Cerebrospinal fluid biomarkers"
+    ]
+  },
+  {
+    "canonical": "Cerebrospinal Fluid Proteomics",
+    "synonyms": [
+      "CSF proteomics",
+      "Cerebrospinal fluid proteomics"
+    ]
+  },
+  {
+    "canonical": "ChIP-seq",
+    "synonyms": [
+      "ChIP-seq"
+    ]
+  },
+  {
+    "canonical": "ChIP-seq (H3K27ac)",
+    "synonyms": [
+      "ChIP-seq (H3K27ac)",
+      "ChIP-seq H3K27ac",
+      "H3K27ac ChIP-seq"
+    ]
+  },
+  {
+    "canonical": "ChIP-seq (H3K4me3)",
+    "synonyms": [
+      "ChIP-seq H3K4me3",
+      "H3K4me3 peaks"
+    ]
+  },
+  {
+    "canonical": "ChIP-seq (H3K9Ac)",
+    "synonyms": [
+      "H3K9Ac ChIP-seq"
+    ]
+  },
+  {
+    "canonical": "Circuit Physiology",
+    "synonyms": [
+      "Circuit physiology"
+    ]
+  },
+  {
+    "canonical": "Circular RNA Sequencing",
+    "synonyms": [
+      "Circular RNA sequencing"
+    ]
+  },
+  {
+    "canonical": "Clinical Assessments (General)",
+    "synonyms": [
+      "Clinical",
+      "Clinical Data",
+      "Clinical Diagnosis",
+      "Clinical assessments",
+      "Clinical data",
+      "Clinical interviews",
+      "Clinical records",
+      "Harmonized Phenotypes",
+      "Harmonized clinical data",
+      "Harmonized clinical variables",
+      "Harmonized data",
+      "Phenotype data",
+      "Phenotypic",
+      "Standardized assessments",
+      "Standardized clinical protocols",
+      "clinical assessments"
+    ]
+  },
+  {
+    "canonical": "Clinical Dementia Rating (CDR)",
+    "synonyms": [
+      "Clinical Dementia Rating (CDR)"
+    ]
+  },
+  {
+    "canonical": "Clinical Phenotyping",
+    "synonyms": [
+      "Clinical phenotypes",
+      "Clinical phenotyping"
+    ]
+  },
+  {
+    "canonical": "Clinical Trial Data",
+    "synonyms": [
+      "Aggregated clinical trial data",
+      "Clinical Trial",
+      "Clinical trial data",
+      "Clinical trials data",
+      "Control arm data",
+      "Control arm patient records",
+      "Placebo response data",
+      "Prevention trial data",
+      "Safety and efficacy",
+      "Safety data",
+      "Semagacestat trials",
+      "Synthetic clinical trial data",
+      "clinical trial data"
+    ]
+  },
+  {
+    "canonical": "Cognitive Assessments (General)",
+    "synonyms": [
+      "Cognitive assessment",
+      "Cognitive assessments",
+      "Cognitive assessments (CASI",
+      "Cognitive function",
+      "Cognitive screening (CASI)",
+      "Cognitive testing",
+      "Cognitive tests",
+      "Digital cognitive assessments",
+      "Neuropsychological assessments",
+      "Neuropsychological evaluation",
+      "Neuropsychological testing",
+      "Neuropsychological tests",
+      "Neuropsychometric testing",
+      "Online assessments",
+      "Online cognitive assessments",
+      "UCSF MAC Bedside Neuropsychological Screen)",
+      "cognitive function tests"
+    ]
+  },
+  {
+    "canonical": "Combined Amyloid/Tau PET",
+    "synonyms": [
+      "PET imaging (Amyloid and Tau)"
+    ]
+  },
+  {
+    "canonical": "Comorbidities",
+    "synonyms": [
+      "Comorbidities",
+      "Current medication",
+      "Medical history",
+      "Medication records",
+      "Medications",
+      "Prescriptions",
+      "medical history"
+    ]
+  },
+  {
+    "canonical": "Copy Number Variation (CNV)",
+    "synonyms": [
+      "CNV"
+    ]
+  },
+  {
+    "canonical": "Cytokine/Growth Factor Assays",
+    "synonyms": [
+      "Gamma-secretase inhibitor",
+      "Interleukin-6 measurements",
+      "Invitrogen ProtoArray v5.0",
+      "MMP-1",
+      "VEGF",
+      "VEGF-C)",
+      "bFGF"
+    ]
+  },
+  {
+    "canonical": "DESeq2 Differential Expression Analysis",
+    "synonyms": [
+      "DESeq2 Analysis"
+    ]
+  },
+  {
+    "canonical": "DNA Methylation",
+    "synonyms": [
+      "DNA methylation",
+      "DNA methylation profiling",
+      "Epigenetic - Methylation",
+      "Methylation"
+    ]
+  },
+  {
+    "canonical": "DNA Methylation (EPIC Array)",
+    "synonyms": [
+      "DNA methylation (EPIC array)",
+      "Illumina HumanMethylation450 BeadChip"
+    ]
+  },
+  {
+    "canonical": "DaTscan SPECT",
+    "synonyms": [
+      "DaTscan SPECT",
+      "SPECT"
+    ]
+  },
+  {
+    "canonical": "Dementia Diagnosis",
+    "synonyms": [
+      "Dementia diagnosis",
+      "Dementia prevalence",
+      "Dementia screening",
+      "Disease subtypes",
+      "MCI and dementia diagnosis",
+      "MCI diagnosis"
+    ]
+  },
+  {
+    "canonical": "Demographics",
+    "synonyms": [
+      "Demographic assessments",
+      "Demographic data",
+      "Demographic information",
+      "Demographics",
+      "Demographics and clinical characteristics",
+      "Sociodemographic data"
+    ]
+  },
+  {
+    "canonical": "Diagnostic/Disease Biomarkers",
+    "synonyms": [
+      "Biomarker discovery",
+      "Diagnostic biomarkers",
+      "Disease progression markers"
+    ]
+  },
+  {
+    "canonical": "Diffusion Tensor Imaging (DTI)",
+    "synonyms": [
+      "DTI",
+      "DWI)",
+      "Imaging - DTI"
+    ]
+  },
+  {
+    "canonical": "Droplet-based Single-nucleus RNA Sequencing",
+    "synonyms": [
+      "Droplet-based snRNA-seq"
+    ]
+  },
+  {
+    "canonical": "EQ-5D Questionnaire",
+    "synonyms": [
+      "EQ-5D questionnaire"
+    ]
+  },
+  {
+    "canonical": "Electroencephalography (EEG)",
+    "synonyms": [
+      "Electroencephalography (EEG)"
+    ]
+  },
+  {
+    "canonical": "Epidemiological Data",
+    "synonyms": [
+      "Epidemiological assessments",
+      "Epidemiological data",
+      "Epidemiology",
+      "Global health",
+      "Incidence data",
+      "Mortality data",
+      "Population health data"
+    ]
+  },
+  {
+    "canonical": "Epigenomics (General)",
+    "synonyms": [
+      "Cell-type specific epigenomics (FANS-sorted nuclei)",
+      "Epigenetics",
+      "Epigenomic data",
+      "Epigenomic profiling",
+      "Epigenomics"
+    ]
+  },
+  {
+    "canonical": "Exome/Genome QTL Summary Statistics",
+    "synonyms": [
+      "QTL Summary Statistics",
+      "Summary Statistics"
+    ]
+  },
+  {
+    "canonical": "FDG-PET",
+    "synonyms": [
+      "FDG-PET",
+      "PET (FDG-PET)"
+    ]
+  },
+  {
+    "canonical": "FLAIR MRI",
+    "synonyms": [
+      "FLAIR",
+      "FLAIR imaging",
+      "Imaging - FLAIR"
+    ]
+  },
+  {
+    "canonical": "Family/Birth Cohort Studies",
+    "synonyms": [
+      "Birth cohort data",
+      "Family studies",
+      "Family-based study",
+      "Multiple phase studies"
+    ]
+  },
+  {
+    "canonical": "Fatty Acid Profiling",
+    "synonyms": [
+      "Fatty acid composition"
+    ]
+  },
+  {
+    "canonical": "Flow Cytometry",
+    "synonyms": [
+      "Flow cytometry"
+    ]
+  },
+  {
+    "canonical": "Fluid Biomarkers",
+    "synonyms": [
+      "CSF/plasma biomarkers",
+      "Fluid biomarkers"
+    ]
+  },
+  {
+    "canonical": "Functional Ability Assessments",
+    "synonyms": [
+      "Functional abilities assessment",
+      "Functional assessments",
+      "Physical examinations",
+      "Physical performance measures",
+      "physical performance measures"
+    ]
+  },
+  {
+    "canonical": "Functional Genomics",
+    "synonyms": [
+      "Functional genomics"
+    ]
+  },
+  {
+    "canonical": "Functional MRI (fMRI)",
+    "synonyms": [
+      "Functional MRI (resting-state and task-based)",
+      "Imaging - fMRI",
+      "MRI (fMRI",
+      "fMRI",
+      "rs-fMRI"
+    ]
+  },
+  {
+    "canonical": "Gene Expression",
+    "synonyms": [
+      "Brain gene expression data",
+      "Cell-type-specific gene expression",
+      "Expression data",
+      "Gene Expression",
+      "Gene Expression from Blood",
+      "Gene expression",
+      "Gene expression profiles",
+      "Gene expression profiling",
+      "Neuritic transcriptome",
+      "RNA expression profiling",
+      "Temporal Cortex Gene Expression"
+    ]
+  },
+  {
+    "canonical": "Genetic Data",
+    "synonyms": [
+      "DNA",
+      "DNA samples",
+      "Genetic Data",
+      "Genetic data",
+      "Genomic DNA",
+      "Genomic data",
+      "Genomics data"
+    ]
+  },
+  {
+    "canonical": "Genetic Data (Consumer, e.g. 23andMe)",
+    "synonyms": [
+      "Genetic data (23andMe partnership)"
+    ]
+  },
+  {
+    "canonical": "Genetics (General)",
+    "synonyms": [
+      "Genetic analysis",
+      "Genetic profiling",
+      "Genetics",
+      "Genomics",
+      "Genomics - DNA",
+      "genetics"
+    ]
+  },
+  {
+    "canonical": "Genome-Wide Association Study (GWAS)",
+    "synonyms": [
+      "GWAS",
+      "GWAS data",
+      "Genetic - GWAS",
+      "Genome-Wide Association Study (GWAS)",
+      "Genome-wide association data"
+    ]
+  },
+  {
+    "canonical": "Genomic Variants",
+    "synonyms": [
+      "Genomic Variants",
+      "Genomic variants"
+    ]
+  },
+  {
+    "canonical": "Gluconeogenesis Metabolite Profiling",
+    "synonyms": [
+      "Gluconeogenesis metabolites"
+    ]
+  },
+  {
+    "canonical": "Health Assessments (General)",
+    "synonyms": [
+      "Health assessments"
+    ]
+  },
+  {
+    "canonical": "Healthcare Utilization",
+    "synonyms": [
+      "Electronic health records",
+      "Health records linkage",
+      "Health service use data",
+      "Healthcare resource use",
+      "Healthcare resource utilization",
+      "Healthcare utilization",
+      "Hospital admissions",
+      "Linked health records",
+      "Medical imaging repository",
+      "Patient and caregiver resource use",
+      "Registry data",
+      "Resource utilization"
+    ]
+  },
+  {
+    "canonical": "Histochemistry",
+    "synonyms": [
+      "Histochemistry"
+    ]
+  },
+  {
+    "canonical": "Histone Modification Profiling",
+    "synonyms": [
+      "Cell type-specific histone acetylation profiling",
+      "Histone modification profiling",
+      "Histone modifications"
+    ]
+  },
+  {
+    "canonical": "Immunoassay",
+    "synonyms": [
+      "ELISA biochemical measures",
+      "Immunoassay",
+      "Immunoassay data"
+    ]
+  },
+  {
+    "canonical": "Immunohistochemistry",
+    "synonyms": [
+      "Immunohistochemistry"
+    ]
+  },
+  {
+    "canonical": "Immunological Markers",
+    "synonyms": [
+      "Autoantibody profiling",
+      "Blood-based autoantibodies",
+      "Immunological",
+      "Immunological markers"
+    ]
+  },
+  {
+    "canonical": "Joint Variant Calling",
+    "synonyms": [
+      "Joint Variant Calls"
+    ]
+  },
+  {
+    "canonical": "Ketone Body Profiling",
+    "synonyms": [
+      "Ketone bodies"
+    ]
+  },
+  {
+    "canonical": "Laboratory Biomarkers",
+    "synonyms": [
+      "Blood chemistry",
+      "Laboratory biomarkers",
+      "Laboratory tests",
+      "laboratory biomarkers"
+    ]
+  },
+  {
+    "canonical": "Lifestyle Factors",
+    "synonyms": [
+      "Environmental",
+      "Environmental exposures",
+      "Envitonment",
+      "Health behaviors",
+      "Lifestyle and behavioral data",
+      "Lifestyle data",
+      "Lifestyle factors",
+      "Lifestyle risk factors",
+      "Military service history",
+      "Occupational cohort",
+      "lifestyle"
+    ]
+  },
+  {
+    "canonical": "Lipidomics",
+    "synonyms": [
+      "Lipidomics",
+      "Lipoprotein subclass profiling"
+    ]
+  },
+  {
+    "canonical": "Liver Tissue Samples",
+    "synonyms": [
+      "Liver Tissue"
+    ]
+  },
+  {
+    "canonical": "Long-Read RNA Sequencing",
+    "synonyms": [
+      "Long Read RNA Sequencing",
+      "long read sequencing"
+    ]
+  },
+  {
+    "canonical": "Long-read Whole Genome Sequencing",
+    "synonyms": [
+      "Long-read whole-genome sequencing"
+    ]
+  },
+  {
+    "canonical": "Longitudinal Cognitive Assessment",
+    "synonyms": [
+      "Longitudinal cognitive assessment",
+      "Longitudinal motor assessments"
+    ]
+  },
+  {
+    "canonical": "Longitudinal Study Design",
+    "synonyms": [
+      "Longitudinal",
+      "Longitudinal assessments",
+      "Longitudinal clinical assessments",
+      "Longitudinal clinical records",
+      "Longitudinal follow-up",
+      "Longitudinal follow-up (60+ years)",
+      "Longitudinal monitoring",
+      "Longitudinal outcome measures",
+      "Synthetic longitudinal data including demographic data",
+      "longitudinal"
+    ]
+  },
+  {
+    "canonical": "MRI (General)",
+    "synonyms": [
+      "Brain imaging",
+      "Imaging - MRI",
+      "MR imaging",
+      "MRI",
+      "MRI (1.5T/3T)",
+      "MRI brain imaging"
+    ]
+  },
+  {
+    "canonical": "Magnetoencephalography (MEG)",
+    "synonyms": [
+      "Magnetoencephalography (MEG)"
+    ]
+  },
+  {
+    "canonical": "Mass Spectrometry Proteomics",
+    "synonyms": [
+      "Mass Spectrometry Proteomics",
+      "Mass spectrometry",
+      "Mass spectrometry proteomics"
+    ]
+  },
+  {
+    "canonical": "Medical Imaging (General)",
+    "synonyms": [
+      "Imaging",
+      "Imaging data",
+      "Neuroimaging",
+      "imaging"
+    ]
+  },
+  {
+    "canonical": "Metabolomics (General)",
+    "synonyms": [
+      "Metabolomic data",
+      "Metabolomic profiling",
+      "Metabolomics",
+      "Metabolomics (targeted and untargeted)",
+      "metabolomics"
+    ]
+  },
+  {
+    "canonical": "Metabolon HD4 Platform",
+    "synonyms": [
+      "Metabolon HD4 platform",
+      "Serum metabolites measured using Biocrates MxP\u00ae Quant 500 kit"
+    ]
+  },
+  {
+    "canonical": "Mini-Mental State Examination (MMSE)",
+    "synonyms": [
+      "MMSE questionnaire",
+      "Mini-Mental State Examination (MMSE)"
+    ]
+  },
+  {
+    "canonical": "Mis-splicing Analysis",
+    "synonyms": [
+      "Mis-splicing analysis"
+    ]
+  },
+  {
+    "canonical": "Mitochondrial DNA Analysis",
+    "synonyms": [
+      "Mitochondrial DNA Analysis",
+      "Mitochondrial variants"
+    ]
+  },
+  {
+    "canonical": "Molecular Profiling (General)",
+    "synonyms": [
+      "Molecular pathways",
+      "Molecular profiling",
+      "Multi-omics data"
+    ]
+  },
+  {
+    "canonical": "Motor Assessments",
+    "synonyms": [
+      "Motor assessments",
+      "Motor testing",
+      "Motor/non-motor symptoms",
+      "Sensory and motor tests"
+    ]
+  },
+  {
+    "canonical": "Multi-cohort Collaborative Data",
+    "synonyms": [
+      "Collaborative resource",
+      "Connectome analysis",
+      "Multi-cohort federated data",
+      "Multi-team collaborative data",
+      "Open science resources"
+    ]
+  },
+  {
+    "canonical": "Multiome (RNA + Chromatin Accessibility)",
+    "synonyms": [
+      "Multiome (gene expression and chromatin accessibility)",
+      "Multiome profiling"
+    ]
+  },
+  {
+    "canonical": "Multiplexed Genomics",
+    "synonyms": [
+      "Multiplexed genomics"
+    ]
+  },
+  {
+    "canonical": "NACC Uniform Dataset",
+    "synonyms": [
+      "NACC Uniform Dataset V3"
+    ]
+  },
+  {
+    "canonical": "NIA-Reagan Criteria",
+    "synonyms": [
+      "NIA-Reagan scores"
+    ]
+  },
+  {
+    "canonical": "NMR Metabolomics",
+    "synonyms": [
+      "NMR Metabolomics",
+      "NMR metabolomics"
+    ]
+  },
+  {
+    "canonical": "NPI Questionnaire",
+    "synonyms": [
+      "NPI questionnaire"
+    ]
+  },
+  {
+    "canonical": "Neuro-immune Interaction Studies",
+    "synonyms": [
+      "Neuro-immune interactions"
+    ]
+  },
+  {
+    "canonical": "Neurological Examination",
+    "synonyms": [
+      "Autonomic testing",
+      "Neurological Evaluations",
+      "Neurological examination",
+      "Neurological examinations"
+    ]
+  },
+  {
+    "canonical": "Neuropathology",
+    "synonyms": [
+      "Neuropathological assessments",
+      "Neuropathological data",
+      "Neuropathological evaluation",
+      "Neuropathological evaluations",
+      "Neuropathological measures",
+      "Neuropathology",
+      "Pathological evaluations",
+      "Pathological measurements",
+      "neuropahtology",
+      "neuropathology",
+      "pathological quantifications"
+    ]
+  },
+  {
+    "canonical": "Next-Generation Sequencing (NGS)",
+    "synonyms": [
+      "Genetic - NGS",
+      "High-throughput sequencing",
+      "Next-Generation Sequencing",
+      "Next-generation sequencing"
+    ]
+  },
+  {
+    "canonical": "Non-communicable Disease Assessment",
+    "synonyms": [
+      "Non-communicable disease assessments"
+    ]
+  },
+  {
+    "canonical": "Nucleus Hashing",
+    "synonyms": [
+      "Nucleus hashing"
+    ]
+  },
+  {
+    "canonical": "Ophthalmology Data",
+    "synonyms": [
+      "Ophthalmology data"
+    ]
+  },
+  {
+    "canonical": "Other",
+    "synonyms": [
+      "Other",
+      "Therapeutic"
+    ]
+  },
+  {
+    "canonical": "PCR-based Assays",
+    "synonyms": [
+      "PCR sequencing",
+      "qPCR gene expression",
+      "qRT-PCR validation"
+    ]
+  },
+  {
+    "canonical": "PET Imaging (General)",
+    "synonyms": [
+      "Imaging - PET",
+      "PET",
+      "PET imaging"
+    ]
+  },
+  {
+    "canonical": "PLAC-seq",
+    "synonyms": [
+      "PLAC-seq"
+    ]
+  },
+  {
+    "canonical": "Patient-reported Outcomes",
+    "synonyms": [
+      "Health questionnaires",
+      "Patient-reported outcomes",
+      "Questionnaires and surveys"
+    ]
+  },
+  {
+    "canonical": "Peripheral Blood Mononuclear Cells (PBMCs)",
+    "synonyms": [
+      "Peripheral blood mononuclear cells",
+      "Peripheral blood mononuclear cells (PBMCs)"
+    ]
+  },
+  {
+    "canonical": "Pharmacokinetics",
+    "synonyms": [
+      "Pharmacokinetics"
+    ]
+  },
+  {
+    "canonical": "Plasma Biomarkers",
+    "synonyms": [
+      "Plasma biomarkers"
+    ]
+  },
+  {
+    "canonical": "Plasma Proteomics",
+    "synonyms": [
+      "Plasma proteomics"
+    ]
+  },
+  {
+    "canonical": "Plasma p-tau",
+    "synonyms": [
+      "p-tau 181",
+      "p-tau 217)"
+    ]
+  },
+  {
+    "canonical": "Population Cohort",
+    "synonyms": [
+      "Population cohort",
+      "Population-based assessments"
+    ]
+  },
+  {
+    "canonical": "Population Genetics",
+    "synonyms": [
+      "Ancestry analysis",
+      "Population genetics"
+    ]
+  },
+  {
+    "canonical": "Population-specific Cohort Focus",
+    "synonyms": [
+      "Asian-American population focus",
+      "Mexican population"
+    ]
+  },
+  {
+    "canonical": "Proteomics (General)",
+    "synonyms": [
+      "Enhancer-promoter interaction maps",
+      "Label-free proteome analysis",
+      "Multi-platform protein measurements",
+      "Protein microarray",
+      "Proteomic",
+      "Proteomic data",
+      "Proteomic profiling",
+      "Proteomic/Metabolomic",
+      "Proteomics",
+      "Proteomics - temporal profiling",
+      "Proteomics profiling",
+      "Spatial proteomics profiling"
+    ]
+  },
+  {
+    "canonical": "Quality Control Data",
+    "synonyms": [
+      "Quality control data"
+    ]
+  },
+  {
+    "canonical": "Quality of Life",
+    "synonyms": [
+      "Health-related quality of life",
+      "Patient and caregiver health-related quality of life",
+      "Quality of Life",
+      "Quality of life",
+      "Quality of life measures"
+    ]
+  },
+  {
+    "canonical": "RNA (General)",
+    "synonyms": [
+      "RNA"
+    ]
+  },
+  {
+    "canonical": "RNA Sequencing (RNA-seq)",
+    "synonyms": [
+      "RNA Sequencing",
+      "RNA sequencing",
+      "RNA-Seq",
+      "RNA-seq",
+      "RNA-sequencing",
+      "Transcriptomics (RNA-Seq)",
+      "Transcriptomics (RNA-seq)",
+      "mRNA Sequencing"
+    ]
+  },
+  {
+    "canonical": "RUD Questionnaire",
+    "synonyms": [
+      "RUD questionnaire"
+    ]
+  },
+  {
+    "canonical": "Retinal Imaging",
+    "synonyms": [
+      "Retinal imaging"
+    ]
+  },
+  {
+    "canonical": "Ribosome Sequencing",
+    "synonyms": [
+      "Ribosome Sequencing"
+    ]
+  },
+  {
+    "canonical": "Risk Factor Assessment",
+    "synonyms": [
+      "Risk Scores",
+      "Risk factors assessment"
+    ]
+  },
+  {
+    "canonical": "SNP Genotyping",
+    "synonyms": [
+      "Genetic variation (Illumina GSA)",
+      "Genomics (SNP genotyping)",
+      "Genotyping",
+      "Genotyping SNP Array",
+      "Illumina Global Diversity Array backbone",
+      "NeuroBooster array genotyping",
+      "SNP Array",
+      "SNP array",
+      "SNP genotyping",
+      "Targeted Genotyping",
+      "array genotyping"
+    ]
+  },
+  {
+    "canonical": "Seizure Frequency Diaries",
+    "synonyms": [
+      "Seizure Frequency Diaries"
+    ]
+  },
+  {
+    "canonical": "Self-reported Health Data",
+    "synonyms": [
+      "Self-reported health data"
+    ]
+  },
+  {
+    "canonical": "Serum Biomarkers",
+    "synonyms": [
+      "Serum biomarkers"
+    ]
+  },
+  {
+    "canonical": "Serum Proteomics",
+    "synonyms": [
+      "Serum proteomics"
+    ]
+  },
+  {
+    "canonical": "Short-Read RNA Sequencing",
+    "synonyms": [
+      "Short-Read RNA Sequencing"
+    ]
+  },
+  {
+    "canonical": "Short-read Whole Genome Sequencing",
+    "synonyms": [
+      "Short-read whole-genome sequencing"
+    ]
+  },
+  {
+    "canonical": "Single-cell RNA Sequencing (scRNA-seq)",
+    "synonyms": [
+      "Single Cell RNA Sequencing",
+      "Single cell RNA sequencing",
+      "Single-cell RNA sequencing",
+      "Single-cell microglia transcriptomics",
+      "Single-cell transcriptomics",
+      "Transcriptomics - single cell RNAseq",
+      "single cell transcriptomics"
+    ]
+  },
+  {
+    "canonical": "Single-cell Whole Genome Sequencing",
+    "synonyms": [
+      "Single-cell WGS",
+      "Single-neuron WGS"
+    ]
+  },
+  {
+    "canonical": "Single-nucleus ATAC Sequencing (snATAC-seq)",
+    "synonyms": [
+      "Single nucleus ATAC-sequencing (snATAC-seq)",
+      "Single-cell ATAC Sequencing",
+      "Single-nucleus ATAC sequencing"
+    ]
+  },
+  {
+    "canonical": "Single-nucleus RNA Sequencing (snRNA-seq)",
+    "synonyms": [
+      "Single nuclear RNA sequencing",
+      "Single nucleus RNA sequencing",
+      "Single nucleus RNA-sequencing (snRNA-seq)",
+      "Single-nucleus RNA sequencing",
+      "Single-nucleus RNA sequencing (snRNA-seq)",
+      "Single-nucleus RNA sequencing (snRNAseq)",
+      "Single-nucleus RNA-seq"
+    ]
+  },
+  {
+    "canonical": "Sleep Studies",
+    "synonyms": [
+      "Sleep studies"
+    ]
+  },
+  {
+    "canonical": "Small RNA Sequencing",
+    "synonyms": [
+      "Small RNA Sequencing",
+      "Small RNA sequencing"
+    ]
+  },
+  {
+    "canonical": "Social/Economic Factors",
+    "synonyms": [
+      "Cost data",
+      "Economic data",
+      "Economic factors",
+      "Health Economics",
+      "Medical costs",
+      "Social determinants",
+      "Social factors",
+      "Socio-economic indicators"
+    ]
+  },
+  {
+    "canonical": "SomaScan Plasma Proteomics",
+    "synonyms": [
+      "SomaScan 7K plasma proteomics",
+      "SomaScan assays"
+    ]
+  },
+  {
+    "canonical": "Structural MRI",
+    "synonyms": [
+      "Structural MRI",
+      "Structural MRI (T1",
+      "T1-weighted)",
+      "T2*"
+    ]
+  },
+  {
+    "canonical": "Structural Variant Analysis",
+    "synonyms": [
+      "Structural Variant Calls",
+      "Structural variant analysis",
+      "Structural variant calls"
+    ]
+  },
+  {
+    "canonical": "Synthetic Data (General)",
+    "synonyms": [
+      "Synthetic"
+    ]
+  },
+  {
+    "canonical": "T1-weighted MRI",
+    "synonyms": [
+      "Imaging - T1W"
+    ]
+  },
+  {
+    "canonical": "TMT Proteomics",
+    "synonyms": [
+      "TMT proteomics"
+    ]
+  },
+  {
+    "canonical": "TRA Recombination Sequencing",
+    "synonyms": [
+      "TRA Recombination Reads"
+    ]
+  },
+  {
+    "canonical": "Targeted Bisulfite Sequencing",
+    "synonyms": [
+      "Targeted bisulfite sequencing"
+    ]
+  },
+  {
+    "canonical": "Targeted Lipidomics",
+    "synonyms": [
+      "Targeted lipidomics"
+    ]
+  },
+  {
+    "canonical": "Targeted Metabolomics",
+    "synonyms": [
+      "Targeted metabolomics"
+    ]
+  },
+  {
+    "canonical": "Targeted Proteomics (Olink)",
+    "synonyms": [
+      "Targeted proteomics (Olink)"
+    ]
+  },
+  {
+    "canonical": "Tau ELISA",
+    "synonyms": [
+      "Tau ELISA"
+    ]
+  },
+  {
+    "canonical": "Tau-PET",
+    "synonyms": [
+      "Tau-PET",
+      "Tau-PET (AV-1451)"
+    ]
+  },
+  {
+    "canonical": "Transcriptomics (General)",
+    "synonyms": [
+      "Blood microRNA profiling",
+      "Brain tissue RNA-seq",
+      "Brain tissue transcriptomics",
+      "Brain tissue transcriptomics (bulk tissue)",
+      "Multi-omics brain tissue data",
+      "Non-coding RNA profiling",
+      "Plasma microRNA expression profiling",
+      "RNA-binding protein networks",
+      "RNA-sequencing of iPSC-derived cerebral organoids",
+      "Transcriptomics",
+      "Whole blood RNA-seq",
+      "Whole transcriptome RNA sequencing",
+      "microRNA expression profiling"
+    ]
+  },
+  {
+    "canonical": "Transposable Element Analysis",
+    "synonyms": [
+      "transposable elements"
+    ]
+  },
+  {
+    "canonical": "Untargeted Metabolomics",
+    "synonyms": [
+      "Untargeted Metabolomics",
+      "Untargeted metabolomics",
+      "Untargeted plasma metabolomics"
+    ]
+  },
+  {
+    "canonical": "Untargeted Proteomics",
+    "synonyms": [
+      "Untargeted proteomics"
+    ]
+  },
+  {
+    "canonical": "Voice Assessments",
+    "synonyms": [
+      "Voice assessments"
+    ]
+  },
+  {
+    "canonical": "Wearable Device Data",
+    "synonyms": [
+      "wearables"
+    ]
+  },
+  {
+    "canonical": "Western Blotting",
+    "synonyms": [
+      "Western blotting protein expression analysis"
+    ]
+  },
+  {
+    "canonical": "Whole Exome Sequencing (WES)",
+    "synonyms": [
+      "Exome sequencing",
+      "Whole Exome Sequencing",
+      "Whole exome sequencing"
+    ]
+  },
+  {
+    "canonical": "Whole Genome Microbiome Sequencing",
+    "synonyms": [
+      "Whole genome microbiome sequencing"
+    ]
+  },
+  {
+    "canonical": "Whole Genome Sequencing (WGS)",
+    "synonyms": [
+      "Genetic - WGS",
+      "WGS",
+      "Whole Genome Sequencing",
+      "Whole Genome Sequencing (WGS)",
+      "Whole genome sequencing",
+      "Whole-genome sequencing",
+      "whole genome sequencing"
+    ]
+  },
+  {
+    "canonical": "X-Ray Imaging",
+    "synonyms": [
+      "X-Ray"
+    ]
+  },
+  {
+    "canonical": "ZBI-22 Questionnaire (Caregiver Burden)",
+    "synonyms": [
+      "ZBI-22 questionnaire"
+    ]
+  },
+  {
+    "canonical": "eQTL",
+    "synonyms": [
+      "eQTL"
+    ]
+  },
+  {
+    "canonical": "haQTL",
+    "synonyms": [
+      "haQTL"
+    ]
+  },
+  {
+    "canonical": "iPSC Models",
+    "synonyms": [
+      "3D human brain organoids",
+      "Differentiated neural cell types",
+      "Direct neuronal differentiation",
+      "Human iPSC lines",
+      "Reference iPSC line",
+      "iPSC culture and differentiation",
+      "iPSC lines",
+      "iPSC models"
+    ]
+  },
+  {
+    "canonical": "iPSC-derived Astrocytes",
+    "synonyms": [
+      "iPSC-derived astrocytes"
+    ]
+  },
+  {
+    "canonical": "iPSC-derived Neurons",
+    "synonyms": [
+      "iPSC-derived induced neurons",
+      "iPSC-derived neurons"
+    ]
+  },
+  {
+    "canonical": "pQTL",
+    "synonyms": [
+      "pQTL"
+    ]
+  },
+  {
+    "canonical": "sQTL",
+    "synonyms": [
+      "sQTL"
+    ]
+  },
+  {
+    "canonical": "shRNA Knockdown Screening",
+    "synonyms": [
+      "shRNA knockdown data",
+      "shRNA knockdown screens",
+      "siRNA Knockdown Studies"
+    ]
+  }
+]

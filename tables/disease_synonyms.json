@@ -1,0 +1,786 @@
+[
+  {
+    "canonical": "APOE4 carriers",
+    "synonyms": [
+      "APOE4 carriers"
+    ]
+  },
+  {
+    "canonical": "APOE4 homozygous carriers",
+    "synonyms": [
+      "APOE4 homozygous carriers"
+    ]
+  },
+  {
+    "canonical": "Age-related Cognitive Decline",
+    "synonyms": [
+      "Age-related Cognitive Decline"
+    ]
+  },
+  {
+    "canonical": "Alzheimer's Disease",
+    "synonyms": [
+      "Alzheimer's Disease"
+    ]
+  },
+  {
+    "canonical": "Alzheimer's Disease Prevention",
+    "synonyms": [
+      "Alzheimer's Disease Prevention"
+    ]
+  },
+  {
+    "canonical": "Alzheimer's Disease and Related Dementias (ADRD)",
+    "synonyms": [
+      "ADRD",
+      "Alzheimer's Disease and related dementias (ADRD)"
+    ]
+  },
+  {
+    "canonical": "Alzheimer's Disease subtypes",
+    "synonyms": [
+      "Alzheimer's Disease subtypes"
+    ]
+  },
+  {
+    "canonical": "Alzheimer's Disease with Psychosis",
+    "synonyms": [
+      "Alzheimer's Disease with Psychosis"
+    ]
+  },
+  {
+    "canonical": "Amyloid-positive Cognitively Normal",
+    "synonyms": [
+      "Amyloid-positive Cognitively Normal"
+    ]
+  },
+  {
+    "canonical": "Amyotrophic Lateral Sclerosis (ALS)",
+    "synonyms": [
+      "ALS",
+      "Amyotrohic Lateral Sclerosis",
+      "Amyotrophic Lateral Sclerosis"
+    ]
+  },
+  {
+    "canonical": "Anxiety",
+    "synonyms": [
+      "Anxiety"
+    ]
+  },
+  {
+    "canonical": "Asymptomatic Alzheimer's Disease",
+    "synonyms": [
+      "Asymptomatic Alzheimer's Disease"
+    ]
+  },
+  {
+    "canonical": "Attention-Deficit/Hyperactivity Disorder (ADHD)",
+    "synonyms": [
+      "ADHD"
+    ]
+  },
+  {
+    "canonical": "Atypical Parkinsonism",
+    "synonyms": [
+      "Atypical Parkinsonian Disorders",
+      "Atypical Parkinsonism"
+    ]
+  },
+  {
+    "canonical": "Autism Spectrum Disorder",
+    "synonyms": [
+      "Autism Spectrum Disorder"
+    ]
+  },
+  {
+    "canonical": "Autosomal Dominant Alzheimer's Disease",
+    "synonyms": [
+      "Autosomal Dominant Alzheimer's Disease"
+    ]
+  },
+  {
+    "canonical": "Behavioral variant FTD (bvFTD)",
+    "synonyms": [
+      "Behavioral variant FTD (bvFTD)"
+    ]
+  },
+  {
+    "canonical": "Bipolar Disorder",
+    "synonyms": [
+      "Bipolar Disorder"
+    ]
+  },
+  {
+    "canonical": "Breast Cancer",
+    "synonyms": [
+      "Breast Cancer"
+    ]
+  },
+  {
+    "canonical": "C9orf72-related ALS/FTD",
+    "synonyms": [
+      "C9orf72-related ALS/FTD"
+    ]
+  },
+  {
+    "canonical": "COVID-19",
+    "synonyms": [
+      "COVID-19"
+    ]
+  },
+  {
+    "canonical": "Cardiovascular Disease",
+    "synonyms": [
+      "Cardiovascular Disease"
+    ]
+  },
+  {
+    "canonical": "Cerebral Amyloid Angiopathy (CAA)",
+    "synonyms": [
+      "Cerebral Amyloid Angiopathy"
+    ]
+  },
+  {
+    "canonical": "Cerebrovascular Disorder",
+    "synonyms": [
+      "Cerebrovascular Disorder"
+    ]
+  },
+  {
+    "canonical": "Cerebrovascular Phenotypes",
+    "synonyms": [
+      "Cerebrovascular Phenotypes"
+    ]
+  },
+  {
+    "canonical": "Chronic Traumatic Encephalopathy (CTE)",
+    "synonyms": [
+      "CTE"
+    ]
+  },
+  {
+    "canonical": "Cognitive Aging",
+    "synonyms": [
+      "Cognitive Aging"
+    ]
+  },
+  {
+    "canonical": "Cognitive Decline",
+    "synonyms": [
+      "Cognitive Decline",
+      "Cognitive decline"
+    ]
+  },
+  {
+    "canonical": "Cognitive Impairment",
+    "synonyms": [
+      "Cognitive Impairment"
+    ]
+  },
+  {
+    "canonical": "Cognitive function",
+    "synonyms": [
+      "Cognitive function"
+    ]
+  },
+  {
+    "canonical": "Cognitively Normal Controls",
+    "synonyms": [
+      "Cognitively Normal Controls"
+    ]
+  },
+  {
+    "canonical": "Cognitively Unimpaired Controls",
+    "synonyms": [
+      "Cognitively Unimpaired Controls"
+    ]
+  },
+  {
+    "canonical": "Controls (Non-AD Brain Pathology)",
+    "synonyms": [
+      "Controls (Non-AD Brain Pathology)"
+    ]
+  },
+  {
+    "canonical": "Controls (global populations)",
+    "synonyms": [
+      "Controls (global populations)"
+    ]
+  },
+  {
+    "canonical": "Corticobasal Degeneration (CBD)",
+    "synonyms": [
+      "CBD",
+      "Corticobasal Degeneration",
+      "Corticobasal Degeneration Disorder"
+    ]
+  },
+  {
+    "canonical": "Dementia with Lewy Bodies",
+    "synonyms": [
+      "Dementia with Lewy Bodies"
+    ]
+  },
+  {
+    "canonical": "Depression",
+    "synonyms": [
+      "Depression"
+    ]
+  },
+  {
+    "canonical": "Diabetes",
+    "synonyms": [
+      "Diabetes"
+    ]
+  },
+  {
+    "canonical": "Dissociative Seizures",
+    "synonyms": [
+      "Dissociative Seizures"
+    ]
+  },
+  {
+    "canonical": "Down Syndrome",
+    "synonyms": [
+      "Down Syndrome",
+      "Down Syndrome (Trisomy 21)",
+      "Down syndrome"
+    ]
+  },
+  {
+    "canonical": "Early Mild Cognitive Impairment",
+    "synonyms": [
+      "Early Mild Cognitive Impairment"
+    ]
+  },
+  {
+    "canonical": "Early Parkinson's Disease",
+    "synonyms": [
+      "Early Parkinson's Disease"
+    ]
+  },
+  {
+    "canonical": "Early-onset Alzheimer's Disease",
+    "synonyms": [
+      "Early-Onset Alzheimer's Disease",
+      "Early-onset Alzheimer's Disease"
+    ]
+  },
+  {
+    "canonical": "Early-onset Parkinson's Disease",
+    "synonyms": [
+      "Early-onset Parkinson's Disease"
+    ]
+  },
+  {
+    "canonical": "Eating Disorders",
+    "synonyms": [
+      "Eating Disorders"
+    ]
+  },
+  {
+    "canonical": "Elevated Brain Amyloid",
+    "synonyms": [
+      "Elevated Brain Amyloid"
+    ]
+  },
+  {
+    "canonical": "Essential Tremor",
+    "synonyms": [
+      "Essential Tremor"
+    ]
+  },
+  {
+    "canonical": "Eye diseases",
+    "synonyms": [
+      "Eye diseases"
+    ]
+  },
+  {
+    "canonical": "Familial Alzheimer's Disease",
+    "synonyms": [
+      "Familial AD",
+      "Familial Alzheimer's Disease"
+    ]
+  },
+  {
+    "canonical": "Familial Parkinson's Disease",
+    "synonyms": [
+      "Familial Parkinson's Disease"
+    ]
+  },
+  {
+    "canonical": "Frontotemporal Dementia (FTD)",
+    "synonyms": [
+      "Frontotemporal Dementia",
+      "Frontotemporal Dementia (FTD)"
+    ]
+  },
+  {
+    "canonical": "Frontotemporal Dementia with TDP-43",
+    "synonyms": [
+      "Frontotemporal Dementia with TDP-43"
+    ]
+  },
+  {
+    "canonical": "Frontotemporal Lobar Degeneration (FTLD)",
+    "synonyms": [
+      "Frontotemporal Lobar Degeneration (FTLD)"
+    ]
+  },
+  {
+    "canonical": "Functional Neurological Disorder",
+    "synonyms": [
+      "Functional Neurological Disorder"
+    ]
+  },
+  {
+    "canonical": "GBA",
+    "synonyms": [
+      "GBA"
+    ]
+  },
+  {
+    "canonical": "GRN",
+    "synonyms": [
+      "GRN"
+    ]
+  },
+  {
+    "canonical": "Genetic FTD (C9orf72",
+    "synonyms": [
+      "Genetic FTD (C9orf72"
+    ]
+  },
+  {
+    "canonical": "Genetic PD",
+    "synonyms": [
+      "Genetic PD"
+    ]
+  },
+  {
+    "canonical": "Genetic PD (LRRK2",
+    "synonyms": [
+      "Genetic PD (LRRK2"
+    ]
+  },
+  {
+    "canonical": "Huntington's Disease",
+    "synonyms": [
+      "Huntington's Disease",
+      "Huntington's disease"
+    ]
+  },
+  {
+    "canonical": "Hypertension",
+    "synonyms": [
+      "Hypertension"
+    ]
+  },
+  {
+    "canonical": "Idiopathic Parkinson's Disease",
+    "synonyms": [
+      "Idiopathic Parkinson's Disease"
+    ]
+  },
+  {
+    "canonical": "LRRK2 Parkinson's Disease",
+    "synonyms": [
+      "LRRK2 Parkinson's Disease"
+    ]
+  },
+  {
+    "canonical": "LRRK2 carriers without PD",
+    "synonyms": [
+      "LRRK2 carriers without PD"
+    ]
+  },
+  {
+    "canonical": "Late Onset Alzheimer's Disease",
+    "synonyms": [
+      "Late Onset Alzheimer's Disease"
+    ]
+  },
+  {
+    "canonical": "Lewy Body Dementia",
+    "synonyms": [
+      "Lewy Body Dementia"
+    ]
+  },
+  {
+    "canonical": "Lewy Body Disease",
+    "synonyms": [
+      "Lewy Body Disease"
+    ]
+  },
+  {
+    "canonical": "MAPT)",
+    "synonyms": [
+      "MAPT)"
+    ]
+  },
+  {
+    "canonical": "Major Depression",
+    "synonyms": [
+      "Major Depression"
+    ]
+  },
+  {
+    "canonical": "Major Depressive Disorder",
+    "synonyms": [
+      "Major Depressive Disorder"
+    ]
+  },
+  {
+    "canonical": "Memory Disorders",
+    "synonyms": [
+      "Memory Disorders"
+    ]
+  },
+  {
+    "canonical": "Menopause-related conditions",
+    "synonyms": [
+      "Menopause-related conditions"
+    ]
+  },
+  {
+    "canonical": "Mild Cognitive Impairment (MCI)",
+    "synonyms": [
+      "Mild Cognitive Impairment",
+      "mild cognitive impairment"
+    ]
+  },
+  {
+    "canonical": "Mild Cognitive Impairment in PD",
+    "synonyms": [
+      "Mild Cognitive Impairment in PD"
+    ]
+  },
+  {
+    "canonical": "Mild cognitive developement",
+    "synonyms": [
+      "Mild cognitive developement"
+    ]
+  },
+  {
+    "canonical": "Mild to Moderate Alzheimer's Disease",
+    "synonyms": [
+      "Mild to Moderate Alzheimer's Disease"
+    ]
+  },
+  {
+    "canonical": "Mixed Dementia",
+    "synonyms": [
+      "Mixed Dementia"
+    ]
+  },
+  {
+    "canonical": "Multiple Sclerosis",
+    "synonyms": [
+      "Multiple Sclerosis"
+    ]
+  },
+  {
+    "canonical": "Multiple System Atrophy (MSA)",
+    "synonyms": [
+      "Multiple System Atrophy"
+    ]
+  },
+  {
+    "canonical": "Multiple age-related conditions",
+    "synonyms": [
+      "Multiple age-related conditions"
+    ]
+  },
+  {
+    "canonical": "Multiple conditions including neurodegenerative diseases",
+    "synonyms": [
+      "Multiple conditions including neurodegenerative diseases"
+    ]
+  },
+  {
+    "canonical": "Multiple health conditions",
+    "synonyms": [
+      "Multiple health conditions"
+    ]
+  },
+  {
+    "canonical": "Multiple neurological conditions",
+    "synonyms": [
+      "Multiple neurological conditions"
+    ]
+  },
+  {
+    "canonical": "Neurodegenerative Disease (General)",
+    "synonyms": [
+      "Multiple Neurodegenerative Conditions",
+      "Multiple Neurodegenerative Diseases",
+      "Neurodegenerative disease",
+      "Neurodegenerative diseases"
+    ]
+  },
+  {
+    "canonical": "Neuropsychiatric Brain Disorders",
+    "synonyms": [
+      "Neuropsychiatric Brain Disorders"
+    ]
+  },
+  {
+    "canonical": "No Cognitive Impairment (Control)",
+    "synonyms": [
+      "No Cognitive Impairment",
+      "No Cognitive Impairment. controls"
+    ]
+  },
+  {
+    "canonical": "No Pathology Controls",
+    "synonyms": [
+      "No Pathology Controls"
+    ]
+  },
+  {
+    "canonical": "Non-Alzheimer's Disease Controls",
+    "synonyms": [
+      "Non-Alzheimer's Disease Controls"
+    ]
+  },
+  {
+    "canonical": "Non-demented Controls",
+    "synonyms": [
+      "Non-demented Controls"
+    ]
+  },
+  {
+    "canonical": "Normal Aging Controls",
+    "synonyms": [
+      "Normal Aging Controls",
+      "Normal aging controls"
+    ]
+  },
+  {
+    "canonical": "Normal Cognition",
+    "synonyms": [
+      "Normal Cognition"
+    ]
+  },
+  {
+    "canonical": "Obsessive-Compulsive Disorder (OCD)",
+    "synonyms": [
+      "OCD"
+    ]
+  },
+  {
+    "canonical": "Osteoarthritis",
+    "synonyms": [
+      "Osteoarthritis"
+    ]
+  },
+  {
+    "canonical": "Osteoporotic Fractures",
+    "synonyms": [
+      "Osteoporotic Fractures"
+    ]
+  },
+  {
+    "canonical": "PD Dementia",
+    "synonyms": [
+      "PD Dementia"
+    ]
+  },
+  {
+    "canonical": "Parkinson's Disease",
+    "synonyms": [
+      "Parkinson's Disease",
+      "Parkinson's disease"
+    ]
+  },
+  {
+    "canonical": "Parkinson's Disease with Lewy Body Dementia",
+    "synonyms": [
+      "Parkinson's Disease with Lewy Body Dementia"
+    ]
+  },
+  {
+    "canonical": "Parkinson's Plus syndromes",
+    "synonyms": [
+      "Parkinson's Plus syndromes"
+    ]
+  },
+  {
+    "canonical": "Parkinsonism",
+    "synonyms": [
+      "Parkinsonism"
+    ]
+  },
+  {
+    "canonical": "Pathologic Aging",
+    "synonyms": [
+      "Pathologic Aging"
+    ]
+  },
+  {
+    "canonical": "Pathologic Alzheimer's Disease",
+    "synonyms": [
+      "Pathologic Alzheimer's Disease"
+    ]
+  },
+  {
+    "canonical": "Pathological Aging",
+    "synonyms": [
+      "Pathological Aging"
+    ]
+  },
+  {
+    "canonical": "Pick's disease",
+    "synonyms": [
+      "Pick's disease"
+    ]
+  },
+  {
+    "canonical": "Post-Traumatic Stress Disorder (PTSD)",
+    "synonyms": [
+      "PTSD"
+    ]
+  },
+  {
+    "canonical": "Preclinical Alzheimer's Disease",
+    "synonyms": [
+      "Preclinical Alzheimer's Disease"
+    ]
+  },
+  {
+    "canonical": "Presymptomatic Mutation Carriers",
+    "synonyms": [
+      "Presymptomatic Mutation Carriers"
+    ]
+  },
+  {
+    "canonical": "Prodromal PD",
+    "synonyms": [
+      "Prodromal PD"
+    ]
+  },
+  {
+    "canonical": "Prodromal Parkinson's Disease",
+    "synonyms": [
+      "Prodromal Parkinson's Disease"
+    ]
+  },
+  {
+    "canonical": "Progressive Supranuclear Palsy (PSP)",
+    "synonyms": [
+      "Progressive Supranuclear Palsy"
+    ]
+  },
+  {
+    "canonical": "Psychiatric Disorders",
+    "synonyms": [
+      "Psychiatric Disorders",
+      "Psychiatric disorders"
+    ]
+  },
+  {
+    "canonical": "Reference cell line for neurodegenerative disease modeling",
+    "synonyms": [
+      "Reference cell line for neurodegenerative disease modeling"
+    ]
+  },
+  {
+    "canonical": "Related Dementias",
+    "synonyms": [
+      "Related Dementias"
+    ]
+  },
+  {
+    "canonical": "SNCA mutations)",
+    "synonyms": [
+      "SNCA mutations)"
+    ]
+  },
+  {
+    "canonical": "Schizophrenia",
+    "synonyms": [
+      "Schizophrenia"
+    ]
+  },
+  {
+    "canonical": "Sleep disorders",
+    "synonyms": [
+      "Sleep disorders"
+    ]
+  },
+  {
+    "canonical": "Spinal Muscular Atrophy",
+    "synonyms": [
+      "Spinal Muscular Atrophy"
+    ]
+  },
+  {
+    "canonical": "Stroke",
+    "synonyms": [
+      "Stroke"
+    ]
+  },
+  {
+    "canonical": "Substance Related Disorder",
+    "synonyms": [
+      "Substance Related Disorder"
+    ]
+  },
+  {
+    "canonical": "Sudden Infant Death Syndrome",
+    "synonyms": [
+      "Sudden Infant Death Syndrome"
+    ]
+  },
+  {
+    "canonical": "Sudden Unexpected Death without Definitive Diagnosis (SWEDD)",
+    "synonyms": [
+      "SWEDD"
+    ]
+  },
+  {
+    "canonical": "Tau pathology",
+    "synonyms": [
+      "Tau pathology"
+    ]
+  },
+  {
+    "canonical": "Tauopathies",
+    "synonyms": [
+      "Tauopathies"
+    ]
+  },
+  {
+    "canonical": "Traumatic Brain Injury",
+    "synonyms": [
+      "Traumatic Brain Injury"
+    ]
+  },
+  {
+    "canonical": "Type 2 Diabetes Mellitus",
+    "synonyms": [
+      "Type 2 Diabetes Mellitus"
+    ]
+  },
+  {
+    "canonical": "Vascular Dementia",
+    "synonyms": [
+      "Vascular Dementia",
+      "Vascular dementia"
+    ]
+  },
+  {
+    "canonical": "Young-onset Dementia",
+    "synonyms": [
+      "Young-onset Dementia"
+    ]
+  },
+  {
+    "canonical": "neuropathology",
+    "synonyms": [
+      "neuropathology"
+    ]
+  }
+]

@@ -28,9 +28,16 @@ export function Facet<T>({
         : raw
           ? [String(raw).trim()]
           : [];
+      // Synonym variants (e.g. "APOE Genotype" / "APOE genotyping") merge into
+      // one chip here — canonicalize before counting, not just at display time,
+      // or they'd show as separate rows with the same-looking label.
+      const seenInRow = new Set<string>();
       for (const v of values) {
         if (!v) continue;
-        m.set(v, (m.get(v) ?? 0) + 1);
+        const canon = spec.canonicalize?.(v) ?? v;
+        if (seenInRow.has(canon)) continue; // don't double-count a resource with 2 raw synonyms of the same concept
+        seenInRow.add(canon);
+        m.set(canon, (m.get(canon) ?? 0) + 1);
       }
     }
     return Array.from(m.entries())

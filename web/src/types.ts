@@ -161,4 +161,12 @@ export interface FacetSpec<T> {
    * carry the underlying value.
    */
   displayLabel?: (value: string) => string;
+  /**
+   * Optional: map a raw value to its canonical/harmonized form (e.g. many
+   * spellings of "Whole Genome Sequencing" -> one chip). Unlike displayLabel,
+   * this changes what gets counted and what selections carry — synonym
+   * variants merge into one chip instead of appearing as separate rows with
+   * the same-looking label.
+   */
+  canonicalize?: (value: string) => string;
 }

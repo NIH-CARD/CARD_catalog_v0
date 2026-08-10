@@ -44,6 +44,16 @@ copy_latest "iNDI_inventory_*"                 cellular_models.tsv      "$TABLES
 HITS_DIR="../tables/hits"
 copy_latest "fair_compliance_log_*.tsv"        fair_compliance.tsv      "$HITS_DIR"
 
+# Synonym tables for harmonized filter chips (static, not timestamped)
+for f in modality_synonyms.json disease_synonyms.json; do
+  if [[ -f "$TABLES_DIR/$f" ]]; then
+    cp "$TABLES_DIR/$f" "$DST_DIR/$f"
+    echo "  $TABLES_DIR/$f -> $DST_DIR/$f"
+  else
+    echo "WARN: $TABLES_DIR/$f not found — skipping" >&2
+  fi
+done
+
 # Logos for the Home page
 mkdir -p public/logos
 for f in ADDI.png card_logo.png stacked_DT.png; do

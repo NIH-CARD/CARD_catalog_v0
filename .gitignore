@@ -69,3 +69,6 @@ tables/cache/
 scrapers/batch_**jsonl
 docs/plans/EUPMC_annotations_anz.ipynb
 tables/table_check.ipynb
+docs/plans/paperclip/experiments/*.log
+docs/plans/paperclip/experiments/*.tsv
+scrapers/.paperclip_validation_cache.json

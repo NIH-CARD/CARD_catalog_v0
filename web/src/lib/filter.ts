@@ -13,7 +13,12 @@ export function matchesFacet<T>(
     : raw
       ? [String(raw).trim()]
       : [];
-  for (const v of values) if (selected.has(v)) return true;
+  // selected holds canonical values when spec.canonicalize is set (see
+  // FacetPanel) — canonicalize each row value the same way before matching,
+  // or a selected chip would only match its own exact raw spelling.
+  for (const v of values) {
+    if (selected.has(spec.canonicalize?.(v) ?? v)) return true;
+  }
   return false;
 }
 
