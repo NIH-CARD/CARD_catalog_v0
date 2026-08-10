@@ -11,7 +11,6 @@ import logging
 import os
 import re
 import sys
-import time
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -19,7 +18,10 @@ import pandas as pd
 from dotenv import load_dotenv
 
 from logging_config import setup_logger, get_default_log_file
-from scrape_publications import _paperclip_cli, _paperclip_cli_raw, _paperclip_slug
+from scrape_publications import (
+    _paperclip_cli, _paperclip_cli_raw, _paperclip_repo_name,
+    _commit_with_retry, _find_stale_doc_ids, _classify_claim,
+)
 
 try:
     load_dotenv()
@@ -72,41 +74,6 @@ def _resolve_doc_id(row: Dict[str, str], sources: str) -> Optional[str]:
     return None
 
 
-STALE_STATUS_RE = re.compile(r'^\s*\[!\]\s+(\S+)')
-
-
-def _find_stale_doc_ids(repo_name: str) -> set:
-    """`repo status` marks claims with unloadable full text distinctly from
-    unverified ones ("[!] <doc_id> ... no loadable full text") — retrying
-    those does nothing, unlike a genuinely still-processing claim."""
-    status_out = _paperclip_cli(repo_name, "repo", "status")
-    stale = set()
-    pending_doc_id = None
-    for line in status_out.splitlines():
-        m = STALE_STATUS_RE.match(line)
-        if m:
-            pending_doc_id = m.group(1)
-        elif pending_doc_id and "no loadable full text" in line:
-            stale.add(pending_doc_id)
-            pending_doc_id = None
-    return stale
-
-
-def _commit_with_retry(repo_name: str, message: str, jobs: int, max_attempts: int = 3) -> str:
-    """paperclip's own commit output tells you to retry on incomplete verification
-    ("Retry the same command. Completed claim checks will be reused.") — do that
-    automatically instead of treating an incomplete round as a real verdict."""
-    out = ""
-    for attempt in range(1, max_attempts + 1):
-        out = _paperclip_cli(repo_name, "repo", "commit", "-m", message[:200], "-j", str(jobs))
-        if "no commit was created" not in out and "remained unresolved" not in out:
-            return out
-        logger.warning(f"[validate] commit for {repo_name} incomplete (attempt {attempt}/{max_attempts}), retrying: {out[:200]}")
-        time.sleep(3)
-    logger.warning(f"[validate] commit for {repo_name} still incomplete after {max_attempts} attempts")
-    return out
-
-
 def validate_group(resource_name: str, rows: List[Dict[str, str]], sources: str, jobs: int,
                     cache: Dict[str, str]) -> List[str]:
     """Validate one resource's rows against paperclip; return a status string per row."""
@@ -134,7 +101,7 @@ def validate_group(resource_name: str, rows: List[Dict[str, str]], sources: str,
     if unique_new_doc_ids:
         existing_repos = {r.get("Paperclip Repo", "") for r in rows if r.get("Paperclip Repo")}
         reuse = len(existing_repos) == 1 and list(existing_repos)[0]
-        repo_name = reuse or f"validate-{_paperclip_slug(resource_name)}"
+        repo_name = reuse or _paperclip_repo_name("validate", resource_name, rows[0].get("Abbreviation", ""))
 
         if not reuse:
             init_out = _paperclip_cli_raw("repo", "init", repo_name, f"Validate: {resource_name}"[:200])
@@ -154,20 +121,12 @@ def validate_group(resource_name: str, rows: List[Dict[str, str]], sources: str,
             claims = []
         verified_map = {c.get("paperclip_doc_id"): c.get("verified") for c in claims}
 
-        stale_doc_ids = _find_stale_doc_ids(repo_name) if any(verified_map.get(d) is None for d in unique_new_doc_ids) else set()
+        stale_doc_ids = _find_stale_doc_ids(repo_name)
         if stale_doc_ids:
             logger.info(f"[validate] '{resource_name}': {len(stale_doc_ids)} doc_id(s) permanently unavailable (no loadable full text), not a verdict")
 
         for doc_id in unique_new_doc_ids:
-            v = verified_map.get(doc_id)
-            if v is True:
-                status = "OK"
-            elif v is False:
-                status = "X"
-            elif doc_id in stale_doc_ids:
-                status = "stale_content"
-            else:
-                status = "not_committed"
+            status = _classify_claim(doc_id, verified_map, stale_doc_ids)
             cache[cache_key(resource_name, doc_id)] = status
 
     statuses = []
@@ -202,7 +161,8 @@ def main():
     logger.info(f"Logging initialized. Log file: {log_file}")
 
     if not os.getenv("PAPERCLIP_API_KEY"):
-        logger.warning("PAPERCLIP_API_KEY not set; paperclip CLI calls will likely fail")
+        logger.warning("PAPERCLIP_API_KEY not set; paperclip CLI calls will fail unless "
+                        "already signed in via `paperclip login`")
 
     try:
         df = pd.read_csv(args.input, sep="\t", dtype=str).fillna("")

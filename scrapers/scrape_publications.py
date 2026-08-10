@@ -15,6 +15,7 @@ import csv
 import io
 import json
 import subprocess
+import hashlib
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 import urllib.parse
@@ -277,31 +278,35 @@ _NOISY_ABBREVIATIONS = frozenset({
     "match", "predict", "select", "prime", "origin", "snap",
 })
 
-def build_search_query_v2(study_name: str, abbreviation: str, diseases: str, data_modalities: str, years: int = 3) -> str:
+def build_search_query_v2(study_name: str, abbreviation: str, diseases: str, data_modalities: str, years: int = 3, target_db: str = "pubmed") -> str:
     """Build informationist-informed PubMed search query.
 
     - Uses [tiab] (Title/Abstract) to avoid false positives from references/affiliations
     - Omits data modality terms (catalog metadata, not PubMed vocabulary)
     - Omits disease terms (were over-restricting results)
     - Skips abbreviations that are common English words (checked against _NOISY_ABBREVIATIONS)
+
+    Args:
+        target_db: "pmc" uses [All Fields] instead of [tiab] — [tiab] restricts PMC to title/abstract too.
     """
     end_date = datetime.now()
     start_date = end_date - timedelta(days=365*years)
     date_range = f"{start_date.strftime('%Y/%m/%d')}:{end_date.strftime('%Y/%m/%d')}"
+    name_tag = "[All Fields]" if target_db == "pmc" else "[tiab]"
 
     logger.debug(f"Building v2 query for study: {study_name}, abbreviation: {abbreviation}")
 
-    # Always include full Resource Name in [tiab] — this is the most precise signal
+    # Always include full Resource Name — this is the most precise signal
     study_terms = []
     if study_name and pd.notna(study_name):
         clean_name = re.sub(r'\s*\([^)]*\)\s*$', '', str(study_name)).strip()
         if clean_name:
-            study_terms.append(f'"{clean_name}"[tiab]')
+            study_terms.append(f'"{clean_name}"{name_tag}')
 
     # Only include abbreviation if it's not a common word
     abbrev_str = str(abbreviation).strip() if pd.notna(abbreviation) else ""
     if abbrev_str and abbrev_str != str(study_name) and abbrev_str.lower() not in _NOISY_ABBREVIATIONS:
-        study_terms.append(f'"{abbrev_str}"[tiab]')
+        study_terms.append(f'"{abbrev_str}"{name_tag}')
     elif abbrev_str and abbrev_str.lower() in _NOISY_ABBREVIATIONS:
         logger.info(f"Skipping noisy abbreviation '{abbrev_str}' (common word)")
 
@@ -315,29 +320,33 @@ def build_search_query_v2(study_name: str, abbreviation: str, diseases: str, dat
     logger.debug(f"Final v2 query: {final_query}")
     return final_query
 
-def build_search_query_v3(study_name: str, abbreviation: str, diseases: str, data_modalities: str, years: int = 3) -> str:
+def build_search_query_v3(study_name: str, abbreviation: str, diseases: str, data_modalities: str, years: int = 3, target_db: str = "pubmed") -> str:
     """Build PubMed search query: v2 (tiab, noisy abbrev filter) + disease terms + modality terms.
 
     - Uses [tiab] like v2 to reduce false positives from references/affiliations
     - Skips noisy abbreviations like v2
     - Adds disease terms AND modality terms like the original query for precision
+
+    Args:
+        target_db: see build_search_query_v2. Disease/modality terms already use [All Fields].
     """
     end_date = datetime.now()
     start_date = end_date - timedelta(days=365*years)
     date_range = f"{start_date.strftime('%Y/%m/%d')}:{end_date.strftime('%Y/%m/%d')}"
+    name_tag = "[All Fields]" if target_db == "pmc" else "[tiab]"
 
     logger.info(f"Building v3 query for study: {study_name}, abbreviation: {abbreviation}")
 
-    # Study terms: [tiab] + noisy abbreviation filter (from v2)
+    # Study terms: noisy abbreviation filter (from v2)
     study_terms = []
     if study_name and pd.notna(study_name):
         clean_name = re.sub(r'\s*\([^)]*\)\s*$', '', str(study_name)).strip()
         if clean_name:
-            study_terms.append(f'"{clean_name}"[tiab]')
+            study_terms.append(f'"{clean_name}"{name_tag}')
 
     abbrev_str = str(abbreviation).strip() if pd.notna(abbreviation) else ""
     if abbrev_str and abbrev_str != str(study_name) and abbrev_str.lower() not in _NOISY_ABBREVIATIONS:
-        study_terms.append(f'"{abbrev_str}"[tiab]')
+        study_terms.append(f'"{abbrev_str}"{name_tag}')
     elif abbrev_str and abbrev_str.lower() in _NOISY_ABBREVIATIONS:
         logger.info(f"Skipping noisy abbreviation '{abbrev_str}' (common word)")
 
@@ -389,6 +398,10 @@ def _load_synonym_lookup() -> dict:
     docs/plans/paperclip/experiments — 49/726 concept tokens got any variant at
     all under the old table). These files are built from and verified against
     every real Diseases/Data-Modality value in the catalog (no fabricated entries).
+
+    Only real `synonyms` become OR-search variants — `canonical` is often an
+    invented umbrella label (e.g. "MRI (General)") not guaranteed to appear
+    verbatim in any paper, so it's a valid lookup key but never an injected variant.
     """
     lookup = {}
     tables_dir = Path(__file__).parent.parent / "tables"
@@ -401,9 +414,12 @@ def _load_synonym_lookup() -> dict:
             logger.warning(f"Could not load {path}: {e}")
             continue
         for g in groups:
-            all_forms = sorted(set(g["synonyms"]) | {g["canonical"]})
-            for form in all_forms:
-                lookup[form.lower()] = all_forms
+            real_forms = sorted(set(g["synonyms"]))
+            if not real_forms:
+                continue
+            for form in real_forms:
+                lookup[form.lower()] = real_forms
+            lookup.setdefault(g["canonical"].lower(), real_forms)
     return lookup
 
 
@@ -419,11 +435,28 @@ _GENERIC_CONCEPT_STOPWORDS = frozenset({
 
 
 def _split_concept_cell(value: str) -> List[str]:
-    """ Split a Diseases/Modality cell into atomic concept strings. """
+    """Split a Diseases/Modality cell into atomic concept strings, without splitting inside parens."""
     if not value or pd.isna(value):
         return []
+    parts = []
+    current = []
+    depth = 0
+    for ch in str(value):
+        if ch == "(":
+            depth += 1
+            current.append(ch)
+        elif ch == ")":
+            depth = max(0, depth - 1)
+            current.append(ch)
+        elif ch in ";," and depth == 0:
+            parts.append("".join(current))
+            current = []
+        else:
+            current.append(ch)
+    parts.append("".join(current))
+
     concepts = []
-    for part in re.split(r"[;,]", str(value)):
+    for part in parts:
         term = part.strip()
         if len(term) < 3 or term.lower() in _GENERIC_CONCEPT_STOPWORDS:
             continue
@@ -448,7 +481,7 @@ def _generate_term_variants(term: str) -> List[str]:
 
 
 def build_search_queries_v4(study_name: str, abbreviation: str, diseases: str, data_modalities: str,
-                             years: float = 3, concepts_per_query: int = 5) -> List[str]:
+                             years: float = 3, concepts_per_query: int = 5, target_db: str = "pubmed") -> List[str]:
     """Build PubMed queries batching disease/modality concepts as OR-groups per study.
 
     Args:
@@ -458,6 +491,7 @@ def build_search_queries_v4(study_name: str, abbreviation: str, diseases: str, d
         data_modalities: Combined Coarse+Granular Data Modality string.
         years: Date range in years to search back from today.
         concepts_per_query: How many concepts to OR together per batched query.
+        target_db: see build_search_query_v2.
 
     Returns:
         Concept-batch (synonym-expanded) queries first, unrestricted base name+date
@@ -467,6 +501,7 @@ def build_search_queries_v4(study_name: str, abbreviation: str, diseases: str, d
     start_date = end_date - timedelta(days=365 * years)
     date_range = f"{start_date.strftime('%Y/%m/%d')}:{end_date.strftime('%Y/%m/%d')}"
     date_clause = f'({date_range}[Date - Publication])'
+    tag = "[All Fields]" if target_db == "pmc" else "[tiab]"
 
     name_terms = []
     if study_name and pd.notna(study_name):
@@ -484,7 +519,7 @@ def build_search_queries_v4(study_name: str, abbreviation: str, diseases: str, d
     if not name_terms:
         logger.warning(f"No usable study name/abbreviation for v4 query on '{study_name}' — skipping")
         return []
-    name_clause = "(" + " OR ".join(f'"{t}"[tiab]' for t in name_terms) + ")"
+    name_clause = "(" + " OR ".join(f'"{t}"{tag}' for t in name_terms) + ")"
 
     concepts = []
     seen_lower = set()
@@ -502,7 +537,7 @@ def build_search_queries_v4(study_name: str, abbreviation: str, diseases: str, d
         variant_terms = []
         for concept in batch:
             variant_terms.extend(_generate_term_variants(concept))
-        concept_clause = "(" + " OR ".join(f'"{v}"[tiab]' for v in sorted(set(variant_terms))) + ")"
+        concept_clause = "(" + " OR ".join(f'"{v}"{tag}' for v in sorted(set(variant_terms))) + ")"
         queries.append(f'{name_clause} AND {concept_clause} AND {date_clause}')
     queries.append(f'{name_clause} AND {date_clause}')  # base query last — see docstring
 
@@ -543,7 +578,7 @@ def _search_pubmed_fanout(study_name: str, abbreviation: str, diseases: str, sea
     See build_search_queries_v4 for why this fans out instead of ANDing every
     facet into a single query.
     """
-    queries = build_search_queries_v4(study_name, abbreviation, diseases, search_data_modalities, years=years)
+    queries = build_search_queries_v4(study_name, abbreviation, diseases, search_data_modalities, years=years, target_db=target_db)
     if not queries:
         return []
 
@@ -677,6 +712,13 @@ def _paperclip_slug(text) -> str:
     return re.sub(r'[^a-z0-9]+', '-', text.lower()).strip('-')[:40] or "resource"
 
 
+def _paperclip_repo_name(prefix: str, study_name: str, abbreviation: str) -> str:
+    """Unique repo name per (study_name, abbreviation) — many rows share an Abbreviation slug."""
+    resource_key = f"{study_name}|{abbreviation}"
+    suffix = hashlib.sha1(resource_key.encode()).hexdigest()[:8]
+    return f"{prefix}-{_paperclip_slug(abbreviation or study_name)}-{suffix}"
+
+
 def _paperclip_cli_raw(*args: str, timeout: int = 90) -> str:
     """Run `paperclip <args>` with no --repo scoping (only for `repo init`)."""
     cmd = ["paperclip", *args]
@@ -706,10 +748,64 @@ def _extract_result_ids(output: str) -> set:
     return ids
 
 
+# Shared by _search_paperclip and validate_with_paperclip.py.
+_STALE_STATUS_RE = re.compile(r'^\s*\[!\]\s+(\S+)')
+
+
+def _find_stale_doc_ids(repo_name: str) -> set:
+    """`repo status` marks claims with unloadable full text distinctly from
+    unverified ones ("[!] <doc_id> ... no loadable full text") — retrying
+    those does nothing, unlike a genuinely still-processing claim."""
+    status_out = _paperclip_cli(repo_name, "repo", "status")
+    stale = set()
+    pending_doc_id = None
+    for line in status_out.splitlines():
+        m = _STALE_STATUS_RE.match(line)
+        if m:
+            pending_doc_id = m.group(1)
+        elif pending_doc_id and "no loadable full text" in line:
+            stale.add(pending_doc_id)
+            pending_doc_id = None
+    return stale
+
+
+def _commit_with_retry(repo_name: str, message: str, jobs: int, max_attempts: int = 3, verify: bool = True) -> str:
+    """paperclip's own commit output tells you to retry on incomplete verification
+    ("Retry the same command. Completed claim checks will be reused.") — do that
+    automatically instead of treating an incomplete round as a real verdict."""
+    args = ["repo", "commit", "-m", message[:200]]
+    if verify:
+        args += ["-j", str(jobs)]
+    else:
+        args.append("--no-verify")
+    out = ""
+    for attempt in range(1, max_attempts + 1):
+        out = _paperclip_cli(repo_name, *args)
+        if "no commit was created" not in out and "remained unresolved" not in out:
+            return out
+        logger.warning(f"[paperclip] commit for {repo_name} incomplete (attempt {attempt}/{max_attempts}), retrying: {out[:200]}")
+        time.sleep(3)
+    logger.warning(f"[paperclip] commit for {repo_name} still incomplete after {max_attempts} attempts")
+    return out
+
+
+def _classify_claim(doc_id: str, verified_map: Dict[str, Optional[bool]], stale_doc_ids: set) -> str:
+    """Classify one doc_id's verification outcome. Checks stale before False — a stale
+    claim's `verified` is also False, so checking False first would misclassify it."""
+    if doc_id in stale_doc_ids:
+        return "stale_content"
+    v = verified_map.get(doc_id)
+    if v is True:
+        return "OK"
+    if v is False:
+        return "X"
+    return "not_committed"
+
+
 def _search_paperclip(study_name: str, abbreviation: str, diseases: str, search_data_modalities: str,
                        years: float = 3, max_turns: int = 35, anthropic_key: Optional[str] = None,
                        sources: str = "pmc,biorxiv,medrxiv,arxiv,trials", skip_verify: bool = False) -> List[Dict]:
-    """Full-text fallback search via the `paperclip` CLI, for resources with zero PubMed title/abstract hits.
+    """Full-text (PMC/bioRxiv/medRxiv/arXiv/trials) search via the `paperclip` CLI and an LLM tool-use loop.
 
     Args:
         years: Unused — kept for signature parity with search_pubmed's other methods.
@@ -724,15 +820,19 @@ def _search_paperclip(study_name: str, abbreviation: str, diseases: str, search_
         logger.error("[paperclip] ANTHROPIC_API_KEY not set; skipping paperclip search")
         return []
     if not os.getenv("PAPERCLIP_API_KEY"):
-        logger.warning("[paperclip] PAPERCLIP_API_KEY not set; paperclip CLI calls will likely fail")
+        logger.warning("[paperclip] PAPERCLIP_API_KEY not set; paperclip CLI calls will fail unless "
+                        "already signed in via `paperclip login`")
 
-    client = Anthropic(api_key=key)
-    repo_name = f"paperclip-{_paperclip_slug(abbreviation or study_name)}"
+    client = Anthropic(api_key=key, max_retries=5)  # default of 2 gives up too fast on a transient error
+    repo_name = _paperclip_repo_name("paperclip", study_name, abbreviation)
 
     init_out = _paperclip_cli_raw("repo", "init", repo_name, f"Fallback search: {study_name}"[:200])
-    logger.debug(f"[paperclip] repo init {repo_name}: {init_out[:200]}")
+    if "already exists" not in init_out and ("ERROR" in init_out or "[error]" in init_out):
+        logger.warning(f"[paperclip] repo init {repo_name} failed unexpectedly: {init_out[:300]}")
+    else:
+        logger.debug(f"[paperclip] repo init {repo_name}: {init_out[:200]}")
 
-    system_prompt = f"""You are investigating whether any published paper (source(s): {sources}) describes or uses data from this catalog resource, which has zero PubMed title/abstract hits under any query-construction method tried so far.
+    system_prompt = f"""You are investigating whether any published paper (source(s): {sources}) describes or uses data from this catalog resource.
 
 Resource Name: {study_name}
 Abbreviation: {abbreviation}
@@ -819,22 +919,26 @@ Hard limit: {max_turns} tool calls total (every search/grep/add counts, not just
         logger.info(f"[paperclip] '{study_name}': no candidates found ({turns} turns, {tool_calls_used} tool calls)")
         return []
 
-    commit_args = ["repo", "commit", "-m", f"{'Candidates (unverified)' if skip_verify else 'Verify candidates'} for {study_name}"[:200]]
-    if skip_verify:
-        commit_args.append("--no-verify")
-    commit_out = _paperclip_cli(repo_name, *commit_args)
+    commit_out = _commit_with_retry(
+        repo_name, f"{'Candidates (unverified)' if skip_verify else 'Verify candidates'} for {study_name}",
+        jobs=8, verify=not skip_verify,
+    )
     logger.debug(f"[paperclip] commit {repo_name}: {commit_out[:300]}")
 
-    if skip_verify:
-        verified_map = {}
-    else:
+    claims_by_doc: Dict[str, List[dict]] = {}  # doc_id -> all claims committed for it (may be >1)
+    stale_doc_ids: set = set()
+    if not skip_verify:
         claims_out = _paperclip_cli(repo_name, "repo", "claims")
         try:
             claims = json.loads(claims_out)
         except (json.JSONDecodeError, TypeError):
             logger.warning(f"[paperclip] '{study_name}': repo claims returned non-JSON output, treating as no verified claims: {claims_out[:200]}")
             claims = []
-        verified_map = {c.get("paperclip_doc_id"): c.get("verified") for c in claims}
+        for c in claims:
+            claims_by_doc.setdefault(c.get("paperclip_doc_id"), []).append(c)
+        stale_doc_ids = _find_stale_doc_ids(repo_name)
+        if stale_doc_ids:
+            logger.info(f"[paperclip] '{study_name}': {len(stale_doc_ids)} doc_id(s) permanently unavailable (no loadable full text), not a verdict")
 
     export_out = _paperclip_cli(repo_name, "repo", "export", "csv")
     try:
@@ -843,11 +947,15 @@ Hard limit: {max_turns} tool calls total (every search/grep/add counts, not just
         logger.warning(f"[paperclip] '{study_name}': repo export csv failed to parse: {e}")
         papers = []
     paper_by_id = {p["paper_id"]: p for p in papers}
-    claim_by_doc = {c["doc_id"]: c for c in added_claims}
+    claims_added_by_doc: Dict[str, List[Dict]] = {}
+    for c in added_claims:
+        claims_added_by_doc.setdefault(c["doc_id"], []).append(c)
 
     def build_row(doc_id, status):
         p = paper_by_id.get(doc_id, {})
-        c = claim_by_doc.get(doc_id, {})
+        doc_added = claims_added_by_doc.get(doc_id, [{}])
+        verified_notes = {rc.get("note") for rc in claims_by_doc.get(doc_id, []) if rc.get("verified") is True}
+        c = next((ac for ac in doc_added if ac.get("claim") in verified_notes), doc_added[0])
         return {
             "PMID": "",
             "DOI": p.get("doi", ""),
@@ -870,21 +978,35 @@ Hard limit: {max_turns} tool calls total (every search/grep/add counts, not just
 
     results = []
     if skip_verify:
-        for c in added_claims:
-            results.append(build_row(c["doc_id"], "PENDING"))
+        for doc_id in claims_added_by_doc:
+            results.append(build_row(doc_id, "PENDING"))
         logger.info(f"[paperclip] '{study_name}': {len(added_claims)} candidates added, verification skipped ({turns} turns, {tool_calls_used} tool calls, repo={repo_name})")
         return results
 
-    n_ok = n_x = n_uncommitted = 0
-    for doc_id, verified in verified_map.items():
-        if verified is not True:
-            n_x += 1 if verified is False else 0
-            n_uncommitted += 1 if verified is None else 0
-            continue
-        n_ok += 1
-        results.append(build_row(doc_id, "OK"))
+    verified_map = {}  # reduce each doc's claims to one tri-state verdict
+    for doc_id, doc_claims in claims_by_doc.items():
+        if any(c.get("verified") is True for c in doc_claims):
+            verified_map[doc_id] = True
+        elif any(c.get("verified") is False for c in doc_claims):
+            verified_map[doc_id] = False
+        else:
+            verified_map[doc_id] = None
 
-    logger.info(f"[paperclip] '{study_name}': {len(added_claims)} candidates added, {n_ok} verified OK, {n_x} X, {n_uncommitted} not committed ({turns} turns, {tool_calls_used} tool calls, repo={repo_name})")
+    n_ok = n_x = n_stale = n_uncommitted = 0
+    for doc_id in claims_added_by_doc:
+        status = _classify_claim(doc_id, verified_map, stale_doc_ids)
+        if status == "OK":
+            n_ok += 1
+            results.append(build_row(doc_id, "OK"))
+        elif status == "X":
+            n_x += 1
+        elif status == "stale_content":
+            n_stale += 1
+        else:
+            n_uncommitted += 1
+
+    logger.info(f"[paperclip] '{study_name}': {len(added_claims)} candidates added, {n_ok} verified OK, {n_x} X, "
+                f"{n_stale} stale, {n_uncommitted} not committed ({turns} turns, {tool_calls_used} tool calls, repo={repo_name})")
     return results
 
 
@@ -922,7 +1044,7 @@ def _generate_pmc_queries(study_name: str, abbreviation: str, diseases: str, sea
         logger.error("[v5] ANTHROPIC_API_KEY not set; skipping v5 query generation")
         return []
 
-    client = Anthropic(api_key=key)
+    client = Anthropic(api_key=key, max_retries=5)  # default of 2 gives up too fast on a transient error
     prompt = f"""Generate full-text search queries (up to {max_queries}) to find PMC (PubMed Central) papers that describe or use data from this catalog resource:
 
 Resource Name: {study_name}
@@ -970,6 +1092,9 @@ def _fetch_pmc_summaries(pmcids: List[str], ncbi_api_key_suffix: str) -> List[Di
             result = response.json().get("result", {})
             for uid in result.get("uids", []):
                 doc = result.get(uid, {})
+                if doc.get("error") or not doc.get("title"):
+                    logger.debug(f"[pmc] esummary has no usable record for PMC{uid}: {doc.get('error', 'blank title')}")
+                    continue
                 article_ids = {a.get("idtype"): a.get("value") for a in doc.get("articleids", [])}
                 authors = "; ".join(a.get("name", "") for a in doc.get("authors", []) if a.get("authtype") == "Author")
                 results.append({
@@ -1063,9 +1188,9 @@ def search_pubmed(study_name: str, abbreviation: str, diseases: str, search_data
 
     # Build search query
     if query_method == "v2":
-        query = build_search_query_v2(study_name, abbreviation, diseases, search_data_modalities, years=years)
+        query = build_search_query_v2(study_name, abbreviation, diseases, search_data_modalities, years=years, target_db=target_db)
     elif query_method == "v3":
-        query = build_search_query_v3(study_name, abbreviation, diseases, search_data_modalities, years=years)
+        query = build_search_query_v3(study_name, abbreviation, diseases, search_data_modalities, years=years, target_db=target_db)
     else:
         query = build_search_query(study_name, abbreviation, diseases, search_data_modalities, years=years)
 
