@@ -45,14 +45,26 @@ def mask_api_key(text: str) -> str:
     return re.sub(r'api_key=[^&\s]+', 'api_key=***', text)
 
 def search_pubmed_with_retry(url: str, max_retries: int = 3, base_delay: int = 60) -> Optional[requests.Response]:
-    """Make a request to PubMed API with exponential backoff retry logic"""
+    """Make a request to PubMed API with exponential backoff retry logic.
+
+    Uses POST instead of GET when the URL is long (NCBI's own recommendation for
+    long esearch queries — v4's synonym-expanded OR-clauses can otherwise exceed
+    server URL-length limits and 414). Non-retryable client errors (4xx other than
+    429) fail fast instead of burning the full backoff on a request that's
+    identical, and therefore doomed, on every retry.
+    """
     logged_url = mask_api_key(url)
     logger.info(f"Fetching URL: {logged_url}")
+    use_post = len(url) > 2000
+    if use_post:
+        base_url, _, query_string = url.partition("?")
+        post_params = dict(urllib.parse.parse_qsl(query_string))
     for attempt in range(max_retries):
         try:
             logger.debug(f"Attempt {attempt + 1}/{max_retries}, sleeping 1 second for rate limiting")
             time.sleep(0.1)  # Rate limiting: minimum 0.1 second between requests
-            response = requests.get(url, timeout=30)
+            response = requests.post(base_url, data=post_params, timeout=30) if use_post \
+                else requests.get(url, timeout=30)
 
             logger.debug(f"Response status code: {response.status_code}")
             if response.status_code == 200:
@@ -62,6 +74,9 @@ def search_pubmed_with_retry(url: str, max_retries: int = 3, base_delay: int = 6
                 delay = base_delay * (2 ** attempt)
                 logger.warning(f"Rate limited (attempt {attempt + 1}/{max_retries}). Waiting {delay} seconds...")
                 time.sleep(delay)
+            elif 400 <= response.status_code < 500:
+                logger.error(f"Non-retryable client error {response.status_code} for {logged_url}: {response.text[:200]}")
+                return None
             else:
                 response.raise_for_status()
         except requests.exceptions.RequestException as e:
@@ -712,10 +727,12 @@ def _paperclip_slug(text) -> str:
     return re.sub(r'[^a-z0-9]+', '-', text.lower()).strip('-')[:40] or "resource"
 
 
-def _paperclip_repo_name(prefix: str, study_name: str, abbreviation: str) -> str:
-    """Unique repo name per (study_name, abbreviation) — many rows share an Abbreviation slug."""
-    resource_key = f"{study_name}|{abbreviation}"
-    suffix = hashlib.sha1(resource_key.encode()).hexdigest()[:8]
+def _paperclip_repo_name(prefix: str, study_name: str, abbreviation: str, unique_id) -> str:
+    """Repo name unique via caller-supplied unique_id (e.g. inventory row index), not
+    content — confirmed the catalog has genuine duplicate rows sharing identical
+    Resource Name AND Abbreviation, so no content field (or combination) can be
+    trusted to disambiguate rows. unique_id only needs to be unique within one run."""
+    suffix = hashlib.sha1(str(unique_id).encode()).hexdigest()[:8]
     return f"{prefix}-{_paperclip_slug(abbreviation or study_name)}-{suffix}"
 
 
@@ -804,13 +821,15 @@ def _classify_claim(doc_id: str, verified_map: Dict[str, Optional[bool]], stale_
 
 def _search_paperclip(study_name: str, abbreviation: str, diseases: str, search_data_modalities: str,
                        years: float = 3, max_turns: int = 35, anthropic_key: Optional[str] = None,
-                       sources: str = "pmc,biorxiv,medrxiv,arxiv,trials", skip_verify: bool = False) -> List[Dict]:
+                       sources: str = "pmc,biorxiv,medrxiv,arxiv,trials", skip_verify: bool = False,
+                       row_id=None) -> List[Dict]:
     """Full-text (PMC/bioRxiv/medRxiv/arXiv/trials) search via the `paperclip` CLI and an LLM tool-use loop.
 
     Args:
         years: Unused — kept for signature parity with search_pubmed's other methods.
         sources: Comma-separated paperclip -s/--source value(s), e.g. "pmc", "fda,trials/us".
         skip_verify: If True, commit with --no-verify and return all candidates.
+        row_id: Inventory row index, for a guaranteed-unique repo name (see _paperclip_repo_name).
 
     Returns:
         Result dicts filtered to Verification Status == "OK".
@@ -824,7 +843,7 @@ def _search_paperclip(study_name: str, abbreviation: str, diseases: str, search_
                         "already signed in via `paperclip login`")
 
     client = Anthropic(api_key=key, max_retries=5)  # default of 2 gives up too fast on a transient error
-    repo_name = _paperclip_repo_name("paperclip", study_name, abbreviation)
+    repo_name = _paperclip_repo_name("paperclip", study_name, abbreviation, row_id)
 
     init_out = _paperclip_cli_raw("repo", "init", repo_name, f"Fallback search: {study_name}"[:200])
     if "already exists" not in init_out and ("ERROR" in init_out or "[error]" in init_out):
@@ -1172,11 +1191,12 @@ def _search_pmc_v5(study_name: str, abbreviation: str, diseases: str, search_dat
     return results
 
 
-def search_pubmed(study_name: str, abbreviation: str, diseases: str, search_data_modalities: str, max_results: int = 100, ncbi_api_key_suffix: str = "", query_method: str = "original", years: float = 3, paperclip_max_turns: int = 35, anthropic_key: Optional[str] = None, target_db: str = "pubmed", paperclip_sources: str = "pmc,biorxiv,medrxiv,arxiv,trials", paperclip_skip_verify: bool = False) -> List[Dict]:
+def search_pubmed(study_name: str, abbreviation: str, diseases: str, search_data_modalities: str, max_results: int = 100, ncbi_api_key_suffix: str = "", query_method: str = "original", years: float = 3, paperclip_max_turns: int = 35, anthropic_key: Optional[str] = None, target_db: str = "pubmed", paperclip_sources: str = "pmc,biorxiv,medrxiv,arxiv,trials", paperclip_skip_verify: bool = False, row_id=None) -> List[Dict]:
     """Search PubMed for articles related to the study"""
     if query_method == "paperclip":
         return _search_paperclip(study_name, abbreviation, diseases, search_data_modalities,
-                                  years, paperclip_max_turns, anthropic_key, paperclip_sources, paperclip_skip_verify)
+                                  years, paperclip_max_turns, anthropic_key, paperclip_sources, paperclip_skip_verify,
+                                  row_id)
 
     if query_method == "v5":
         return _search_pmc_v5(study_name, abbreviation, diseases, search_data_modalities,
@@ -1338,7 +1358,7 @@ def main():
         search_data_modalities = ", ".join(coarse + granular)
 
         logger.info(f"[{idx+1}/{len(studies_df)}] Searching for publications: {study_name} ({abbreviation})")
-        results = search_pubmed(study_name, abbreviation, diseases, search_data_modalities, args.max_results, ncbi_api_key_suffix, args.query_method, args.years, args.paperclip_max_turns, args.anthropic_key, args.target_db, args.paperclip_sources, args.paperclip_skip_verify)
+        results = search_pubmed(study_name, abbreviation, diseases, search_data_modalities, args.max_results, ncbi_api_key_suffix, args.query_method, args.years, args.paperclip_max_turns, args.anthropic_key, args.target_db, args.paperclip_sources, args.paperclip_skip_verify, idx)
         # For each result, the Coarse and Granular Data Modalities should be included from the from the study metadata
         return [{**r, "Coarse Data Modality": row.get("Coarse Data Modality", ""), "Granular Data Modality": row.get("Granular Data Modality", "")} for r in results]
 

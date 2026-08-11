@@ -1,11 +1,11 @@
 Method,Total rows,Resources covered,Coverage %,Unrecognized resource names
-paperclip_full,1155,235,99.2,0
+paperclip_full_with_doc_ids,1155,235,99.2,0
 v5_pmc_full,21322,233,98.3,0
-q1_pmc_full,6400,132,55.7,0
-q2_pmc_full,3640,115,48.5,0
-q4_pmc_full,3099,115,48.5,0
-q2_pubmed_full,3206,99,41.8,0
-q4_pubmed_full,2438,99,41.8,0
-q1_pubmed_full,2840,95,40.1,0
-q3_pmc_full,1574,76,32.1,0
-q3_pubmed_full,1474,73,30.8,0
+q2_pmc_full,9236,165,69.6,0
+q4_pmc_full,8977,165,69.6,0
+q1_pmc_full,6392,132,55.7,0
+q3_pmc_full,5661,125,52.7,0
+q2_pubmed_full,3205,99,41.8,0
+q4_pubmed_full,2441,99,41.8,0
+q1_pubmed_full,2842,95,40.1,0
+q3_pubmed_full,1475,73,30.8,0

@@ -71,4 +71,6 @@ docs/plans/EUPMC_annotations_anz.ipynb
 tables/table_check.ipynb
 docs/plans/paperclip/experiments/*.log
 docs/plans/paperclip/experiments/*.tsv
+docs/plans/paperclip/validation/*.log
+docs/plans/paperclip/validation/*.tsv
 scrapers/.paperclip_validation_cache.json
