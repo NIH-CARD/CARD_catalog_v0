@@ -154,11 +154,15 @@ def validate_group(resource_name: str, rows: List[Dict[str, str]], sources: str,
 
     if unique_new_doc_ids:
         existing_repos = {r.get("Paperclip Repo", "") for r in rows if r.get("Paperclip Repo")}
-        candidate_reuse = len(existing_repos) == 1 and list(existing_repos)[0]
+        candidate_reuse = list(existing_repos)[0] if len(existing_repos) == 1 else None
         # paperclip repos aren't permanent — confirmed live that repos from an older
         # run can simply be gone. Trusting a dead reuse target skips init+add
         # entirely and silently classifies everything "not_committed".
-        reuse = candidate_reuse and "not found" not in _paperclip_cli(candidate_reuse, "repo", "status")
+        # (Keep candidate_reuse — a string — separate from this boolean check: an
+        # `and`/`or` chain here would collapse repo_name to a bare True/False on
+        # the reuse-valid path instead of preserving the actual repo name string.)
+        can_reuse = bool(candidate_reuse) and "not found" not in _paperclip_cli(candidate_reuse, "repo", "status")
+        reuse = candidate_reuse if can_reuse else None
         # row_id (the groupby position) only guarantees uniqueness within this run —
         # two genuinely different resources sharing an identical Resource Name string
         # are already merged into one group by df.groupby before this function runs,
@@ -168,11 +172,23 @@ def validate_group(resource_name: str, rows: List[Dict[str, str]], sources: str,
         if not reuse:
             init_out = _paperclip_cli_raw("repo", "init", repo_name, f"Validate: {resource_name}"[:200])
             logger.debug(f"[validate] repo init {repo_name}: {init_out[:200]}")
-            claim = _build_claim(resource_name, rows[0], sample_size)
-            for doc_id in unique_new_doc_ids:
-                _paperclip_cli(repo_name, "repo", "add", doc_id, claim)
 
-        commit_out = _commit_with_retry(repo_name, f"Validate {resource_name}", jobs)
+        # Always add, whether reusing or not — a reused repo (e.g. one created by
+        # _search_paperclip's own discovery run) was populated for a different,
+        # usually much smaller candidate set. Assuming "repo exists" means "already
+        # has what we need" silently skipped verifying most of unique_new_doc_ids.
+        # repo add on an already-present doc_id is harmless (adds a second claim,
+        # not an error), so this is safe to run unconditionally.
+        claim = _build_claim(resource_name, rows[0], sample_size)
+        for doc_id in unique_new_doc_ids:
+            _paperclip_cli(repo_name, "repo", "add", doc_id, claim)
+
+        # Large resources can have hundreds of unique docs — a flat -j 8 would need
+        # dozens of rounds to work through them. Paperclip's own CLI docs say
+        # over-shooting the server's per-user cap is safe (429s retried internally),
+        # so scale jobs with the batch size instead of leaving it fixed.
+        effective_jobs = max(jobs, min(len(unique_new_doc_ids), 64))
+        commit_out = _commit_with_retry(repo_name, f"Validate {resource_name}", effective_jobs)
         logger.debug(f"[validate] commit {repo_name}: {commit_out[:300]}")
 
         claims_out = _paperclip_cli(repo_name, "repo", "claims")
@@ -181,7 +197,22 @@ def validate_group(resource_name: str, rows: List[Dict[str, str]], sources: str,
         except (json.JSONDecodeError, TypeError):
             logger.warning(f"[validate] '{resource_name}': repo claims returned non-JSON output: {claims_out[:200]}")
             claims = []
-        verified_map = {c.get("paperclip_doc_id"): c.get("verified") for c in claims}
+        # A reused repo can carry >1 claim per doc_id (this run's own add, plus
+        # whatever a prior process — e.g. _search_paperclip's own discovery —
+        # already committed there). A plain dict comprehension would keep only
+        # the last claim in the array; reduce properly instead so a real True
+        # verdict from either claim isn't silently dropped by a later None/False.
+        claims_by_doc: Dict[str, List[dict]] = {}
+        for c in claims:
+            claims_by_doc.setdefault(c.get("paperclip_doc_id"), []).append(c)
+        verified_map = {}
+        for doc_id, doc_claims in claims_by_doc.items():
+            if any(c.get("verified") is True for c in doc_claims):
+                verified_map[doc_id] = True
+            elif any(c.get("verified") is False for c in doc_claims):
+                verified_map[doc_id] = False
+            else:
+                verified_map[doc_id] = None
 
         stale_doc_ids = _find_stale_doc_ids(repo_name)
         if stale_doc_ids:
@@ -189,7 +220,11 @@ def validate_group(resource_name: str, rows: List[Dict[str, str]], sources: str,
 
         for doc_id in unique_new_doc_ids:
             status = _classify_claim(doc_id, verified_map, stale_doc_ids)
-            cache[cache_key(resource_name, doc_id)] = status
+            # not_committed isn't a real verdict — it means paperclip hasn't
+            # finished checking yet, not that the check came back negative.
+            # Caching it would permanently mask genuine progress on a retry.
+            if status != "not_committed":
+                cache[cache_key(resource_name, doc_id)] = status
 
     statuses = []
     for doc_id in doc_ids:

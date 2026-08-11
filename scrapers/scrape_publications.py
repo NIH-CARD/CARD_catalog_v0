@@ -786,23 +786,48 @@ def _find_stale_doc_ids(repo_name: str) -> set:
     return stale
 
 
-def _commit_with_retry(repo_name: str, message: str, jobs: int, max_attempts: int = 3, verify: bool = True) -> str:
+_UNRESOLVED_RE = re.compile(r'unresolved for (\d+) claim')
+
+
+def _commit_with_retry(repo_name: str, message: str, jobs: int, max_attempts: int = 30,
+                        verify: bool = True, retry_delay: int = 10) -> str:
     """paperclip's own commit output tells you to retry on incomplete verification
     ("Retry the same command. Completed claim checks will be reused.") — do that
-    automatically instead of treating an incomplete round as a real verdict."""
+    automatically instead of treating an incomplete round as a real verdict.
+
+    A large batch (hundreds of claims) can take many rounds to fully verify
+    server-side, so this keeps retrying as long as the unresolved count is
+    actually shrinking, and only gives up early once it plateaus for a few
+    attempts in a row (a real sign of stuck/stale claims, not slow progress).
+    """
     args = ["repo", "commit", "-m", message[:200]]
     if verify:
         args += ["-j", str(jobs)]
     else:
         args.append("--no-verify")
     out = ""
+    last_unresolved = None
+    stalled = 0
     for attempt in range(1, max_attempts + 1):
         out = _paperclip_cli(repo_name, *args)
         if "no commit was created" not in out and "remained unresolved" not in out:
             return out
-        logger.warning(f"[paperclip] commit for {repo_name} incomplete (attempt {attempt}/{max_attempts}), retrying: {out[:200]}")
-        time.sleep(3)
-    logger.warning(f"[paperclip] commit for {repo_name} still incomplete after {max_attempts} attempts")
+        m = _UNRESOLVED_RE.search(out)
+        unresolved = int(m.group(1)) if m else None
+        logger.warning(f"[paperclip] commit for {repo_name} incomplete (attempt {attempt}/{max_attempts}, "
+                        f"{unresolved if unresolved is not None else '?'} unresolved): {out[:200]}")
+        if unresolved is not None and unresolved == last_unresolved:
+            stalled += 1
+            if stalled >= 3:
+                logger.warning(f"[paperclip] commit for {repo_name} stalled at {unresolved} unresolved "
+                                f"for {stalled} attempts in a row — stopping early")
+                break
+        else:
+            stalled = 0
+        last_unresolved = unresolved
+        time.sleep(retry_delay)
+    else:
+        logger.warning(f"[paperclip] commit for {repo_name} still incomplete after {max_attempts} attempts")
     return out
 
 
