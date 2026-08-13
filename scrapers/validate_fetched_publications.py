@@ -230,16 +230,52 @@ def extract_query_context(row: Dict[str, str]) -> str:
     return fetched_with.removeprefix("paperclip:").strip()
 
 
+_QUOTED_TERM_RE = re.compile(r'"([^"]+)"')
+
+
+def _derive_id_patterns(row: Dict[str, str]) -> List[str]:
+    """ID_patterns for retrieve_relevant_content: resource name/abbreviation plus every
+    double-quoted term in the discovery query, each re.escape()'d."""
+    terms = set()
+    name = (row.get("Resource Name") or "").strip()
+    if name:
+        terms.add(name)
+    abbrev = (row.get("Abbreviation") or "").strip()
+    if abbrev:
+        terms.add(abbrev)
+    fetched_with = (row.get("Fetched With") or "").strip()
+    for m in _QUOTED_TERM_RE.finditer(fetched_with):
+        term = m.group(1).strip()
+        if term:
+            terms.add(term)
+    return [re.escape(t) for t in terms]
+
+
+def _extract_reasoning(response) -> str:
+    """Concatenate every reasoning item's text from a Responses API result - the model's own
+    chain-of-thought, distinct from "rationale" (its post-hoc explanation of the verdict)."""
+    texts = []
+    for item in response.output:
+        if getattr(item, "type", None) == "reasoning":
+            for c in getattr(item, "content", None) or []:
+                if getattr(c, "text", None):
+                    texts.append(c.text)
+    return "\n".join(texts)
+
+
 def _parse_final_message(response) -> Optional[dict]:
-    """Pull the first message item's text out of a Responses API result and parse it as JSON."""
+    """Pull the first message item's text out of a Responses API result, parse it as JSON,
+    and attach the model's reasoning trace under "reasoning"."""
     for item in response.output:
         if getattr(item, "type", None) == "message":
             text = item.content[0].text
             try:
-                return json.loads(text)
+                parsed = json.loads(text)
             except json.JSONDecodeError:
                 logger.warning(f"Model returned non-JSON message text: {text[:200]}")
                 return None
+            parsed["reasoning"] = _extract_reasoning(response)
+            return parsed
     return None
 
 
@@ -336,6 +372,67 @@ def prefetch_fulltext(rows_by_url: Dict[str, Dict[str, str]]) -> Dict[str, Any]:
     return content_by_url
 
 
+def prefetch_excerpts(rows_by_resource: List[tuple]) -> Dict[tuple, str]:
+    """Fetch each unique URL once, then run retrieve_relevant_content() single-threaded per
+    (resource_name, url) pair - kept out of the per-resource ThreadPoolExecutor since it
+    mutates shared state on dg.parser that would race under concurrent calls.
+
+    Args:
+        rows_by_resource: (resource_name, url, id_patterns) tuples, one per row.
+
+    Returns:
+        (resource_name, url) -> excerpt text (empty if no ID pattern matched at all).
+    """
+    from data_gatherer.data_gatherer import DataGatherer
+
+    if not rows_by_resource:
+        return {}
+    urls = list({url for _, url, _ in rows_by_resource if url})
+    if not urls:
+        return {}
+    logger.info(f"[excerpt] fetching raw content for {len(urls)} unique URL(s), "
+                f"{len(rows_by_resource)} (resource, doc) pair(s) to extract")
+    dg = DataGatherer(llm_name="vllm-openai/gpt-oss-20b", clear_previous_logs=False, prompt_dir="prompts")
+    local_fetch_file = "tables/hits/fetched_excerpt_raw.tsv"
+    fetched = dg.fetch_data(urls, local_fetch_file=local_fetch_file, write_df_to_path=local_fetch_file)
+
+    excerpt_by_key: Dict[tuple, str] = {}
+    last_format = None
+    for resource_name, url, id_patterns in rows_by_resource:
+        if not url or not id_patterns:
+            continue
+        data = fetched.get(url)
+        if not data:
+            logger.warning(f"[excerpt] could not fetch {url}")
+            continue
+        try:
+            raw_format = data["raw_data_format"]
+            if raw_format != last_format:
+                dg.init_parser_by_input_type(raw_format, data, full_document_read=False)
+                last_format = raw_format
+            excerpt = dg.parser.retrieve_relevant_content(
+                data["fetched_data"],
+                semantic_retrieval=False,
+                top_k=5,
+                output_format="text",
+                skip_rule_based_retrieved_elm=False,
+                include_snippets_with_ID_patterns=True,
+                article_id=dg.data_fetcher.url_to_article_id(url),
+                relevant_content_flag="DAS",
+                ID_patterns=id_patterns,
+            )
+            excerpt_by_key[(resource_name, url)] = excerpt or ""
+        except Exception as e:
+            logger.warning(f"[excerpt] '{resource_name}'/{url}: retrieve_relevant_content failed: {e}")
+
+    n_empty = sum(1 for v in excerpt_by_key.values() if not v.strip())
+    if n_empty:
+        logger.info(f"[excerpt] {n_empty}/{len(excerpt_by_key)} (resource, doc) pair(s) had no "
+                    "ID-pattern match anywhere in the document")
+    logger.info(f"[excerpt] extracted {len(excerpt_by_key)}/{len(rows_by_resource)} (resource, doc) pair(s)")
+    return excerpt_by_key
+
+
 def fetch_abstract_only(doc_id: str) -> str:
     """paperclip's own abstract section - a reasonable fallback since abstracts are short
     enough to rarely hit the ~1.5K char preview cap, used when there's no PMC link/DOI to
@@ -412,8 +509,8 @@ def validate_via_fulltext_dg_prompt(client: OpenAI, resource_name: str, row: Dic
     of a hardcoded Python string - a separate function rather than a drop-in swap so the two
     prompt-loading paths stay comparable against the same held-out cases. Chunk handling
     mirrors validate_via_fulltext (see _best_chunk_verdict). prompt_name selects which JSON
-    template under prompts/validate_fetched_publications/publication_prompts/ to render -
-    every template must accept resource_info/query_context/content/n_queries."""
+    template under prompts/ to render - every template must accept
+    resource_info/query_context/content/n_queries."""
     url = _row_fetch_url(row)
     content = (url_to_content or {}).get(url, "")
     is_full_text = bool(content)
@@ -450,6 +547,40 @@ def validate_via_fulltext_dg_prompt(client: OpenAI, resource_name: str, row: Dic
     parsed = _best_chunk_verdict(results)
     if not is_full_text:
         parsed["rationale"] = "[abstract-only, no full text available] " + parsed.get("rationale", "")
+    return parsed
+
+
+def validate_via_excerpt_dg_prompt(client: OpenAI, resource_name: str, row: Dict[str, str],
+                                    doc_id: str, excerpt_to_content: Dict[tuple, str] = None,
+                                    sample_size: str = "", prompt_name: str = DEFAULT_DG_PROMPT_NAME) -> dict:
+    """Like validate_via_fulltext_dg_prompt, but feeds only the resource-relevant excerpt (see
+    prefetch_excerpts) instead of the whole document. excerpt_to_content is keyed by
+    (resource_name, url), not just url."""
+    url = _row_fetch_url(row)
+    excerpt = (excerpt_to_content or {}).get((resource_name, url), "")
+    if not excerpt.strip():
+        return {"verification_status": "not_confirmed", "claim_text": "n/a",
+                "rationale": "No occurrence of the resource's name, abbreviation, or discovery-query "
+                              "terms found anywhere in the document's full text."}
+
+    resource_info = compose_resource_info(row, sample_size)
+    query_context = extract_query_context(row)
+    n_queries = row.get("Fetched With", "").count(";") + 1
+    static_prompt = _load_dg_static_prompt(prompt_name)
+    messages = _FULLTEXT_PROMPT_MANAGER.render_prompt(
+        static_prompt, entire_doc=False,
+        resource_info=resource_info, query_context=query_context, content=excerpt,
+        n_queries=n_queries,
+    )
+    response = client.responses.create(
+        model=VLLM_MODEL,
+        input=messages,
+        temperature=0.0,
+        text={"format": RESPONSE_FORMAT},
+    )
+    parsed = _parse_final_message(response)
+    if parsed is None:
+        return {"verification_status": "error", "claim_text": "n/a", "rationale": "model returned no parseable message"}
     return parsed
 
 
@@ -627,17 +758,25 @@ METHOD_FUNCS = {
     "agentic_search": validate_via_agentic_search,
     "fulltext": validate_via_fulltext,
     "fulltext_dg_prompt": validate_via_fulltext_dg_prompt,
+    "excerpt_dg_prompt": validate_via_excerpt_dg_prompt,
 }
 
 # Methods whose prompt needs the prefetched full text (vs. agentic_search, which fetches
 # on demand via paperclip grep/search tool calls instead).
 FULLTEXT_METHODS = {"fulltext", "fulltext_dg_prompt"}
+# excerpt_dg_prompt needs the prefetched *excerpt* (see prefetch_excerpts) instead of full text -
+# a different dict, keyed by (resource_name, url) rather than just url.
+EXCERPT_METHODS = {"excerpt_dg_prompt"}
+# Methods whose cache entries are further keyed by which JSON prompt template produced them -
+# switching --dg-prompt-name must not return a stale prompt's cached verdict.
+DG_PROMPT_METHODS = {"fulltext_dg_prompt", "excerpt_dg_prompt"}
 
 
 def validate_group(client: OpenAI, resource_name: str, rows: List[Dict[str, str]], sources: str,
                     methods: List[str], cache: Dict[str, dict], sample_size: str = "",
                     max_turns: int = 12, url_to_content: Dict[str, Any] = None,
-                    dg_prompt_name: str = DEFAULT_DG_PROMPT_NAME) -> List[Dict[str, dict]]:
+                    dg_prompt_name: str = DEFAULT_DG_PROMPT_NAME,
+                    excerpt_to_content: Dict[tuple, str] = None) -> List[Dict[str, dict]]:
     """Validate one resource's rows; return a list (one per row) of {method: {verification_status,
     claim_text, rationale}} dicts."""
     doc_ids = [_resolve_doc_id(row, sources) for row in rows]
@@ -662,10 +801,7 @@ def validate_group(client: OpenAI, resource_name: str, rows: List[Dict[str, str]
     for doc_id in unique_doc_ids:
         per_doc_result[doc_id] = {}
         for method in methods:
-            # fulltext_dg_prompt's cache entries are further keyed by which JSON template
-            # produced them - switching --dg-prompt-name must not return a stale prompt's
-            # cached verdict.
-            cache_method = f"{method}:{dg_prompt_name}" if method == "fulltext_dg_prompt" else method
+            cache_method = f"{method}:{dg_prompt_name}" if method in DG_PROMPT_METHODS else method
             key = cache_key(resource_name, doc_id, cache_method)
             if key in cache:
                 per_doc_result[doc_id][method] = cache[key]
@@ -676,8 +812,10 @@ def validate_group(client: OpenAI, resource_name: str, rows: List[Dict[str, str]
                 kwargs.update(sources=sources, max_turns=max_turns)
             elif method in FULLTEXT_METHODS:
                 kwargs.update(url_to_content=url_to_content)
-                if method == "fulltext_dg_prompt":
-                    kwargs.update(prompt_name=dg_prompt_name)
+            elif method in EXCERPT_METHODS:
+                kwargs.update(excerpt_to_content=excerpt_to_content)
+            if method in DG_PROMPT_METHODS:
+                kwargs.update(prompt_name=dg_prompt_name)
             try:
                 result = fn(client, resource_name, doc_id_to_row[doc_id], doc_id, **kwargs)
             except Exception as e:
@@ -715,10 +853,11 @@ def main():
     parser.add_argument('--resource-col', default='Resource Name', help='Column to group rows by (default: "Resource Name")')
     parser.add_argument('--sources', default='pmc,biorxiv,medrxiv,arxiv,trials',
                        help='Comma-separated paperclip -s/--source value(s) (default: pmc,biorxiv,medrxiv,arxiv,trials)')
-    parser.add_argument('--method', choices=['agentic_search', 'fulltext', 'fulltext_dg_prompt', 'both'], default='fulltext',
-                       help='Validation procedure to run (default: fulltext). fulltext_dg_prompt is the same '
-                            'procedure but built on data_gatherer\'s own PromptManager.render_prompt against the '
-                            'externalized JSON template rather than a hardcoded Python string.')
+    parser.add_argument('--method', choices=['agentic_search', 'fulltext', 'fulltext_dg_prompt', 'excerpt_dg_prompt', 'both'],
+                       default='fulltext',
+                       help='Validation procedure to run (default: fulltext). fulltext_dg_prompt: full-document read '
+                            'via an externalized JSON prompt template. excerpt_dg_prompt: same template, but fed only '
+                            'the resource-matching excerpt (retrieve-then-read), not the whole document.')
     parser.add_argument('--max-turns', type=int, default=12, help='Tool-call budget for --method agentic_search (default: 12)')
     parser.add_argument('--dg-prompt-name', default=DEFAULT_DG_PROMPT_NAME,
                        help=f'JSON template under prompts/ for --method fulltext_dg_prompt (default: {DEFAULT_DG_PROMPT_NAME})')
@@ -778,6 +917,15 @@ def main():
         rows_by_url = {u: None for u in (_row_fetch_url(row) for row in df.to_dict("records")) if u}
         url_to_content = prefetch_fulltext(rows_by_url)
 
+    excerpt_to_content: Dict[tuple, str] = {}
+    if EXCERPT_METHODS & set(methods):
+        rows_by_resource = [
+            (row.get(args.resource_col, ""), _row_fetch_url(row), _derive_id_patterns(row))
+            for row in df.to_dict("records")
+        ]
+        rows_by_resource = [r for r in rows_by_resource if r[1]]
+        excerpt_to_content = prefetch_excerpts(rows_by_resource)
+
     max_workers = args.workers or min(16, max(1, (os.cpu_count() or 4) - 2))
     groups = list(df.groupby(args.resource_col))
     logger.info(f"Validating {len(groups)} resources with {max_workers} concurrent workers, method(s): {methods}")
@@ -785,12 +933,13 @@ def main():
     columns: Dict[str, List[str]] = {m: [""] * len(df) for m in methods}
     claim_columns: Dict[str, List[str]] = {m: [""] * len(df) for m in methods}
     rationale_columns: Dict[str, List[str]] = {m: [""] * len(df) for m in methods}
+    reasoning_columns: Dict[str, List[str]] = {m: [""] * len(df) for m in methods}
     completed = 0
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {
             executor.submit(validate_group, client, resource_name, group.to_dict("records"), args.sources,
                              methods, cache, sample_sizes.get(resource_name, ""), args.max_turns,
-                             url_to_content, args.dg_prompt_name): (resource_name, group)
+                             url_to_content, args.dg_prompt_name, excerpt_to_content): (resource_name, group)
             for resource_name, group in groups
         }
         for future in as_completed(futures):
@@ -808,6 +957,7 @@ def main():
                     columns[method][pos] = r.get("verification_status", "")
                     claim_columns[method][pos] = r.get("claim_text", "")
                     rationale_columns[method][pos] = r.get("rationale", "")
+                    reasoning_columns[method][pos] = r.get("reasoning", "")
             logger.info(f"[validate] [{completed}/{len(groups)}] '{resource_name}' done")
             if not args.no_cache and completed % 10 == 0:
                 save_cache(cache_path, cache)
@@ -820,6 +970,7 @@ def main():
         df[f"Verification Status{suffix}"] = columns[method]
         df[f"Claim Text{suffix}"] = claim_columns[method]
         df[f"Rationale{suffix}"] = rationale_columns[method]
+        df[f"Reasoning{suffix}"] = reasoning_columns[method]
 
     if args.output:
         output_path = Path(args.output)

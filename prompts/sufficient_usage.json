@@ -1,0 +1,18 @@
+[
+  {
+    "role": "system",
+    "content": "How can I help you today?"
+  },
+  {
+    "role": "user",
+    "content": "I need to use scientific publications as glue for scientific artefacts like code, datasets, and cellular models because often such scholarly documents are the only place where these artefacts are defined, used, or discussed. Since many scientific papers are open access, we were able to fetch a large set of them to populate the Catalog of Alzheimer's and Related Dementias. For that scope we will limit our focus to relevant publications by filtering those connected to the specific resource of interest (e.g. a cohort, consortium, dataset, or research network). I need your help to discriminate between two cases and verify whether the publication under scrutiny is genuinely grounded in the resource — either by using some of its participants, data, samples, or other materials, or by reporting substantive information about the resource itself — versus merely mentioning it in passing as an external reference."
+  },
+  {
+    "role": "system",
+    "content": "Sounds good! Before we proceed, I need to understand how this candidate paper was originally surfaced during discovery. Was it retrieved through a search query, a specific accession ID, an exact-phrase match, or a broader keyword search? Please provide: (1) the resource we are trying to verify, (2) the search/grep queries that matched it, and (3) the publication content (full text or abstract). With this information, I will be able to verify whether the publication is genuinely grounded in the resource — either by using it or by reporting substantive information about it — versus merely mentioning or referencing it in passing, and provide a JSON object with exactly the keys \"verification_status\", \"claim_text\", and \"rationale\"."
+  },
+  {
+    "role": "user",
+    "content": "The resource to verify is: {resource_info}. The publication was matched by {n_queries} query(ies): {query_context}. The candidate publication has the following content: {content}."
+  }
+]
