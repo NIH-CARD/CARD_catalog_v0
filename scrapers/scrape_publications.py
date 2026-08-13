@@ -766,31 +766,66 @@ def _extract_result_ids(output: str) -> set:
 
 
 # Shared by _search_paperclip and validate_with_paperclip.py.
-_STALE_STATUS_RE = re.compile(r'^\s*\[!\]\s+(\S+)')
+# A doc with >1 claim nests a per-claim "[OK|X] claim: ..." line under its own
+# "[OK|X] <doc_id> <title>" line — same bracket syntax, so the doc-block regex
+# must not also match the inner claim line (the lookahead below excludes it),
+# and the inner status feeds _CLAIM_STATUS_RE so evidence can be attributed to
+# the right claim rather than whichever one was read last.
+_STATUS_BLOCK_RE = re.compile(r'^\s*\[(OK|X|!|\?)\]\s+(?!claim:)(\S+)')
+_CLAIM_STATUS_RE = re.compile(r'^\s*\[(OK|X|!|\?)\]\s+claim:')
+_EVIDENCE_LINE_RE = re.compile(r'^\s*evidence:\s*(.*)$')
+_EVIDENCE_STATUS_RANK = {"OK": 0, "X": 1, "!": 2, "?": 2}
 
 
-def _find_stale_doc_ids(repo_name: str) -> set:
-    """`repo status` marks claims with unloadable full text distinctly from
-    unverified ones ("[!] <doc_id> ... no loadable full text") — retrying
-    those does nothing, unlike a genuinely still-processing claim."""
+def _parse_repo_status(repo_name: str) -> tuple:
+    """One `repo status` call, two things out of it: the evidence text paperclip's
+    verifier gave for each doc_id (for an audit trail — otherwise the actual "why"
+    behind an OK/X verdict is read once and discarded), and the set of doc_ids
+    marked "no loadable full text" — permanently unavailable, distinct from a
+    claim that's just still processing.
+
+    Returns:
+        (evidence_by_doc_id, stale_doc_ids)
+    """
     status_out = _paperclip_cli(repo_name, "repo", "status")
+    evidence_by_doc: Dict[str, str] = {}
+    evidence_rank: Dict[str, int] = {}
     stale = set()
-    pending_doc_id = None
+    current_doc_id = None
+    current_claim_status = None
     for line in status_out.splitlines():
-        m = _STALE_STATUS_RE.match(line)
+        m = _STATUS_BLOCK_RE.match(line)
         if m:
-            pending_doc_id = m.group(1)
-        elif pending_doc_id and "no loadable full text" in line:
-            stale.add(pending_doc_id)
-            pending_doc_id = None
-    return stale
+            current_doc_id = m.group(2)
+            current_claim_status = m.group(1)
+            continue
+        if current_doc_id is None:
+            continue
+        cm = _CLAIM_STATUS_RE.match(line)
+        if cm:
+            current_claim_status = cm.group(1)
+            continue
+        ev = _EVIDENCE_LINE_RE.match(line)
+        if ev:
+            text = ev.group(1).strip()
+            if "no loadable full text" in text:
+                stale.add(current_doc_id)
+            # Multiple claims on one doc_id: keep the evidence for whichever
+            # claim has the best status (OK > X > pending), matching the
+            # True-beats-False-beats-None precedence validate_with_paperclip.py
+            # already applies when collapsing multiple claims into one verdict.
+            rank = _EVIDENCE_STATUS_RANK.get(current_claim_status, 3)
+            if rank < evidence_rank.get(current_doc_id, 4):
+                evidence_by_doc[current_doc_id] = text
+                evidence_rank[current_doc_id] = rank
+    return evidence_by_doc, stale
 
 
 _UNRESOLVED_RE = re.compile(r'unresolved for (\d+) claim')
 
 
 def _commit_with_retry(repo_name: str, message: str, jobs: int, max_attempts: int = 30,
-                        verify: bool = True, retry_delay: int = 10) -> str:
+                        verify: bool = True, retry_delay: int = 10, timeout: int = 300) -> str:
     """paperclip's own commit output tells you to retry on incomplete verification
     ("Retry the same command. Completed claim checks will be reused.") — do that
     automatically instead of treating an incomplete round as a real verdict.
@@ -799,6 +834,9 @@ def _commit_with_retry(repo_name: str, message: str, jobs: int, max_attempts: in
     server-side, so this keeps retrying as long as the unresolved count is
     actually shrinking, and only gives up early once it plateaus for a few
     attempts in a row (a real sign of stuck/stale claims, not slow progress).
+
+    Args:
+        timeout: Per-attempt CLI timeout — a high -j commit over hundreds of claims can take long 
     """
     args = ["repo", "commit", "-m", message[:200]]
     if verify:
@@ -808,8 +846,21 @@ def _commit_with_retry(repo_name: str, message: str, jobs: int, max_attempts: in
     out = ""
     last_unresolved = None
     stalled = 0
+    cli_failures = 0
     for attempt in range(1, max_attempts + 1):
-        out = _paperclip_cli(repo_name, *args)
+        out = _paperclip_cli(repo_name, *args, timeout=timeout)
+        if out.startswith("ERROR:"):
+            # A CLI-level failure (timeout, subprocess error) — not a verification verdict of any kind. 
+            cli_failures += 1
+            logger.warning(f"[paperclip] commit for {repo_name} failed at the CLI level "
+                            f"(attempt {attempt}/{max_attempts}, {cli_failures} in a row): {out[:200]}")
+            if cli_failures >= 3:
+                logger.warning(f"[paperclip] commit for {repo_name} failed at the CLI level "
+                                f"{cli_failures} times in a row — stopping early")
+                break
+            time.sleep(retry_delay)
+            continue
+        cli_failures = 0
         if "no commit was created" not in out and "remained unresolved" not in out:
             return out
         m = _UNRESOLVED_RE.search(out)
@@ -831,9 +882,40 @@ def _commit_with_retry(repo_name: str, message: str, jobs: int, max_attempts: in
     return out
 
 
-def _classify_claim(doc_id: str, verified_map: Dict[str, Optional[bool]], stale_doc_ids: set) -> str:
-    """Classify one doc_id's verification outcome. Checks stale before False — a stale
-    claim's `verified` is also False, so checking False first would misclassify it."""
+_BATCH_FAILED_RE = re.compile(r"Batch verify failed for \[(.*?)\]")
+# Named-batch variant: paperclip retries via a one-at-a-time fallback, but the
+# fallback's own success isn't visible from this message — treat the cited
+# doc_id as suspect rather than assume the fallback silently made it trustworthy.
+_SINGLE_VERIFY_FALLBACK_RE = re.compile(r"Concurrent claim verify unavailable for (\S+) batch")
+
+
+def _extract_batch_failed_ids(commit_out: str) -> set:
+    """paperclip's own verifier can fail technically mid-batch (its internal LLM
+    call returns non-JSON, surfaced as "Batch verify failed for [...]: Expecting
+    value..." or "Concurrent claim verify unavailable for <doc_id> batch ...").
+    Confirmed live: these doc_ids still get `verified: False` in `repo claims` —
+    a technical failure masquerading as a real negative verdict."""
+    ids = set()
+    for m in _BATCH_FAILED_RE.finditer(commit_out):
+        ids.update(re.findall(r"'([^']+)'", m.group(1)))
+    ids.update(_SINGLE_VERIFY_FALLBACK_RE.findall(commit_out))
+    return ids
+
+
+def _detect_verification_errors(commit_out: str, evidence_by_doc: Dict[str, str]) -> set:
+    """Union of two signals for a technical (non-verdict) verification failure."""
+    ids = _extract_batch_failed_ids(commit_out)
+    ids.update(doc_id for doc_id, ev in evidence_by_doc.items() if ev.lower().startswith("error:"))
+    return ids
+
+
+def _classify_claim(doc_id: str, verified_map: Dict[str, Optional[bool]], stale_doc_ids: set,
+                     error_doc_ids: set = frozenset()) -> str:
+    """Classify one doc_id's verification outcome. Checks error/stale before False —
+    a batch-verify error and a stale claim both report `verified: False`, so checking
+    False first would misclassify either as a real negative verdict."""
+    if doc_id in error_doc_ids:
+        return "verification_error"
     if doc_id in stale_doc_ids:
         return "stale_content"
     v = verified_map.get(doc_id)
@@ -971,6 +1053,8 @@ Hard limit: {max_turns} tool calls total (every search/grep/add counts, not just
 
     claims_by_doc: Dict[str, List[dict]] = {}  # doc_id -> all claims committed for it (may be >1)
     stale_doc_ids: set = set()
+    error_doc_ids: set = set()
+    evidence_by_doc: Dict[str, str] = {}
     if not skip_verify:
         claims_out = _paperclip_cli(repo_name, "repo", "claims")
         try:
@@ -980,9 +1064,12 @@ Hard limit: {max_turns} tool calls total (every search/grep/add counts, not just
             claims = []
         for c in claims:
             claims_by_doc.setdefault(c.get("paperclip_doc_id"), []).append(c)
-        stale_doc_ids = _find_stale_doc_ids(repo_name)
+        evidence_by_doc, stale_doc_ids = _parse_repo_status(repo_name)
         if stale_doc_ids:
             logger.info(f"[paperclip] '{study_name}': {len(stale_doc_ids)} doc_id(s) permanently unavailable (no loadable full text), not a verdict")
+        error_doc_ids = _detect_verification_errors(commit_out, evidence_by_doc)
+        if error_doc_ids:
+            logger.warning(f"[paperclip] '{study_name}': {len(error_doc_ids)} doc_id(s) hit a batch-verify technical failure server-side (paperclip's own verifier errored), not a real verdict")
 
     export_out = _paperclip_cli(repo_name, "repo", "export", "csv")
     try:
@@ -1016,6 +1103,7 @@ Hard limit: {max_turns} tool calls total (every search/grep/add counts, not just
             "Verification Status": status,
             "Claim Text": c.get("claim", p.get("annotations", "")),
             "Rationale": c.get("found_via_command", ""),
+            "Evidence": evidence_by_doc.get(doc_id, ""),
             "Fetched With": f"paperclip:{c.get('found_via_command', repo_name)}",
             "Paperclip Repo": repo_name,
         }
@@ -1036,9 +1124,9 @@ Hard limit: {max_turns} tool calls total (every search/grep/add counts, not just
         else:
             verified_map[doc_id] = None
 
-    n_ok = n_x = n_stale = n_uncommitted = 0
+    n_ok = n_x = n_stale = n_error = n_uncommitted = 0
     for doc_id in claims_added_by_doc:
-        status = _classify_claim(doc_id, verified_map, stale_doc_ids)
+        status = _classify_claim(doc_id, verified_map, stale_doc_ids, error_doc_ids)
         if status == "OK":
             n_ok += 1
             results.append(build_row(doc_id, "OK"))
@@ -1046,11 +1134,13 @@ Hard limit: {max_turns} tool calls total (every search/grep/add counts, not just
             n_x += 1
         elif status == "stale_content":
             n_stale += 1
+        elif status == "verification_error":
+            n_error += 1
         else:
             n_uncommitted += 1
 
     logger.info(f"[paperclip] '{study_name}': {len(added_claims)} candidates added, {n_ok} verified OK, {n_x} X, "
-                f"{n_stale} stale, {n_uncommitted} not committed ({turns} turns, {tool_calls_used} tool calls, repo={repo_name})")
+                f"{n_stale} stale, {n_error} verify-errored, {n_uncommitted} not committed ({turns} turns, {tool_calls_used} tool calls, repo={repo_name})")
     return results
 
 
@@ -1408,6 +1498,7 @@ def main():
         "Verification Status",
         "Claim Text",
         "Rationale",
+        "Evidence",
         "Fetched With",
         "Paperclip Repo",
     ]

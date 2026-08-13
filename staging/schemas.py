@@ -61,6 +61,7 @@ class PublicationRow(_Base):
     Verification_Status: str = ""
     Claim_Text: str = ""
     Rationale: str = ""
+    Evidence: str = ""  # from paperclip's own repo verify/claims - maybe remove, that subsystem keeps proving unreliable
 
     # Map from scraper column names (with spaces) to model field names
     model_config = {
@@ -73,7 +74,7 @@ class PublicationRow(_Base):
         "Coarse_Data_Modality", "Granular_Data_Modality", "PubMed_Central_Link",
         "Authors", "Affiliations", "Title", "Abstract", "Keywords",
         "Publication_Date", "Data_Completeness", "Fetched_With",
-        "DOI", "Verification_Status", "Claim_Text", "Rationale",
+        "DOI", "Verification_Status", "Claim_Text", "Rationale", "Evidence",
         mode="before",
     )
     @classmethod
@@ -86,7 +87,7 @@ class PublicationRow(_Base):
         "Diseases Included", "Coarse Data Modality", "Granular Data Modality",
         "PubMed Central Link", "Authors", "Affiliations",
         "Title", "Abstract", "Keywords", "Publication Date", "Data Completeness",
-        "Verification Status", "Claim Text", "Rationale",
+        "Verification Status", "Claim Text", "Rationale", "Evidence",
         "Fetched With",
     ]
 
