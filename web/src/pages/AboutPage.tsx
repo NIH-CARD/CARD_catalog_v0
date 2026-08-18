@@ -1,5 +1,91 @@
 import { PageShell } from "../components/PageShell";
 
+// Column lists mirror web/src/types.ts exactly - update both together if a table's
+// columns change.
+const TABLE_SCHEMAS: { name: string; route: string; file: string; columns: string[] }[] = [
+  {
+    name: "Resources",
+    route: "/resources",
+    file: "resources.tsv",
+    columns: [
+      "Resource Name", "Abbreviation", "Coarse Data Modality", "Granular Data Modality",
+      "Diseases Included", "Sample Size", "Access URL", "FAIR Compliance Notes",
+      "Date added to catalog", "Reviewer", "Alternative URLs", "Resource Type",
+      "Is Part Of", "Remove", "Notes", "new_corpus",
+    ],
+  },
+  {
+    name: "Publications",
+    route: "/publications",
+    file: "publications.tsv",
+    columns: [
+      "PMID", "Resource Name", "Abbreviation", "Diseases Included", "Coarse Data Modality",
+      "Granular Data Modality", "PubMed Central Link", "Authors", "Affiliations", "Title",
+      "Abstract", "Keywords", "Publication Date", "Publication Year", "Data Completeness",
+      "Diseases (Annotated)", "Genes / Proteins", "Chemicals", "Cited Datasets",
+    ],
+  },
+  {
+    name: "Code Repositories",
+    route: "/code",
+    file: "code_repos.tsv",
+    columns: [
+      "Resource Name", "Abbreviation", "Diseases Included", "Repository Link", "Source",
+      "Owner", "Contributors", "Languages", "Biomedical Relevance", "Code Summary",
+      "Data Types", "Tooling", "FAIR Score", "FAIR Issues",
+    ],
+  },
+  {
+    name: "Datasets",
+    route: "/datasets",
+    file: "pub_datasets.tsv",
+    columns: [
+      "pub_title", "source_url", "raw_data_format", "dataset_identifier", "data_repository",
+      "dataset_context_from_paper", "dataset_keywords", "citation_type", "dataset_webpage",
+      "access_mode",
+    ],
+  },
+  {
+    name: "Supplementary Files",
+    route: "/datasets/supplementary",
+    file: "pub_supplementary.tsv",
+    columns: [
+      "link", "source_url", "download_link", "title", "content_type", "caption",
+      "description", "context_description", "source_section", "file_extension",
+      "pub_title", "raw_data_format",
+    ],
+  },
+  {
+    name: "Grants",
+    route: "/datasets/grants",
+    file: "pub_grants.tsv",
+    columns: [
+      "pub_title", "source_url", "raw_data_format", "funder_name", "grant_number",
+      "funding_context_from_paper", "recipient",
+    ],
+  },
+  {
+    name: "SciLite Annotations",
+    route: "/datasets/scilite",
+    file: "scilite_annotations.tsv",
+    columns: [
+      "PMC ID", "Type", "Exact", "Prefix", "Postfix", "Section", "Provider",
+      "Annotation ID", "Tag Name", "Tag URI",
+    ],
+  },
+  {
+    name: "Human Cellular Models",
+    route: "/cellular-models",
+    file: "cellular_models.tsv",
+    columns: [
+      "Product Code", "Parental Line", "Gene", "Gene Variant", "Genotype", "dbSNP",
+      "Condition", "Other Names", "Genome Assembly", "Protospacer Sequence",
+      "Genomic Coordinate", "Genomic Sequence", "Procurement link", "About this gene",
+      "About this variant",
+    ],
+  },
+];
+
 export function AboutPage() {
   return (
     <PageShell>
@@ -9,12 +95,14 @@ export function AboutPage() {
       <section>
         <h1 className="text-2xl font-bold mb-3">About CARD Catalog</h1>
         <p className="text-sm leading-relaxed">
-          The <strong>CARD Catalog</strong> (Center for Alzheimer's and Related Dementias Data
-          Catalog) is a comprehensive resource for discovering datasets, publications, and code
-          repositories related to Alzheimer's Disease and Related Dementias (ADRD) research. Our
-          mission is to improve data sharing, reproducibility, and collaboration in dementia
-          research by providing a centralized, searchable catalog of research resources with
-          quality assessments and relationship mapping.
+          The <strong>CARD Catalog</strong> (Center for Alzheimer's and Related Dementias
+          Catalog) is a collection of research artifacts — resources, publications (enriched
+          with extracted cited datasets, supplementary materials, and disease/gene annotations)
+          , code repositories, and cellular models — from different studies, biorepositories, 
+          and data catalogs into interlinked tables, capturing how they relate to one another 
+          across Alzheimer's Disease and Related Dementias (ADRD) research. Its goal is to 
+          improve data sharing, reproducibility, traceability, and collaboration in dementia 
+          research through a centralized, searchable catalog with cross-table relationship mapping.
         </p>
       </section>
 
@@ -98,31 +186,30 @@ export function AboutPage() {
 
       <hr className="border-slate-200" />
 
-      {/* Data Sources */}
+      {/* Table Schemas */}
       <section>
-        <h2 className="text-xl font-semibold mb-4">Data Sources</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {[
-            {
-              title: "Resources",
-              body: "Curated inventory of neuroscience resources — studies, data catalogs, biorepositories. Covers data modalities, diseases, sample sizes, and access information. Updated quarterly.",
-            },
-            {
-              title: "Publications (PubMed Central)",
-              body: "Scientific articles automatically scraped from PMC, linked to resources by name and metadata. Enriched with SciLite bioentity annotations (diseases, genes, chemicals) and cited dataset identifiers. Updated monthly.",
-            },
-            {
-              title: "Code Repositories (GitHub)",
-              body: "Research code and analysis pipelines scraped via GitHub API. LLM-analyzed for content summary, biomedical relevance, data types, and tooling. FAIR compliance scored from automated checks.",
-            },
-            {
-              title: "Human Cellular Models (iNDI)",
-              body: "626 iPSC cell lines from the iPSC Neurodegenerative Disease Initiative. Covers gene variants, conditions, parental lines, genome assemblies, and procurement links.",
-            },
-          ].map(({ title, body }) => (
-            <div key={title} className="border border-slate-200 rounded p-4">
-              <h3 className="font-semibold text-sm mb-1">{title}</h3>
-              <p className="text-xs text-slate-600 leading-relaxed">{body}</p>
+        <h2 className="text-xl font-semibold mb-3">Table Schemas</h2>
+        <p className="text-sm mb-4 text-slate-700">
+          Every page in the app is a view over one underlying table. These are the exact
+          columns available in each — useful as a reference for what you can filter,
+          export, or ask the assistant about.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {TABLE_SCHEMAS.map(({ name, route, file, columns }) => (
+            <div key={name} className="border border-slate-300 rounded bg-white overflow-hidden">
+              <div className="bg-slate-100 border-b border-slate-300 px-3 py-2">
+                <div className="text-xs font-semibold text-slate-800">{name}</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">
+                  {route} · {file}
+                </div>
+              </div>
+              <ul className="divide-y divide-slate-100">
+                {columns.map((col) => (
+                  <li key={col} className="px-3 py-1 text-[11px] text-slate-700">
+                    {col}
+                  </li>
+                ))}
+              </ul>
             </div>
           ))}
         </div>
