@@ -77,7 +77,7 @@ export function HomePage() {
             <img
               src="/logos/card_logo.png"
               alt="CARD"
-              className="object-contain w-auto h-auto max-w-[300px] max-h-32"
+              className="object-contain w-auto h-auto max-w-[340px] max-h-40"
             />
           </div>
           <div className="flex justify-center">
