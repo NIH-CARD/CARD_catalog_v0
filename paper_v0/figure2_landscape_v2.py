@@ -127,8 +127,8 @@ def create_figure():
 
     ax1.set_yticks(range(len(sorted_datatypes)))
     ax1.set_yticklabels(sorted_datatypes, fontsize=11, rotation=15, ha='right')
-    ax1.set_xlabel('Number of Datasets', fontsize=12, fontweight='bold')
-    ax1.set_title(f'A. Coarse Data Modality by FAIR Compliance\n(n={len(datasets_df)} datasets)',
+    ax1.set_xlabel('Number of Resources', fontsize=12, fontweight='bold')
+    ax1.set_title(f'A. Number of resources annotated with each coarse data modality, stratified by FAIR compliance level\n(n={len(datasets_df)} datasets)',
                   fontsize=13, fontweight='bold', pad=10)
     ax1.legend(title='FAIR Level', loc='upper right', fontsize=10)
     ax1.grid(axis='x', alpha=0.3)
@@ -326,7 +326,7 @@ def create_figure():
     ax3.set_xscale('log')
     ax3.set_xlabel('Sample Size (log scale)', fontsize=12, fontweight='bold')
     ax3.set_ylabel('Density', fontsize=12, fontweight='bold')
-    ax3.set_title('C. Sample Size Distributions by Data Modality\n(top 5 modalities)',
+    ax3.set_title('C. Sample-size distributions for the five most common data modalities among the resources in (A)',
                   fontsize=13, fontweight='bold', pad=10)
     ax3.legend(loc='upper right', fontsize=10)
     ax3.tick_params(axis='both', labelsize=10)
