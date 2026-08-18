@@ -224,6 +224,28 @@ export function AboutPage() {
 
       <hr className="border-slate-200" />
 
+      {/* Project History */}
+      <section>
+        <h2 className="text-xl font-semibold mb-3">Project History</h2>
+        <p className="text-sm text-slate-700">
+          CARD Catalog began as a <strong>Streamlit</strong> app (v0), which validated the
+          pipeline and data model described above. This React application is its actively
+          developed successor and the live, deployed version of the Catalog. The original
+          Streamlit app remains available for reference at{" "}
+          <a
+            href="https://card-catalog-v0.streamlit.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-accent hover:underline"
+          >
+            card-catalog-v0.streamlit.app
+          </a>
+          .
+        </p>
+      </section>
+
+      <hr className="border-slate-200" />
+
       {/* Contact */}
       <section>
         <h2 className="text-xl font-semibold mb-3">Contact and Updates</h2>
