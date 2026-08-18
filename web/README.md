@@ -35,14 +35,14 @@ Re-run `npm run sync-data` whenever the pipeline writes new outputs.
 
 | Path | Source TSV (in `public/data/`) | Notes |
 |---|---|---|
-| `/publications` | `publications.tsv` | Per-row resource chips deep-link to `/datasets?pmc=…` |
+| `/publications` | `publications.tsv` | Per-row resource chips deep-link to `/annotations?pmc=…` |
 | `/resources` | `resources.tsv` | Table + Graph toggle |
 | `/code` | `code_repos.tsv` | |
-| `/datasets` | `pub_datasets.tsv` | Honors `?pmc=PMCxxxx` |
-| `/datasets/supplementary` | `pub_supplementary.tsv` | Honors `?pmc=PMCxxxx` |
-| `/datasets/grants` | `pub_grants.tsv` | Honors `?pmc=PMCxxxx` |
-| `/datasets/software` | `pub_software.tsv` (synced, unused) | Nav link exists but no route/tab is wired up yet — falls through to `/datasets` |
-| `/datasets/scilite` | `scilite_annotations.tsv` | Honors `?pmc=PMCxxxx` |
+| `/annotations` | `pub_datasets.tsv` | Honors `?pmc=PMCxxxx` |
+| `/annotations/supplementary` | `pub_supplementary.tsv` | Honors `?pmc=PMCxxxx` |
+| `/annotations/grants` | `pub_grants.tsv` | Honors `?pmc=PMCxxxx` |
+| `/annotations/software` | `pub_software.tsv` (synced, unused) | Nav link exists but no route/tab is wired up yet — falls through to `/annotations` |
+| `/annotations/scilite` | `scilite_annotations.tsv` | Honors `?pmc=PMCxxxx` |
 | `/cellular-models` | `cellular_models.tsv` | iNDI inventory |
 
 ## File layout
@@ -69,7 +69,7 @@ web/
       PublicationsPage.tsx
       ResourcesPage.tsx
       CodePage.tsx
-      DatasetsPage.tsx            — 3 nested routes (supplementary, grants, scilite);
+      AnnotationsPage.tsx            — 3 nested routes (supplementary, grants, scilite);
                                      "Software" sub-nav link has no route yet
       CellularModelsPage.tsx
   scripts/
@@ -83,7 +83,7 @@ web/
 ## What's done
 
 - All five table-based pages with facets, search, sort, URL state.
-- Cross-entity nav: Publications row chips → `/datasets?pmc=…` with three sub-tabs.
+- Cross-entity nav: Publications row chips → `/annotations?pmc=…` with three sub-tabs.
 - react-flow knowledge graph (shared-disease edges) on Resources and Publications.
 - FastAPI scaffold so a future "Analyze this subset" button has somewhere to call.
 

@@ -162,7 +162,7 @@ CARD_catalog_v0/
 ├── staging/                 # Pydantic schemas + normalizer
 ├── scrapers/                # Raw scrapers (publications, GitHub)
 ├── web/                     # LIVE APP — React + Vite + TypeScript, Netlify-deployed
-│   ├── src/pages/           # PublicationsPage, ResourcesPage, CodePage, DatasetsPage, CellularModelsPage, …
+│   ├── src/pages/           # PublicationsPage, ResourcesPage, CodePage, AnnotationsPage, CellularModelsPage, …
 │   ├── scripts/sync-data.sh # Copies latest tables/final/*.tsv into public/data/
 │   └── backend/             # FastAPI stub proxying Anthropic for AI-analysis features
 ├── app/                     # LEGACY — Streamlit v0 app, not deployed
