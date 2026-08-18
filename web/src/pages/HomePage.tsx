@@ -143,8 +143,8 @@ export function HomePage() {
               with detailed genotype and procurement information.
             </li>
             <li>
-              <Link to="/datasets" className="text-accent hover:underline">
-                <strong>🗂️ Datasets &amp; Supplementary</strong>
+              <Link to="/annotations" className="text-accent hover:underline">
+                <strong>🗂️ Annotations</strong>
               </Link>
               : Per-publication datasets, supplementary files, and Europe PMC SciLite
               annotations.

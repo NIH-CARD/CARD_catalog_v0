@@ -14,7 +14,7 @@ CARD_catalog_v0/
 ├── scrapers/                # Raw scrapers called as subprocesses
 ├── web/                      # LIVE APP — React + Vite + TypeScript, Netlify-deployed
 │   ├── src/
-│   │   ├── pages/            # PublicationsPage, ResourcesPage, CodePage, DatasetsPage (+3 nested routes), CellularModelsPage, AboutPage, HomePage
+│   │   ├── pages/            # PublicationsPage, ResourcesPage, CodePage, AnnotationsPage (+3 nested routes), CellularModelsPage, AboutPage, HomePage
 │   │   ├── lib/               # loaders.ts (per-page TSV loaders), loadPublications.ts, filter.ts, useFacets.ts, export.ts, paperGraph.ts
 │   │   └── components/        # DataTable, FilterRail, PageShell, Chips, KnowledgeGraph, AnalysisPanel, ExportButton
 │   ├── scripts/sync-data.sh   # Copies latest tables/final/*.tsv (+ a few tables/ root + logos) into public/data/ — rerun after pipeline outputs change
@@ -195,13 +195,13 @@ Use `ClassVar` for `COLUMNS` — Pydantic v2 treats plain `list[str]` class attr
 
 ## Gotchas
 
-- **`app/` (Streamlit) is legacy** — the live, deployed app is `web/` (React/Vite, on Netlify). Streamlit's Page 4 (Datasets & Supplementary) was never implemented there; the React app's `DatasetsPage.tsx` (with nested Supplementary/SciLite sub-routes) is the real, working implementation. Don't confuse the two when reasoning about "is this feature shipped."
+- **`app/` (Streamlit) is legacy** — the live, deployed app is `web/` (React/Vite, on Netlify). Streamlit's Page 4 (Datasets & Supplementary) was never implemented there; the React app's `AnnotationsPage.tsx` (with nested Supplementary/Grants/SciLite sub-routes, at route `/annotations`) is the real, working implementation. Don't confuse the two when reasoning about "is this feature shipped."
 - **`web/public/data/*.tsv` is gitignored and generated** — it's populated by `web/scripts/sync-data.sh` from `tables/final/` (+ a couple of `tables/` root files and `logos/`). New tables need a `copy_latest` line added there, plus a loader export in `web/src/lib/loaders.ts`, to actually reach the app.
-- **`data_gatherer` is a DataTecnica internal package** — not on PyPI; required by `pub_metadata` and `page_navigation`. Install from the internal repo before running those stages.
+- **`data_gatherer` is a DataTecnica internal package** — also avaialble on PyPI; required by `pub_metadata` and `page_navigation`. Install from the internal repo before running those stages.
 - **Normalizer auto-deletes old files for the same target** — running normalize twice for `publications` keeps only the latest `pubmed_central_*.tsv` in `tables/final/`.
 - **Restartability**: stages skip automatically if a today-dated hits file already exists. Use `--force` to override.
 - **Streamlit app fallback** (legacy `app/` only): `get_latest_file()` accepts a list of patterns; the app checks `final/` first, falls back to `tables/` root for legacy v0 files.
 
 ## Current Status (July 2026)
 
-Branch `from_v0_to_v1` — active migration. All pipeline stages and normalizer are implemented and producing output in `tables/final/`. The React app (`web/`) is the live, deployed frontend — Publications, Resources, Code, Datasets (+ Supplementary/SciLite sub-routes), and Cellular Models pages are functional, with an AI-analysis proxy (FastAPI + Netlify function) and a Publications "Trends" chart tab. The Streamlit app (`app/`) is kept for reference only. Next milestones: NDD expansion and automated weekly/quarterly cron on server.
+Branch `from_v0_to_v1` — active migration. All pipeline stages and normalizer are implemented and producing output in `tables/final/`. The React app (`web/`) is the live, deployed frontend — Publications, Resources, Code, Annotations (+ Supplementary/Grants/SciLite sub-routes), and Cellular Models pages are functional, with an AI-analysis proxy (FastAPI + Netlify function) and a Publications "Trends" chart tab. The Streamlit app (`app/`) is kept for reference only. Next milestones: NDD expansion and automated weekly/quarterly cron on server.

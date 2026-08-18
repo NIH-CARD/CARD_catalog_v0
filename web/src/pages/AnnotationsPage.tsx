@@ -61,16 +61,16 @@ function SubNav() {
       : "border-transparent text-slate-600 hover:text-slate-900");
   return (
     <nav className="flex gap-2 border-b border-slate-200 mb-4">
-      <NavLink to="/datasets" end className={itemCls}>
+      <NavLink to="/annotations" end className={itemCls}>
         📦 Datasets
       </NavLink>
-      <NavLink to="/datasets/supplementary" className={itemCls}>
+      <NavLink to="/annotations/supplementary" className={itemCls}>
         📎 Supplementary
       </NavLink>
-      <NavLink to="/datasets/grants" className={itemCls}>
+      <NavLink to="/annotations/grants" className={itemCls}>
         💰 Grants
       </NavLink>
-      <NavLink to="/datasets/scilite" className={itemCls}>
+      <NavLink to="/annotations/scilite" className={itemCls}>
         🏷️ SciLite Annotations
       </NavLink>
     </nav>
@@ -212,7 +212,7 @@ function DatasetsTab() {
     <PageShell
       query={query}
       onQueryChange={setQuery}
-      title="Datasets & Supplementary Files"
+      title="Annotations"
       count={
         rows
           ? `${filtered.length.toLocaleString()} of ${scoped.length.toLocaleString()}`
@@ -397,7 +397,7 @@ function SupplementaryTab() {
     <PageShell
       query={query}
       onQueryChange={setQuery}
-      title="Datasets & Supplementary Files"
+      title="Annotations"
       count={
         rows
           ? `${filtered.length.toLocaleString()} of ${scoped.length.toLocaleString()}`
@@ -547,7 +547,7 @@ function GrantsTab() {
     <PageShell
       query={query}
       onQueryChange={setQuery}
-      title="Datasets & Supplementary Files"
+      title="Annotations"
       count={
         rows
           ? `${filtered.length.toLocaleString()} of ${scoped.length.toLocaleString()}`
@@ -757,7 +757,7 @@ function SciliteTab() {
     <PageShell
       query={query}
       onQueryChange={setQuery}
-      title="Datasets & Supplementary Files"
+      title="Annotations"
       count={
         rows
           ? `${filtered.length.toLocaleString()} of ${scoped.length.toLocaleString()}`
@@ -822,7 +822,7 @@ function SciliteTab() {
 // Datasets section router
 // ---------------------------------------------------------------------------
 
-export function DatasetsPage() {
+export function AnnotationsPage() {
   return (
     <Routes>
       <Route index element={<DatasetsTab />} />

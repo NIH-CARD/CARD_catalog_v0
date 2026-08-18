@@ -5,7 +5,7 @@ const NAV = [
   { to: "/resources", label: "Resources" },
   { to: "/publications", label: "Publications" },
   { to: "/code", label: "Code" },
-  { to: "/datasets", label: "Datasets" },
+  { to: "/annotations", label: "Annotations" },
   { to: "/cellular-models", label: "Cellular Models" },
   { to: "/about", label: "About" },
 ];

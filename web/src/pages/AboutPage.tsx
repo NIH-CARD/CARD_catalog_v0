@@ -37,7 +37,7 @@ const TABLE_SCHEMAS: { name: string; route: string; file: string; columns: strin
   },
   {
     name: "Datasets",
-    route: "/datasets",
+    route: "/annotations",
     file: "pub_datasets.tsv",
     columns: [
       "pub_title", "source_url", "raw_data_format", "dataset_identifier", "data_repository",
@@ -47,7 +47,7 @@ const TABLE_SCHEMAS: { name: string; route: string; file: string; columns: strin
   },
   {
     name: "Supplementary Files",
-    route: "/datasets/supplementary",
+    route: "/annotations/supplementary",
     file: "pub_supplementary.tsv",
     columns: [
       "link", "source_url", "download_link", "title", "content_type", "caption",
@@ -57,7 +57,7 @@ const TABLE_SCHEMAS: { name: string; route: string; file: string; columns: strin
   },
   {
     name: "Grants",
-    route: "/datasets/grants",
+    route: "/annotations/grants",
     file: "pub_grants.tsv",
     columns: [
       "pub_title", "source_url", "raw_data_format", "funder_name", "grant_number",
@@ -66,7 +66,7 @@ const TABLE_SCHEMAS: { name: string; route: string; file: string; columns: strin
   },
   {
     name: "SciLite Annotations",
-    route: "/datasets/scilite",
+    route: "/annotations/scilite",
     file: "scilite_annotations.tsv",
     columns: [
       "PMC ID", "Type", "Exact", "Prefix", "Postfix", "Section", "Provider",

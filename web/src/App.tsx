@@ -1,8 +1,8 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AboutPage } from "./pages/AboutPage";
+import { AnnotationsPage } from "./pages/AnnotationsPage";
 import { CellularModelsPage } from "./pages/CellularModelsPage";
 import { CodePage } from "./pages/CodePage";
-import { DatasetsPage } from "./pages/DatasetsPage";
 import { HomePage } from "./pages/HomePage";
 import { PublicationsPage } from "./pages/PublicationsPage";
 import { ResourcesPage } from "./pages/ResourcesPage";
@@ -19,7 +19,7 @@ export default function App() {
         <Route path="/resources" element={<ResourcesPage />} />
         <Route path="/publications" element={<PublicationsPage />} />
         <Route path="/code" element={<CodePage />} />
-        <Route path="/datasets/*" element={<DatasetsPage />} />
+        <Route path="/annotations/*" element={<AnnotationsPage />} />
         <Route path="/cellular-models" element={<CellularModelsPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />

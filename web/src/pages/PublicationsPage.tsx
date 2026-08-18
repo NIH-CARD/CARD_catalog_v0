@@ -64,7 +64,7 @@ function ResourceLinks({
     <div className="flex flex-wrap gap-2 mt-1">
       {ds.length > 0 && (
         <Link
-          to={`/datasets?pmc=${pmcid}`}
+          to={`/annotations?pmc=${pmcid}`}
           className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
         >
           📦 {ds.length} datasets
@@ -72,7 +72,7 @@ function ResourceLinks({
       )}
       {sp.length > 0 && (
         <Link
-          to={`/datasets/supplementary?pmc=${pmcid}`}
+          to={`/annotations/supplementary?pmc=${pmcid}`}
           className="text-[10px] px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100"
         >
           📎 {sp.length} supplementary
@@ -80,7 +80,7 @@ function ResourceLinks({
       )}
       {sc.length > 0 && (
         <Link
-          to={`/datasets/scilite?pmc=${pmcid}`}
+          to={`/annotations/scilite?pmc=${pmcid}`}
           className="text-[10px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100"
         >
           🏷️ {sc.length} annotations
@@ -485,17 +485,17 @@ export function PublicationsPage() {
                     {pmcid && (
                       <div className="flex flex-wrap gap-1.5 pt-1">
                         {(dsByPmc.get(pmcid) ?? []).length > 0 && (
-                          <Link to={`/datasets?pmc=${pmcid}`} className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100">
+                          <Link to={`/annotations?pmc=${pmcid}`} className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100">
                             📦 {(dsByPmc.get(pmcid) ?? []).length} datasets
                           </Link>
                         )}
                         {(spByPmc.get(pmcid) ?? []).length > 0 && (
-                          <Link to={`/datasets/supplementary?pmc=${pmcid}`} className="text-[10px] px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100">
+                          <Link to={`/annotations/supplementary?pmc=${pmcid}`} className="text-[10px] px-1.5 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100">
                             📎 {(spByPmc.get(pmcid) ?? []).length} supplementary
                           </Link>
                         )}
                         {(scByPmc.get(pmcid) ?? []).length > 0 && (
-                          <Link to={`/datasets/scilite?pmc=${pmcid}`} className="text-[10px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100">
+                          <Link to={`/annotations/scilite?pmc=${pmcid}`} className="text-[10px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100">
                             🏷️ {(scByPmc.get(pmcid) ?? []).length} annotations
                           </Link>
                         )}
