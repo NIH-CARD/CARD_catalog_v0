@@ -30,16 +30,20 @@ import os
 import re
 import string
 import sys
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import anthropic
 import pandas as pd
 from dotenv import load_dotenv
 from openai import OpenAI
 from data_gatherer.prompts.prompt_manager import PromptManager
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scrapers"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # staging/ itself, for sibling imports (combine_hits)
 from logging_config import setup_logger, get_default_log_file
 from scrape_publications import _paperclip_cli_raw
 
@@ -67,6 +71,13 @@ HITS_DIR = Path(__file__).parent.parent / "tables" / "hits"
 
 VLLM_BASE_URL = os.getenv("VLLM_CLIENT", "http://localhost:8000/v1")
 VLLM_MODEL = os.getenv("VLLM_MODEL", "openai/gpt-oss-20b")
+
+# Claude Sonnet 5 path (see validate_via_*_dg_prompt_claude below) - a separate client since
+# it's a different SDK, not a drop-in for the OpenAI-compatible vLLM client used everywhere
+# else. Constructed once at import time; resolves credentials from ANTHROPIC_API_KEY or an
+# `ant auth login` profile, same as any other Anthropic() client.
+CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-sonnet-5")
+_anthropic_client = anthropic.Anthropic()
 
 RESOURCE_ATTRIBUTE_FIELDS = [
     "Resource Name", "Abbreviation", "Diseases Included",
@@ -97,6 +108,10 @@ RESPONSE_FORMAT = {
     "strict": True,
 }
 
+# Claude's output_config.format takes {"type": "json_schema", "schema": ...} - no "name" or
+# "strict" keys (those are the vLLM/OpenAI Responses API shape above).
+ANTHROPIC_RESPONSE_FORMAT = {"type": "json_schema", "schema": RESPONSE_FORMAT["schema"]}
+
 VERIFICATION_RULES = _load_prompt("verification_rules.md")
 FEW_SHOT_EXAMPLES = _load_prompt("few_shot_examples.md")
 
@@ -109,7 +124,7 @@ FEW_SHOT_EXAMPLES = _load_prompt("few_shot_examples.md")
 # list per call rather than mutating static_prompt in place, so caching it here and reusing it
 # across threads is safe.
 _FULLTEXT_PROMPT_MANAGER = PromptManager(prompt_dir=str(PROMPTS_DIR.parent), logger=logger)
-DEFAULT_DG_PROMPT_NAME = "fulltext_verification"
+DEFAULT_DG_PROMPT_NAME = "sufficient_usage"
 _dg_static_prompt_cache: Dict[str, list] = {}
 
 
@@ -146,28 +161,10 @@ def cache_key(resource_name: str, doc_id: str, method: str) -> str:
     return f"{resource_name}|||{doc_id}|||{method}"
 
 
-_DOC_ID_RE = re.compile(r'\b(PMC\d+|[a-z]{3}_[0-9a-f]{12})\b')
-
-
-def _search_paperclip_by_exact(term: str, sources: str) -> Optional[str]:
-    """Exact-phrase paperclip search for an identifier string (DOI, PMID, ...); returns
-    the first doc_id found in the results, if any."""
-    out = _paperclip_cli_raw("search", "-s", sources, "-e", term)
-    for line in out.splitlines():
-        m = _DOC_ID_RE.search(line)
-        if m:
-            return m.group(1)
-    return None
-
-
-def _resolve_doc_id(row: Dict[str, str], sources: str) -> Optional[str]:
-    """Prefer an explicit Paperclip Doc ID column, then PMC ID (from PubMed Central
-    Link), then fall back to a paperclip search by PMID, then by DOI. PMID is tried
-    before DOI since a bare PMID is a more literal, less ambiguous search term."""
-    explicit = (row.get("Paperclip Doc ID") or "").strip()
-    if explicit:
-        return explicit
-
+def _resolve_doc_id(row: Dict[str, str]) -> Optional[str]:
+    """Prefer PMC ID (from PubMed Central Link), then PMID, then DOI - each used directly
+    as the identifier, no paperclip search needed - falling back to an explicit Paperclip
+    Doc ID column only if the row has none of the above."""
     link = row.get("PubMed Central Link", "") or ""
     m = PMC_LINK_RE.search(link)
     if m:
@@ -175,15 +172,15 @@ def _resolve_doc_id(row: Dict[str, str], sources: str) -> Optional[str]:
 
     pmid = (row.get("PMID") or "").strip()
     if pmid:
-        found = _search_paperclip_by_exact(pmid, sources)
-        if found:
-            return found
+        return pmid
 
     doi = (row.get("DOI") or "").strip()
     if doi:
-        found = _search_paperclip_by_exact(doi, sources)
-        if found:
-            return found
+        return doi
+
+    explicit = (row.get("Paperclip Doc ID") or "").strip()
+    if explicit:
+        return explicit
 
     return None
 
@@ -263,6 +260,28 @@ def _extract_reasoning(response) -> str:
     return "\n".join(texts)
 
 
+def _extract_usage(response) -> Dict[str, int]:
+    """input/output/total token counts for one API call, 0s if usage is missing."""
+    usage = getattr(response, "usage", None)
+    if usage is None:
+        return {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0}
+    return {
+        "input_tokens": getattr(usage, "input_tokens", 0) or 0,
+        "output_tokens": getattr(usage, "output_tokens", 0) or 0,
+        "total_tokens": getattr(usage, "total_tokens", 0) or 0,
+    }
+
+
+def _sum_usage(usages: List[Dict[str, int]]) -> Dict[str, int]:
+    """Sum per-call usage dicts - a row's true cost across every chunk/turn it took, not
+    just the winning chunk's own call."""
+    return {
+        "input_tokens": sum(u["input_tokens"] for u in usages),
+        "output_tokens": sum(u["output_tokens"] for u in usages),
+        "total_tokens": sum(u["total_tokens"] for u in usages),
+    }
+
+
 def _parse_final_message(response) -> Optional[dict]:
     """Pull the first message item's text out of a Responses API result, parse it as JSON,
     and attach the model's reasoning trace under "reasoning"."""
@@ -277,6 +296,43 @@ def _parse_final_message(response) -> Optional[dict]:
             parsed["reasoning"] = _extract_reasoning(response)
             return parsed
     return None
+
+
+def _to_claude_messages(rendered: List[dict]) -> tuple:
+    """Flatten a render_prompt() message list (role: system/user, OpenAI-style) into
+    Claude's shape: system role isn't valid mid-conversation on Claude Sonnet 5, so every
+    system-role turn is concatenated into the top-level system string, and every user-role
+    turn into one user message."""
+    system_text = "\n\n".join(m["content"] for m in rendered if m["role"] == "system")
+    user_text = "\n\n".join(m["content"] for m in rendered if m["role"] == "user")
+    return system_text, [{"role": "user", "content": user_text}]
+
+
+def _parse_claude_message(response) -> Optional[dict]:
+    """Pull the first text block out of a Claude Messages API result, parse it as JSON,
+    and attach the model's reasoning trace under "reasoning". output_config.format
+    guarantees the first content block is text with valid JSON."""
+    for block in response.content:
+        if block.type == "text":
+            try:
+                parsed = json.loads(block.text)
+            except json.JSONDecodeError:
+                logger.warning(f"Claude returned non-JSON text block: {block.text[:200]}")
+                return None
+            parsed["reasoning"] = "\n".join(
+                b.thinking for b in response.content if b.type == "thinking" and b.thinking
+            )
+            return parsed
+    return None
+
+
+def _extract_claude_usage(response) -> Dict[str, int]:
+    """input/output/total token counts for one Claude Messages API call."""
+    u = response.usage
+    input_tokens = getattr(u, "input_tokens", 0) or 0
+    output_tokens = getattr(u, "output_tokens", 0) or 0
+    return {"input_tokens": input_tokens, "output_tokens": output_tokens,
+            "total_tokens": input_tokens + output_tokens}
 
 
 # ---------------------------------------------------------------------------
@@ -311,15 +367,24 @@ FULLTEXT_ARTICLE_DIR = Path(os.getenv("FULLTEXT_FETCH_DIR", "/tmp/validate_fetch
 
 
 def _row_fetch_url(row: Dict[str, str]) -> str:
-    """PMC link if present, else a DOI URL - data_gatherer resolves either. Confirmed
-    live: data_gatherer pulls genuine full text (~240KB of JATS/HTML) from both; paperclip's
-    own `cat` truncates every corpus document to a ~1.5K char preview regardless of file or
-    section, so it's never used for full text here, only for the short abstract fallback."""
+    """PMC link if present, else a DOI URL, else an OpenAlex work page (oa_W-prefixed) or
+    arXiv abstract page (arx_-prefixed) for corpus entries with neither - data_gatherer
+    resolves all four. Confirmed live: data_gatherer pulls genuine full text (~240KB of
+    JATS/HTML) from PMC/DOI; paperclip's own `cat` truncates every corpus document to a
+    ~1.5K char preview regardless of file or section, so it's never used for full text
+    here, only for the short abstract fallback."""
     link = (row.get("PubMed Central Link") or "").strip()
     if link:
         return link
     doi = (row.get("DOI") or "").strip()
-    return f"https://doi.org/{doi}" if doi else ""
+    if doi:
+        return f"https://doi.org/{doi}"
+    explicit = (row.get("Paperclip Doc ID") or "").strip()
+    if explicit.startswith("oa_W"):
+        return f"https://openalex.org/works/{explicit[len('oa_'):]}"
+    if explicit.startswith("arx_"):
+        return f"https://arxiv.org/abs/{explicit[len('arx_'):]}"
+    return ""
 
 
 def prefetch_fulltext(rows_by_url: Dict[str, Dict[str, str]]) -> Dict[str, Any]:
@@ -338,7 +403,7 @@ def prefetch_fulltext(rows_by_url: Dict[str, Dict[str, str]]) -> Dict[str, Any]:
         return {}
     logger.info(f"[fulltext] fetching full text for {len(urls)} unique URL(s)")
     dg = DataGatherer(llm_name="vllm-openai/gpt-oss-20b", clear_previous_logs=False, prompt_dir="prompts")
-    local_fetch_file = "tables/hits/fetched_fulltext.tsv"
+    local_fetch_file = "tables/hits/fetched_fulltext_batch.parquet"
     fetched = dg.fetch_data(urls, local_fetch_file=local_fetch_file, write_df_to_path=local_fetch_file)
 
     content_by_url: Dict[str, Any] = {}
@@ -418,7 +483,7 @@ def prefetch_excerpts(rows_by_resource: List[tuple]) -> Dict[tuple, str]:
                 skip_rule_based_retrieved_elm=False,
                 include_snippets_with_ID_patterns=True,
                 article_id=dg.data_fetcher.url_to_article_id(url),
-                relevant_content_flag="DAS",
+                relevant_content_flag="none",
                 ID_patterns=id_patterns,
             )
             excerpt_by_key[(resource_name, url)] = excerpt or ""
@@ -433,12 +498,17 @@ def prefetch_excerpts(rows_by_resource: List[tuple]) -> Dict[tuple, str]:
     return excerpt_by_key
 
 
-def fetch_abstract_only(doc_id: str) -> str:
+def fetch_abstract_only(doc_id: str, row: Optional[Dict[str, str]] = None) -> str:
     """paperclip's own abstract section - a reasonable fallback since abstracts are short
     enough to rarely hit the ~1.5K char preview cap, used when there's no PMC link/DOI to
-    fetch full text with at all (e.g. some OpenAlex `oa_` records)."""
-    out = _paperclip_cli_raw("cat", f"/papers/{doc_id}/sections/ABSTRACT.md")
-    return out if "ERR:" not in out and out.strip() else ""
+    fetch full text with at all (e.g. some OpenAlex `oa_` records). Falls back to the row's
+    own Abstract column (already fetched from PubMed metadata) when doc_id isn't in
+    paperclip's corpus at all - e.g. a PMID with no PMC deposit, so there is no full text
+    to be had anywhere and the PubMed abstract is the genuine ceiling."""
+    out = _paperclip_cli_raw("cat", f"/papers/{doc_id}/sections/Abstract.lines")
+    if "ERR:" not in out and out.strip():
+        return out
+    return (row or {}).get("Abstract", "").strip()
 
 
 def _best_chunk_verdict(results: List[dict]) -> dict:
@@ -471,7 +541,7 @@ def validate_via_fulltext(client: OpenAI, resource_name: str, row: Dict[str, str
     content = (url_to_content or {}).get(url, "")
     is_full_text = bool(content)
     if not content:
-        content = fetch_abstract_only(doc_id)
+        content = fetch_abstract_only(doc_id, row)
     if not content:
         return {"verification_status": "error", "claim_text": "n/a",
                 "rationale": f"Could not fetch any text for {doc_id} (url={url!r})"}
@@ -483,6 +553,7 @@ def validate_via_fulltext(client: OpenAI, resource_name: str, row: Dict[str, str
     chunks = content if isinstance(content, list) else [content]
     instructions = _build_fulltext_system_prompt(resource_info, query_context)
     results = []
+    usages = []
     for chunk in chunks:
         response = client.responses.create(
             model=VLLM_MODEL,
@@ -491,11 +562,13 @@ def validate_via_fulltext(client: OpenAI, resource_name: str, row: Dict[str, str
             temperature=0.0,
             text={"format": RESPONSE_FORMAT},
         )
+        usages.append(_extract_usage(response))
         parsed = _parse_final_message(response)
         results.append(parsed or {"verification_status": "error", "claim_text": "n/a",
                                    "rationale": "model returned no parseable message"})
 
     parsed = _best_chunk_verdict(results)
+    parsed.update(_sum_usage(usages))
     if not is_full_text:
         parsed["rationale"] = "[abstract-only, no full text available] " + parsed.get("rationale", "")
     return parsed
@@ -515,7 +588,7 @@ def validate_via_fulltext_dg_prompt(client: OpenAI, resource_name: str, row: Dic
     content = (url_to_content or {}).get(url, "")
     is_full_text = bool(content)
     if not content:
-        content = fetch_abstract_only(doc_id)
+        content = fetch_abstract_only(doc_id, row)
     if not content:
         return {"verification_status": "error", "claim_text": "n/a",
                 "rationale": f"Could not fetch any text for {doc_id} (url={url!r})"}
@@ -528,6 +601,7 @@ def validate_via_fulltext_dg_prompt(client: OpenAI, resource_name: str, row: Dic
     static_prompt = _load_dg_static_prompt(prompt_name)
     chunks = content if isinstance(content, list) else [content]
     results = []
+    usages = []
     for chunk in chunks:
         messages = _FULLTEXT_PROMPT_MANAGER.render_prompt(
             static_prompt, entire_doc=False,
@@ -540,11 +614,13 @@ def validate_via_fulltext_dg_prompt(client: OpenAI, resource_name: str, row: Dic
             temperature=0.0,
             text={"format": RESPONSE_FORMAT},
         )
+        usages.append(_extract_usage(response))
         parsed = _parse_final_message(response)
         results.append(parsed or {"verification_status": "error", "claim_text": "n/a",
                                    "rationale": "model returned no parseable message"})
 
     parsed = _best_chunk_verdict(results)
+    parsed.update(_sum_usage(usages))
     if not is_full_text:
         parsed["rationale"] = "[abstract-only, no full text available] " + parsed.get("rationale", "")
     return parsed
@@ -578,9 +654,105 @@ def validate_via_excerpt_dg_prompt(client: OpenAI, resource_name: str, row: Dict
         temperature=0.0,
         text={"format": RESPONSE_FORMAT},
     )
+    usage = _extract_usage(response)
     parsed = _parse_final_message(response)
     if parsed is None:
-        return {"verification_status": "error", "claim_text": "n/a", "rationale": "model returned no parseable message"}
+        return {"verification_status": "error", "claim_text": "n/a",
+                "rationale": "model returned no parseable message", **usage}
+    parsed.update(usage)
+    return parsed
+
+
+def validate_via_fulltext_dg_prompt_claude(client, resource_name: str, row: Dict[str, str],
+                                            doc_id: str, url_to_content: Dict[str, Any] = None,
+                                            sample_size: str = "", prompt_name: str = DEFAULT_DG_PROMPT_NAME) -> dict:
+    """Same as validate_via_fulltext_dg_prompt, but calls Claude Sonnet 5 via the Anthropic
+    SDK instead of vLLM - a separate function, not a drop-in swap, so the two backends stay
+    comparable on the same held-out cases. client is accepted for calling-convention parity
+    with every other METHOD_FUNCS entry but unused; this always calls _anthropic_client, a
+    different SDK's client object."""
+    url = _row_fetch_url(row)
+    content = (url_to_content or {}).get(url, "")
+    is_full_text = bool(content)
+    if not content:
+        content = fetch_abstract_only(doc_id, row)
+    if not content:
+        return {"verification_status": "error", "claim_text": "n/a",
+                "rationale": f"Could not fetch any text for {doc_id} (url={url!r})"}
+    if not is_full_text:
+        logger.info(f"[fulltext_dg_prompt_claude] '{resource_name}'/{doc_id}: only an abstract is available, no full text")
+
+    resource_info = compose_resource_info(row, sample_size)
+    query_context = extract_query_context(row)
+    n_queries = row.get("Fetched With", "").count(";") + 1
+    static_prompt = _load_dg_static_prompt(prompt_name)
+    chunks = content if isinstance(content, list) else [content]
+    results = []
+    usages = []
+    for chunk in chunks:
+        rendered = _FULLTEXT_PROMPT_MANAGER.render_prompt(
+            static_prompt, entire_doc=False,
+            resource_info=resource_info, query_context=query_context, content=chunk,
+            n_queries=n_queries,
+        )
+        system_text, claude_messages = _to_claude_messages(rendered)
+        response = _anthropic_client.messages.create(
+            model=CLAUDE_MODEL,
+            max_tokens=16000,
+            system=system_text,
+            messages=claude_messages,
+            thinking={"type": "adaptive", "display": "summarized"},
+            output_config={"format": ANTHROPIC_RESPONSE_FORMAT},
+        )
+        usages.append(_extract_claude_usage(response))
+        parsed = _parse_claude_message(response)
+        results.append(parsed or {"verification_status": "error", "claim_text": "n/a",
+                                   "rationale": "model returned no parseable message"})
+
+    parsed = _best_chunk_verdict(results)
+    parsed.update(_sum_usage(usages))
+    if not is_full_text:
+        parsed["rationale"] = "[abstract-only, no full text available] " + parsed.get("rationale", "")
+    return parsed
+
+
+def validate_via_excerpt_dg_prompt_claude(client, resource_name: str, row: Dict[str, str],
+                                           doc_id: str, excerpt_to_content: Dict[tuple, str] = None,
+                                           sample_size: str = "", prompt_name: str = DEFAULT_DG_PROMPT_NAME) -> dict:
+    """Like validate_via_fulltext_dg_prompt_claude, but feeds only the resource-relevant
+    excerpt (see prefetch_excerpts) instead of the whole document. client is accepted for
+    calling-convention parity but unused - see validate_via_fulltext_dg_prompt_claude."""
+    url = _row_fetch_url(row)
+    excerpt = (excerpt_to_content or {}).get((resource_name, url), "")
+    if not excerpt.strip():
+        return {"verification_status": "not_confirmed", "claim_text": "n/a",
+                "rationale": "No occurrence of the resource's name, abbreviation, or discovery-query "
+                              "terms found anywhere in the document's full text."}
+
+    resource_info = compose_resource_info(row, sample_size)
+    query_context = extract_query_context(row)
+    n_queries = row.get("Fetched With", "").count(";") + 1
+    static_prompt = _load_dg_static_prompt(prompt_name)
+    rendered = _FULLTEXT_PROMPT_MANAGER.render_prompt(
+        static_prompt, entire_doc=False,
+        resource_info=resource_info, query_context=query_context, content=excerpt,
+        n_queries=n_queries,
+    )
+    system_text, claude_messages = _to_claude_messages(rendered)
+    response = _anthropic_client.messages.create(
+        model=CLAUDE_MODEL,
+        max_tokens=16000,
+        system=system_text,
+        messages=claude_messages,
+        thinking={"type": "adaptive", "display": "summarized"},
+        output_config={"format": ANTHROPIC_RESPONSE_FORMAT},
+    )
+    usage = _extract_claude_usage(response)
+    parsed = _parse_claude_message(response)
+    if parsed is None:
+        return {"verification_status": "error", "claim_text": "n/a",
+                "rationale": "model returned no parseable message", **usage}
+    parsed.update(usage)
     return parsed
 
 
@@ -701,6 +873,7 @@ def validate_via_agentic_search(client: OpenAI, resource_name: str, row: Dict[st
     query_context = extract_query_context(row)
     system_prompt = _build_agentic_system_prompt(resource_info, doc_id, query_context, max_turns)
     input_items: List[dict] = [{"role": "user", "content": "Begin the investigation."}]
+    usages = []
 
     # Two phases, deliberately never combined in one call - confirmed live against this
     # vLLM/gpt-oss deployment: a forced json_schema `text.format` alongside `tools` on the
@@ -717,6 +890,7 @@ def validate_via_agentic_search(client: OpenAI, resource_name: str, row: Dict[st
             tools=AGENT_TOOLS,
             temperature=0.0,
         )
+        usages.append(_extract_usage(response))
         input_items += [item.model_dump() for item in response.output]
 
         function_calls = [item for item in response.output if getattr(item, "type", None) == "function_call"]
@@ -743,11 +917,369 @@ def validate_via_agentic_search(client: OpenAI, resource_name: str, row: Dict[st
         temperature=0.0,
         text={"format": RESPONSE_FORMAT},
     )
+    usages.append(_extract_usage(response))
+    total_usage = _sum_usage(usages)
     parsed = _parse_final_message(response)
     if parsed is not None:
+        parsed.update(total_usage)
         return parsed
     return {"verification_status": "error", "claim_text": "n/a",
-            "rationale": "model returned no parseable final verdict"}
+            "rationale": "model returned no parseable final verdict", **total_usage}
+
+
+def build_fulltext_batch_jsonl(df: pd.DataFrame, resource_col: str, output_path: Path, sources: str,
+                                sample_sizes: Dict[str, str], prompt_name: str = DEFAULT_DG_PROMPT_NAME) -> Path:
+    """Build an OpenAI-batch-format JSONL (one line per (resource, doc_id, chunk) request) for the
+    fulltext_dg_prompt procedure - full document text, not an excerpt.
+
+    Fetches/normalizes exactly like prefetch_fulltext (clean stripped text, chunked only if still
+    over the token limit after ref-stripping), rendering each row's messages ourselves via
+    render_prompt with the full resource_info/query_context/content/n_queries set, then hands the
+    finished request list to data_gatherer's own LLMClient._handle_batch_mode - the same call
+    run_integrated_batch_processing itself delegates to for writing the batch file. Bypasses only
+    run_integrated_batch_processing's own render_prompt call, which passes content/repos/url/
+    section_filter and has no slot for a per-row resource_info/query_context.
+    """
+    from data_gatherer.data_gatherer import DataGatherer
+
+    rows = df.to_dict("records")
+    doc_ids = [_resolve_doc_id(row) for row in rows]
+    resolved_rows = [(row, doc_id) for row, doc_id in zip(rows, doc_ids) if doc_id]
+    logger.info(f"[batch] {len(resolved_rows)}/{len(rows)} rows resolved to a doc_id")
+
+    urls = list({_row_fetch_url(row) for row, _ in resolved_rows if _row_fetch_url(row)})
+    checkpoint_path = Path("tables/hits/fetched_fulltext_batch.parquet")
+    checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+    if checkpoint_path.exists():
+        logger.info(f"[batch] resuming from existing checkpoint {checkpoint_path}")
+
+    # BackupDataStore (data_gatherer's data_fetcher.py) persists every successful fetch to
+    # write_df_to_path incrementally (flushing - a disk merge, not an overwrite - every 200
+    # fetches, plus a final flush for the remainder), so a single call over the whole URL list
+    # is already crash-bounded to at most ~200 URLs of loss, with no need for our own outer
+    # chunking/checkpointing loop.
+    dg = DataGatherer(llm_name="vllm-openai/gpt-oss-20b", clear_previous_logs=False,
+                       process_entire_document=True, prompt_dir="prompts", log_level="INFO")
+    fetched = dg.fetch_data(urls, local_fetch_file=str(checkpoint_path), write_df_to_path=str(checkpoint_path))
+    logger.info(f"[batch] fetched {len(fetched)}/{len(urls)} URL(s)")
+
+    content_by_url: Dict[str, Any] = {}
+    logger.info(f"[batch] normalizing full text for {len(urls)} unique URL(s)")
+    last_format = None
+    for idx, url in enumerate(urls):
+        logger.info(f"progress: {idx}/{len(urls)}")
+        data = fetched.get(url)
+        if not data:
+            logger.warning(f"[batch] could not fetch {url}")
+            continue
+        try:
+            raw_format = data["raw_data_format"]
+            if raw_format != last_format:
+                dg.init_parser_by_input_type(raw_format, data, full_document_read=True)
+                last_format = raw_format
+            content, _ = dg.normalize_fulltext_input(
+                data["fetched_data"], url, str(FULLTEXT_ARTICLE_DIR), raw_format,
+                remove_refs=True, enable_chunking=True,
+            )
+            if content:
+                content_by_url[url] = content
+        except Exception as e:
+            logger.warning(f"[batch] failed to normalize {url}: {e}")
+
+    static_prompt = _load_dg_static_prompt(prompt_name)
+    batch_requests = []
+    seen = set()
+    for row_idx, (row, doc_id) in enumerate(resolved_rows):
+        resource_name = row.get(resource_col, "")
+        if (resource_name, doc_id) in seen:
+            continue
+        seen.add((resource_name, doc_id))
+        url = _row_fetch_url(row)
+        content = content_by_url.get(url) or fetch_abstract_only(doc_id, row)
+        if not content:
+            logger.warning(f"[batch] '{resource_name}'/{doc_id}: no text available, skipped")
+            continue
+        resource_info = compose_resource_info(row, sample_sizes.get(resource_name, ""))
+        query_context = extract_query_context(row)
+        n_queries = row.get("Fetched With", "").count(";") + 1
+        chunks = content if isinstance(content, list) else [content]
+        # doc_id goes first and resource_name is truncated, not the reverse - a long compound
+        # resource_name (common for catalog sub-study entries) must never swallow doc_id out of
+        # the string, or two different (resource, doc) pairs collapse onto the same custom_id.
+        # row_idx is the actual uniqueness guarantee; the rest is just for readability.
+        safe_doc = re.sub(r'[^a-zA-Z0-9_-]', '_', doc_id)
+        safe_resource = re.sub(r'[^a-zA-Z0-9_-]', '_', resource_name)[:40]
+        base_custom_id = f"{safe_doc}_{safe_resource}_{row_idx}"
+        for chunk_idx, chunk in enumerate(chunks):
+            messages = _FULLTEXT_PROMPT_MANAGER.render_prompt(
+                static_prompt, entire_doc=False,
+                resource_info=resource_info, query_context=query_context, content=chunk,
+                n_queries=n_queries,
+            )
+            batch_requests.append({
+                "custom_id": f"{base_custom_id}_{chunk_idx}",
+                "messages": messages,
+                "metadata": {"resource_name": resource_name, "doc_id": doc_id, "url": url},
+            })
+
+    logger.info(f"[batch] rendered {len(batch_requests)} request(s), writing batch file via LLMClient")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    dg.parser.llm_client._handle_batch_mode(
+        batch_requests=batch_requests,
+        batch_file_path=str(output_path),
+        temperature=0.0,
+        response_format=RESPONSE_FORMAT,
+        api_provider="openai",
+    )
+    # _handle_batch_mode writes self.model (here "vllm-openai/gpt-oss-20b") verbatim into each
+    # request's body.model - unlike the live api_call path, which strips the "vllm-" prefix before
+    # sending it to the server (llm_client.py's self.model[len('vllm-'):]). The prefixed form is
+    # only needed locally, for DataGatherer's own entire_document_models allowlist check; a served
+    # model named "vllm-openai/gpt-oss-20b" doesn't exist, so every request would 404 unfixed.
+    with open(output_path) as f:
+        lines = [json.loads(line) for line in f]
+    for line in lines:
+        line["body"]["model"] = VLLM_MODEL
+    with open(output_path, "w") as f:
+        for line in lines:
+            f.write(json.dumps(line) + "\n")
+    logger.info(f"[batch] wrote {len(batch_requests)} request(s) → {output_path}")
+    return output_path
+
+
+# ---------------------------------------------------------------------------
+# Batch results ingestion - the other half of the offline batch workflow:
+# build_fulltext_batch_jsonl above writes requests; this reads back the results
+# scripts/run_vllm_jsonl_batch.py produced from them.
+# ---------------------------------------------------------------------------
+
+_SMART_QUOTES = str.maketrans({"“": '"', "”": '"'})
+
+# Fetched With prefixes that unambiguously tag a query method. scrape_publications.py's
+# search_pubmed() tags original/v2/v3/v4 too (see search_pubmed and _search_pubmed_fanout) -
+# older combine_hits files predating that fix still have untagged original/v2/v3/v4 rows,
+# which fall into "other" since they're indistinguishable from each other without a tag.
+_TAGGED_METHOD_RE = re.compile(r"^(paperclip|v5|v4|v3|v2|original):")
+
+# The 8 pre-merge files that fed into the first combine_hits.tsv's "other" bucket - q1-q4
+# map to query_method original/v2/v3/v4 (confirmed via the method labels in
+# docs/plans/paperclip/experiments/coverage_comparison_queries.ipynb). Used to recover the
+# original/v2/v3/v4 split for rows predating the Fetched With tagging fix.
+_EXPERIMENTS_DIR = Path(__file__).parent.parent / "docs" / "plans" / "paperclip" / "experiments"
+_Q_FILE_METHODS = {
+    "q1_pubmed_full.tsv": "original", "q1_pmc_full.tsv": "original",
+    "q2_pubmed_full.tsv": "v2", "q2_pmc_full.tsv": "v2",
+    "q3_pubmed_full.tsv": "v3", "q3_pmc_full.tsv": "v3",
+    "q4_pubmed_full.tsv": "v4", "q4_pmc_full.tsv": "v4",
+}
+
+
+def _parse_output_text(output_text: str) -> Optional[dict]:
+    """Parse a response's output_text as the {verification_status, claim_text, rationale}
+    JSON object. Falls back to normalizing smart quotes (a known vLLM/gpt-oss-20b
+    structured-output quirk) before giving up. Returns None if still unparseable."""
+    try:
+        return json.loads(output_text)
+    except (json.JSONDecodeError, TypeError):
+        pass
+    try:
+        return json.loads(output_text.translate(_SMART_QUOTES))
+    except (json.JSONDecodeError, TypeError, AttributeError):
+        return None
+
+
+def _batch_number(path: Path) -> int:
+    m = re.search(r"fulltext_batch_(\d+)_results\.jsonl", path.name)
+    return int(m.group(1)) if m else -1
+
+
+def _query_methods(fetched_with: str) -> set:
+    """A row's Fetched With is a semicolon-joined union of every method that (re)discovered
+    it (see staging/combine_hits.py) - a single row can carry more than one method."""
+    methods = set()
+    for segment in fetched_with.split(";"):
+        segment = segment.strip()
+        if not segment:
+            continue
+        m = _TAGGED_METHOD_RE.match(segment)
+        methods.add(m.group(1) if m else "other")
+    return methods
+
+
+def _load_pre_merge_method_index(experiments_dir: Path) -> dict:
+    """(key_type, value) -> set of methods, built from the pre-combine_hits.py experiment
+    files - lets "other"-tagged rows (predating the Fetched With tagging fix) be resolved
+    back to their real original/v2/v3/v4 method by identity-key match."""
+    from combine_hits import _row_identity_keys
+
+    index: dict = {}
+    for filename, method in _Q_FILE_METHODS.items():
+        path = experiments_dir / filename
+        if not path.exists():
+            continue
+        df = pd.read_csv(path, sep="\t", dtype=str).fillna("")
+        for row in df.to_dict("records"):
+            for key in _row_identity_keys(row):
+                index.setdefault(key, set()).add(method)
+    return index
+
+
+def _load_doc_id_lookup(combine_hits_path: Path, pre_merge_index: Optional[dict] = None) -> dict:
+    """(resource_name, doc_id) -> set of query methods, using the exact same doc_id
+    resolution build_fulltext_batch_jsonl used when building the batch requests.
+
+    If pre_merge_index is given, any row tagged "other" (predating the Fetched With
+    tagging fix) is cross-referenced against it by identity key (PMID/DOI/PMC ID/doc_id)
+    to recover its real original/v2/v3/v4 method - "other" is only kept as a last resort
+    when no pre-merge file matches it at all."""
+    from combine_hits import _row_identity_keys
+
+    df = pd.read_csv(combine_hits_path, sep="\t", dtype=str).fillna("")
+    lookup = {}
+    for row in df.to_dict("records"):
+        doc_id = _resolve_doc_id(row)
+        if not doc_id:
+            continue
+        methods = _query_methods(row.get("Fetched With", ""))
+        if pre_merge_index is not None and "other" in methods:
+            resolved = set()
+            for key in _row_identity_keys(row):
+                resolved.update(pre_merge_index.get(key, set()))
+            if resolved:
+                methods = (methods - {"other"}) | resolved
+        key = (row.get("Resource Name", ""), doc_id)
+        lookup.setdefault(key, set()).update(methods)
+    return lookup
+
+
+def ingest_fulltext_batch_results(results_dir: Path, combine_hits_path: Optional[Path] = None,
+                                   experiments_dir: Path = _EXPERIMENTS_DIR) -> pd.DataFrame:
+    """Ingest scripts/run_vllm_jsonl_batch.py output into one verdict row per (resource_name,
+    doc_id) - the other half of the offline batch workflow build_fulltext_batch_jsonl starts.
+
+    Reduces multiple oversized-document chunks to a single verdict via _best_chunk_verdict
+    (confirmed > insufficient_evidence > not_confirmed > error). Logs a full diagnostic report
+    (per-batch success/error/unparseable counts, verification_status breakdown, top error
+    messages, and - if combine_hits_path is given - a verification_status x query_method
+    breakdown) rather than returning it, since this is meant to run unattended as a pipeline
+    stage.
+
+    Args:
+        results_dir: Directory of fulltext_batch_*_results.jsonl files.
+        combine_hits_path: Optional combine_hits_*.tsv - enables the query_method breakdown.
+        experiments_dir: Pre-merge q1-q4 experiment files dir, used to resolve "other"-tagged
+            rows back to original/v2/v3/v4.
+
+    Returns:
+        DataFrame with one row per (resource_name, doc_id): resource_name, doc_id, url,
+        verification_status, claim_text, rationale, method.
+    """
+    files = sorted(results_dir.glob("fulltext_batch_*_results.jsonl"), key=_batch_number)
+    logger.info(f"[ingest] found {len(files)} results file(s) in {results_dir}")
+
+    per_batch: Dict[int, Dict[str, int]] = {}
+    overall_status = Counter()
+    overall_errors = Counter()
+    by_key: Dict[tuple, List[dict]] = {}
+    n_unparseable = 0
+
+    for f in files:
+        batch_num = _batch_number(f)
+        stats = per_batch.setdefault(batch_num, {"total": 0, "success": 0, "error": 0, "unparseable": 0})
+        with open(f, encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                rec = json.loads(line)
+                stats["total"] += 1
+                meta = rec.get("metadata") or {}
+                key = (meta.get("resource_name", ""), meta.get("doc_id", ""))
+
+                if "error" in rec:
+                    stats["error"] += 1
+                    overall_errors[rec["error"][:60]] += 1
+                    verdict = {"verification_status": "error", "claim_text": "n/a", "rationale": rec["error"]}
+                else:
+                    parsed = _parse_output_text(rec.get("output_text", ""))
+                    if parsed is None:
+                        stats["unparseable"] += 1
+                        n_unparseable += 1
+                        verdict = {
+                            "verification_status": "error", "claim_text": "n/a",
+                            "rationale": f"unparseable output_text: {rec.get('output_text', '')[:200]!r}",
+                        }
+                    else:
+                        stats["success"] += 1
+                        overall_status[parsed.get("verification_status", "(missing key)")] += 1
+                        verdict = parsed
+                verdict["url"] = meta.get("url", "")
+                by_key.setdefault(key, []).append(verdict)
+
+    rows = []
+    for (resource_name, doc_id), verdicts in by_key.items():
+        best = _best_chunk_verdict(verdicts)
+        rows.append({
+            "resource_name": resource_name,
+            "doc_id": doc_id,
+            "url": best.get("url", ""),
+            "verification_status": best.get("verification_status", ""),
+            "claim_text": best.get("claim_text", ""),
+            "rationale": best.get("rationale", ""),
+            "method": "vllm_fulltext_dg_prompt",
+        })
+    result_df = pd.DataFrame(rows)
+
+    # --- diagnostic report, logged rather than returned ---
+    total = sum(s["total"] for s in per_batch.values())
+    n_success = sum(s["success"] for s in per_batch.values())
+    total_error = sum(s["error"] for s in per_batch.values())
+    logger.info(f"[ingest] {total} result line(s) across {len(files)} batch(es) -> "
+                f"{len(by_key)} unique (resource, doc_id) pair(s)")
+    logger.info(f"[ingest] {'Batch':>6}  {'Total':>6}  {'Success':>8}  {'Error':>6}  {'Unparseable':>11}")
+    for batch_num in sorted(per_batch):
+        s = per_batch[batch_num]
+        logger.info(f"[ingest] {batch_num:>6}  {s['total']:>6}  {s['success']:>8}  "
+                    f"{s['error']:>6}  {s['unparseable']:>11}")
+    logger.info(f"[ingest] {'TOTAL':>6}  {total:>6}  {n_success:>8}  {total_error:>6}  {n_unparseable:>11}")
+
+    logger.info("[ingest] verification_status (of parsed successes):")
+    for status, count in overall_status.most_common():
+        logger.info(f"[ingest]   {status:25s} {count:6d}  ({100 * count / max(n_success, 1):.1f}%)")
+
+    if overall_errors:
+        logger.info("[ingest] top error messages:")
+        for msg, count in overall_errors.most_common(10):
+            logger.info(f"[ingest]   {count:5d}x  {msg}")
+
+    if combine_hits_path is not None:
+        pre_merge_index = _load_pre_merge_method_index(experiments_dir)
+        doc_id_lookup = _load_doc_id_lookup(combine_hits_path, pre_merge_index)
+        method_status_counts = Counter()
+        n_unmatched = 0
+        for row in rows:
+            methods = doc_id_lookup.get((row["resource_name"], row["doc_id"]))
+            if methods:
+                for method in methods:
+                    method_status_counts[(method, row["verification_status"])] += 1
+            else:
+                n_unmatched += 1
+
+        methods_seen = sorted({m for m, _ in method_status_counts})
+        statuses_seen = sorted({s for _, s in method_status_counts})
+        logger.info("[ingest] verification_status x query_method (rows found by >1 method "
+                    "count in each - totals per method won't sum to n_success):")
+        header = f"{'method':12s}" + "".join(f"{s:>24s}" for s in statuses_seen) + f"{'total':>10s}"
+        logger.info(f"[ingest] {header}")
+        for method in methods_seen:
+            row_counts = [method_status_counts.get((method, s), 0) for s in statuses_seen]
+            logger.info(f"[ingest] {method:12s}" + "".join(f"{c:>24d}" for c in row_counts) +
+                        f"{sum(row_counts):>10d}")
+        if n_unmatched:
+            logger.warning(f"[ingest] {n_unmatched} row(s) had no matching (resource_name, doc_id) "
+                            f"in {combine_hits_path.name}")
+
+    return result_df
 
 
 # ---------------------------------------------------------------------------
@@ -759,17 +1291,20 @@ METHOD_FUNCS = {
     "fulltext": validate_via_fulltext,
     "fulltext_dg_prompt": validate_via_fulltext_dg_prompt,
     "excerpt_dg_prompt": validate_via_excerpt_dg_prompt,
+    "fulltext_dg_prompt_claude": validate_via_fulltext_dg_prompt_claude,
+    "excerpt_dg_prompt_claude": validate_via_excerpt_dg_prompt_claude,
 }
 
 # Methods whose prompt needs the prefetched full text (vs. agentic_search, which fetches
 # on demand via paperclip grep/search tool calls instead).
-FULLTEXT_METHODS = {"fulltext", "fulltext_dg_prompt"}
-# excerpt_dg_prompt needs the prefetched *excerpt* (see prefetch_excerpts) instead of full text -
-# a different dict, keyed by (resource_name, url) rather than just url.
-EXCERPT_METHODS = {"excerpt_dg_prompt"}
+FULLTEXT_METHODS = {"fulltext", "fulltext_dg_prompt", "fulltext_dg_prompt_claude"}
+# excerpt_dg_prompt/_claude need the prefetched *excerpt* (see prefetch_excerpts) instead of
+# full text - a different dict, keyed by (resource_name, url) rather than just url.
+EXCERPT_METHODS = {"excerpt_dg_prompt", "excerpt_dg_prompt_claude"}
 # Methods whose cache entries are further keyed by which JSON prompt template produced them -
 # switching --dg-prompt-name must not return a stale prompt's cached verdict.
-DG_PROMPT_METHODS = {"fulltext_dg_prompt", "excerpt_dg_prompt"}
+DG_PROMPT_METHODS = {"fulltext_dg_prompt", "excerpt_dg_prompt",
+                      "fulltext_dg_prompt_claude", "excerpt_dg_prompt_claude"}
 
 
 def validate_group(client: OpenAI, resource_name: str, rows: List[Dict[str, str]], sources: str,
@@ -779,7 +1314,7 @@ def validate_group(client: OpenAI, resource_name: str, rows: List[Dict[str, str]
                     excerpt_to_content: Dict[tuple, str] = None) -> List[Dict[str, dict]]:
     """Validate one resource's rows; return a list (one per row) of {method: {verification_status,
     claim_text, rationale}} dicts."""
-    doc_ids = [_resolve_doc_id(row, sources) for row in rows]
+    doc_ids = [_resolve_doc_id(row) for row in rows]
     resolved = sum(1 for d in doc_ids if d)
     logger.info(f"[validate] '{resource_name}': {resolved}/{len(rows)} rows resolved to a paperclip doc_id")
 
@@ -853,11 +1388,12 @@ def main():
     parser.add_argument('--resource-col', default='Resource Name', help='Column to group rows by (default: "Resource Name")')
     parser.add_argument('--sources', default='pmc,biorxiv,medrxiv,arxiv,trials',
                        help='Comma-separated paperclip -s/--source value(s) (default: pmc,biorxiv,medrxiv,arxiv,trials)')
-    parser.add_argument('--method', choices=['agentic_search', 'fulltext', 'fulltext_dg_prompt', 'excerpt_dg_prompt', 'both'],
+    parser.add_argument('--method', choices=['agentic_search', 'fulltext', 'fulltext_dg_prompt', 'excerpt_dg_prompt',
+                                              'fulltext_dg_prompt_claude', 'excerpt_dg_prompt_claude', 'both'],
                        default='fulltext',
-                       help='Validation procedure to run (default: fulltext). fulltext_dg_prompt: full-document read '
-                            'via an externalized JSON prompt template. excerpt_dg_prompt: same template, but fed only '
-                            'the resource-matching excerpt (retrieve-then-read), not the whole document.')
+                       help='Validation procedure to run (default: fulltext). _dg_prompt: externalized JSON prompt '
+                            'template. excerpt_*: fed only the resource-matching excerpt, not the whole document. '
+                            '_claude variants run on Claude Sonnet 5 instead of vLLM.')
     parser.add_argument('--max-turns', type=int, default=12, help='Tool-call budget for --method agentic_search (default: 12)')
     parser.add_argument('--dg-prompt-name', default=DEFAULT_DG_PROMPT_NAME,
                        help=f'JSON template under prompts/ for --method fulltext_dg_prompt (default: {DEFAULT_DG_PROMPT_NAME})')
@@ -934,7 +1470,11 @@ def main():
     claim_columns: Dict[str, List[str]] = {m: [""] * len(df) for m in methods}
     rationale_columns: Dict[str, List[str]] = {m: [""] * len(df) for m in methods}
     reasoning_columns: Dict[str, List[str]] = {m: [""] * len(df) for m in methods}
+    input_tok_columns: Dict[str, List[int]] = {m: [0] * len(df) for m in methods}
+    output_tok_columns: Dict[str, List[int]] = {m: [0] * len(df) for m in methods}
+    total_tok_columns: Dict[str, List[int]] = {m: [0] * len(df) for m in methods}
     completed = 0
+    run_total_tokens = 0
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {
             executor.submit(validate_group, client, resource_name, group.to_dict("records"), args.sources,
@@ -958,7 +1498,12 @@ def main():
                     claim_columns[method][pos] = r.get("claim_text", "")
                     rationale_columns[method][pos] = r.get("rationale", "")
                     reasoning_columns[method][pos] = r.get("reasoning", "")
-            logger.info(f"[validate] [{completed}/{len(groups)}] '{resource_name}' done")
+                    input_tok_columns[method][pos] = r.get("input_tokens", 0)
+                    output_tok_columns[method][pos] = r.get("output_tokens", 0)
+                    total_tok_columns[method][pos] = r.get("total_tokens", 0)
+                    run_total_tokens += r.get("total_tokens", 0)
+            logger.info(f"[validate] [{completed}/{len(groups)}] '{resource_name}' done "
+                        f"({run_total_tokens:,} tokens spent so far)")
             if not args.no_cache and completed % 10 == 0:
                 save_cache(cache_path, cache)
 
@@ -971,6 +1516,9 @@ def main():
         df[f"Claim Text{suffix}"] = claim_columns[method]
         df[f"Rationale{suffix}"] = rationale_columns[method]
         df[f"Reasoning{suffix}"] = reasoning_columns[method]
+        df[f"Input Tokens{suffix}"] = input_tok_columns[method]
+        df[f"Output Tokens{suffix}"] = output_tok_columns[method]
+        df[f"Total Tokens{suffix}"] = total_tok_columns[method]
 
     if args.output:
         output_path = Path(args.output)
@@ -988,7 +1536,9 @@ def main():
                   ("confirmed", "not_confirmed", "insufficient_evidence", "error", "not_in_corpus")}
         n_resolved = counts["confirmed"] + counts["not_confirmed"] + counts["insufficient_evidence"]
         precision = f"{counts['confirmed'] / n_resolved * 100:.1f}%" if n_resolved else "N/A"
-        logger.info(f"[{method}] {counts}  (confirmed / resolved: {precision})")
+        method_tokens = sum(total_tok_columns[method])
+        logger.info(f"[{method}] {counts}  (confirmed / resolved: {precision}, tokens: {method_tokens:,})")
+    logger.info(f"Total tokens spent across this run: {run_total_tokens:,}")
     logger.info("=" * 60)
 
 

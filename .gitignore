@@ -78,3 +78,5 @@ docs/plans/paperclip/validation/smoke_test_cache.json
 docs/plans/paperclip/validation/smoke_test_cache_evidence.json
 docs/plans/paperclip/validation/paperclip_full_**
 docs/plans/paperclip/validation/make_atomic_sample.py
+
+prompts/validate_fetched_publications/fulltext_batch_**

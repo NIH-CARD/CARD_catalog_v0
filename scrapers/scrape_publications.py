@@ -664,7 +664,7 @@ def _search_pubmed_fanout(study_name: str, abbreviation: str, diseases: str, sea
             "Abbreviation": abbreviation,
             "Diseases Included": diseases,
             "Data Modalities": search_data_modalities,
-            "Fetched With": seen_ids.get(r.get(id_field), ""),
+            "Fetched With": f"v4:{seen_ids.get(r.get(id_field), '')}",
         })
 
     logger.info(f"[v4] Successfully processed {len(results)} articles")
@@ -1368,7 +1368,7 @@ def search_pubmed(study_name: str, abbreviation: str, diseases: str, search_data
                 "Abbreviation": abbreviation,
                 "Diseases Included": diseases,
                 "Data Modalities": search_data_modalities,
-                "Fetched With": f"{query} [{db}]" if db == "pmc" else query,
+                "Fetched With": f"{query_method}:{query} [{db}]" if db == "pmc" else f"{query_method}:{query}",
             })
 
         logger.info(f"Successfully processed {len(results)} articles")
