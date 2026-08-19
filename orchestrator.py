@@ -317,6 +317,7 @@ def run_full_rebuild(
         from pipelines.pub_supplementary import PubSupplementaryStage
         from pipelines.pub_grants import PubGrantsStage
         from pipelines.pub_software import PubSoftwareStage
+        from pipelines.pub_models import PubModelsStage
         from pipelines.pub_metadata_shared import load_pmc_links, prefetch_articles
 
         # Fetch each article's full text once, up front, so the four stages below
@@ -343,6 +344,7 @@ def run_full_rebuild(
                 ("pub_supplementary", PubSupplementaryStage(), "pub_supplementary_*.tsv", pub_metadata_kwargs),
                 ("pub_grants", PubGrantsStage(), "pub_grants_*.tsv", pub_metadata_kwargs),
                 ("pub_software", PubSoftwareStage(), "pub_software_*.tsv", pub_metadata_kwargs),
+                ("pub_models", PubModelsStage(), "pub_models_*.tsv", pub_metadata_kwargs),
             ],
             input_path=pubmed_hits,
             skip_stages=skip_stages,
@@ -385,8 +387,12 @@ def run_full_rebuild(
                     extra_repos_path = HITS_DIR / f"extra_repos_from_software_{_ts()}.tsv"
                     candidates.to_csv(extra_repos_path, sep="\t", index=False)
                     logger.info(f"{len(candidates)} GitHub repo(s) from pub_software → {extra_repos_path.name}")
+
+        models_hits = pub_metadata_results["pub_models"]
+        if models_hits and models_hits.exists():
+            run_normalizer(models_hits, "pub_models", "pub_models_*.tsv", force=force)
     else:
-        logger.warning("Skipping pub_datasets/pub_supplementary/pub_grants/pub_software: no pubmed_hits available")
+        logger.warning("Skipping pub_datasets/pub_supplementary/pub_grants/pub_software/pub_models: no pubmed_hits available")
 
     # --- Stage 6: SciLite annotations (Europe PMC) ---
     if pubmed_hits and pubmed_hits.exists():
@@ -538,8 +544,8 @@ def main() -> None:
     parser.add_argument(
         "--no-cache", action="store_true",
         help="Reprocess every item in pub_datasets/pub_supplementary/pub_grants/"
-             "pub_software/repo_analysis/page_navigation, ignoring what's already "
-             "in tables/final/ (a true full rebuild)",
+             "pub_software/pub_models/repo_analysis/page_navigation, ignoring what's "
+             "already in tables/final/ (a true full rebuild)",
     )
     parser.add_argument(
         "--verbose", "-v", action="store_true",

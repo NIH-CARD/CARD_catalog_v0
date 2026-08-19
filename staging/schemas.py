@@ -276,6 +276,71 @@ class PubSoftwareRow(_Base):
 
 
 # ---------------------------------------------------------------------------
+# Table: Publication pretrained-model mentions   (tables/final/pub_models_*.tsv)
+# ---------------------------------------------------------------------------
+class PubModelRow(_Base):
+    Pub_Title: str = ""
+    Source_URL: str = ""
+    Raw_Data_Format: str = ""
+    Model_Name: str = ""
+    Version: str = ""
+    Mention_Type: str = ""
+    Model_URL: str = ""
+    Context_From_Paper: str = ""
+
+    model_config = {
+        "populate_by_name": True,
+        "alias_generator": lambda s: s.replace("_", " "),
+    }
+
+    @field_validator(
+        "Pub_Title", "Source_URL", "Raw_Data_Format", "Model_Name",
+        "Version", "Mention_Type", "Model_URL", "Context_From_Paper",
+        mode="before",
+    )
+    @classmethod
+    def to_str(cls, v: object) -> str:
+        return _coerce_str(v)
+
+    COLUMNS: ClassVar[list[str]] = [
+        "Pub Title", "Source URL", "Raw Data Format", "Model Name",
+        "Version", "Mention Type", "Model URL", "Context From Paper",
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Table: Publication verification results   (tables/final/pub_verification_*.tsv)
+# ---------------------------------------------------------------------------
+class PubVerificationRow(_Base):
+    Resource_Name: str = ""
+    Doc_ID: str = ""
+    URL: str = ""
+    Verification_Status: str = ""
+    Claim_Text: str = ""
+    Rationale: str = ""
+    Method: str = ""
+
+    model_config = {
+        "populate_by_name": True,
+        "alias_generator": lambda s: s.replace("_", " "),
+    }
+
+    @field_validator(
+        "Resource_Name", "Doc_ID", "URL", "Verification_Status",
+        "Claim_Text", "Rationale", "Method",
+        mode="before",
+    )
+    @classmethod
+    def to_str(cls, v: object) -> str:
+        return _coerce_str(v)
+
+    COLUMNS: ClassVar[list[str]] = [
+        "Resource Name", "Doc ID", "URL", "Verification Status",
+        "Claim Text", "Rationale", "Method",
+    ]
+
+
+# ---------------------------------------------------------------------------
 # Table: New Corpus   (tables/final/new_corpus_*.tsv)
 # ---------------------------------------------------------------------------
 class NewCorpusRow(_Base):
@@ -390,6 +455,8 @@ SCHEMA_REGISTRY: dict[str, type[_Base]] = {
     "supplementary": SupplementaryRow,
     "pub_grants": PubGrantRow,
     "pub_software": PubSoftwareRow,
+    "pub_models": PubModelRow,
+    "pub_verification": PubVerificationRow,
     "new_corpus": NewCorpusRow,
     "scilite": SciLiteAnnotationRow,
 }

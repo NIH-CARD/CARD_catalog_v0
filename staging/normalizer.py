@@ -331,6 +331,14 @@ def _normalize_pub_software(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _normalize_pub_models(df: pd.DataFrame) -> pd.DataFrame:
+    return df
+
+
+def _normalize_pub_verification(df: pd.DataFrame) -> pd.DataFrame:
+    return df
+
+
 def _normalize_new_corpus(df: pd.DataFrame) -> pd.DataFrame:
     if "Access_URL" in df.columns:
         df["Access_URL"] = df["Access_URL"].apply(_first_url_from_list)
@@ -400,6 +408,8 @@ _NORMALIZERS = {
     "supplementary": _normalize_supplementary,
     "pub_grants": _normalize_pub_grants,
     "pub_software": _normalize_pub_software,
+    "pub_models": _normalize_pub_models,
+    "pub_verification": _normalize_pub_verification,
     "new_corpus": _normalize_new_corpus,
     "scilite": _normalize_scilite,
 }
