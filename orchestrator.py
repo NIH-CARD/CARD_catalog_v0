@@ -480,7 +480,7 @@ def run_full_rebuild(
                 run_normalizer(nav_hits, "new_corpus", "new_corpus_*.tsv", force=force)
 
     # --- Final step: join SciLite annotations and cited datasets into publications ---
-    from staging.join_annotations import join_annotations
+    from staging.publication_glue import join_annotations
     logger.info("Joining SciLite annotations and cited datasets into publications…")
     join_annotations()
 

@@ -4,7 +4,7 @@
 ---
 
 ## Context
-CARD Catalog uses SciLite (Europe PMC API) to annotate publications with diseases, genes/proteins, and chemicals. These are joined into the **PubMetaData** table via `staging/join_annotations.py`. SciLite coverage is limited to articles indexed by Europe PMC and only covers three entity types.
+CARD Catalog uses SciLite (Europe PMC API) to annotate publications with diseases, genes/proteins, and chemicals. These are joined into the **PubMetaData** table via `staging/publication_glue.py`. SciLite coverage is limited to articles indexed by Europe PMC and only covers three entity types.
 
 AnnotAgent is a local/cloud Transformer NER pipeline designed to run **in parallel with SciLite for comparison** — not as a replacement. It fetches full-text PMC XML, runs configurable HuggingFace NER models, and extracts the same three SciLite types plus new ones (cell types, brain regions, variants). Output conforms to the existing `SciLiteAnnotationRow` schema so the join infrastructure works unchanged, and all results land in **PubMetaData**.
 
@@ -20,7 +20,7 @@ scrapers/
   ner_runner.py               # HuggingFace NER inference, model-agnostic
 staging/
   annot_agent_compare.py      # SciLite vs AnnotAgent comparison report
-  join_annotations.py         # Joins SciLite + AnnotAgent → PubMetaData
+  publication_glue.py         # Joins SciLite + AnnotAgent → PubMetaData
 pipelines/
   annot_agent.py              # PipelineStage wrapper (defer to v2)
 tables/hits/
@@ -131,9 +131,9 @@ python -m staging.annot_agent_compare
 
 ---
 
-## Step 5 — PubMetaData Integration (`staging/join_annotations.py`)
+## Step 5 — PubMetaData Integration (`staging/publication_glue.py`)
 
-`join_annotations.py` is the step that writes to **PubMetaData** (`pubmetadata_{ts}.tsv`). Add a second pass that reads `annot_agent_annotations_*.tsv` and joins into **separate columns** alongside SciLite (preserves provenance for comparison):
+`publication_glue.py` is the step that writes to **PubMetaData** (`pubmetadata_{ts}.tsv`). Add a second pass that reads `annot_agent_annotations_*.tsv` and joins into **separate columns** alongside SciLite (preserves provenance for comparison):
 
 ```python
 _ANNOT_AGENT_TYPE_TO_COLUMN = {
@@ -181,7 +181,7 @@ New PubMetaData columns also require:
 |---|---|
 | `staging/schemas.py` | Add `AnnotAgentAnnotationRow` (SciLiteAnnotationRow + `score`) |
 | `staging/normalizer.py` | Add `"annot_agent"` passthrough to `_NORMALIZERS`; rename `"publications"` output to `pubmetadata_*.tsv` |
-| `staging/join_annotations.py` | Rename output to `pubmetadata_*.tsv`; add second join pass for AnnotAgent columns |
+| `staging/publication_glue.py` | Rename output to `pubmetadata_*.tsv`; add second join pass for AnnotAgent columns |
 | `web/src/types.ts` | New fields on `Publication` for AnnotAgent columns |
 | `web/src/pages/PublicationsPage.tsx` | FACETS + table columns for new PubMetaData annotation columns |
 
@@ -216,5 +216,5 @@ v1 uses `tag_name = exact.lower()`, `tag_uri = ""`.
 2. Run NER on those 10 → inspect spans per type, confidence distribution
 3. Run comparison vs SciLite on same 10 → expect ~40–70% overlap on Diseases
 4. Run full pipeline → check row count in `annot_agent_annotations_{ts}.tsv`
-5. Run `join_annotations.py` → verify PubMetaData (`pubmetadata_{ts}.tsv`) carries all annotation columns
+5. Run `publication_glue.py` → verify PubMetaData (`pubmetadata_{ts}.tsv`) carries all annotation columns
 6. `npm run sync-data && npm run build` → verify new columns visible in React

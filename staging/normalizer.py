@@ -403,6 +403,7 @@ def _normalize_scilite(df: pd.DataFrame) -> pd.DataFrame:
 
 _NORMALIZERS = {
     "publications": _normalize_publications,
+    "misc_publications": _normalize_publications,
     "code": _normalize_code,
     "pub_datasets": _normalize_pub_datasets,
     "supplementary": _normalize_supplementary,

@@ -450,6 +450,7 @@ GITHUB_HITS_COLUMNS: list[str] = [
 # ---------------------------------------------------------------------------
 SCHEMA_REGISTRY: dict[str, type[_Base]] = {
     "publications": PublicationRow,
+    "misc_publications": PublicationRow,
     "code": CodeRepoRow,
     "pub_datasets": PubDatasetRow,
     "supplementary": SupplementaryRow,

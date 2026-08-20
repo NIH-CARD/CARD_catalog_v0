@@ -127,7 +127,7 @@ CARD_catalog_v0/
 │   ├── schemas.py           # Pydantic row models per output table
 │   ├── normalizer.py        # Coerce → validate → write final TSV
 │   ├── cache_utils.py       # latest_final() / combine_cached_and_new() — per-item cache diffing
-│   └── join_annotations.py  # Final step: joins SciLite + cited datasets into publications
+│   └── publication_glue.py  # Final step: joins SciLite + cited datasets into publications
 │
 ├── scrapers/                # Raw scrapers (gitignored)
 │   ├── scrape_publications.py

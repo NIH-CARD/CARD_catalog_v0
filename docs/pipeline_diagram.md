@@ -77,7 +77,7 @@ flowchart TD
     N3a --> JA
     N4 --> JA
 
-    JA["[8] join_annotations\nstaging/join_annotations.py\nJoins SciLite entities + cited datasets\ninto publications table"]
+    JA["[8] join_annotations\nstaging/publication_glue.py\nJoins SciLite entities + cited datasets\ninto publications table"]
 
     JA --> OUT[(pubmed_central_*.tsv\nenriched with:\nDiseases Annotated\nGenes / Proteins\nChemicals\nCited Datasets)]
 ```

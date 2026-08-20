@@ -10,5 +10,5 @@ staging
 .. automodule:: staging.cache_utils
    :members:
 
-.. automodule:: staging.join_annotations
+.. automodule:: staging.publication_glue
    :members:
