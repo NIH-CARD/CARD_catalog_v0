@@ -66,6 +66,9 @@ docs/_build/
 # stage files
 tables/hits/
 tables/cache/
+# regenerated every pipeline run and grows unbounded (43MB -> 254MB across one session) -
+# exceeds GitHub's 100MB per-file limit; treat like tables/hits/ and tables/cache/ above
+tables/final/scilite_annotations_*.tsv
 scrapers/batch_**jsonl
 docs/plans/EUPMC_annotations_anz.ipynb
 tables/table_check.ipynb
