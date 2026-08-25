@@ -19,6 +19,17 @@ Usage:
     python orchestrator.py update --query-method v2 --verbose
     python orchestrator.py full_rebuild --skip page_navigation
 
+    # Multi-method / misc_publications path: runs each method separately, combines
+    # via staging/combine_hits.py, verifies (cache-aware) via
+    # staging/validate_fetched_publications.py, and writes
+    # tables/final/misc_publications_*.tsv instead of the standard publications
+    # table. Triggers when more than one method is given, or the single method
+    # given is 'paperclip'.
+    python orchestrator.py full_rebuild --query-method all
+    python orchestrator.py full_rebuild --query-method v3 v4 paperclip
+    python orchestrator.py full_rebuild --query-method paperclip
+    python orchestrator.py full_rebuild --query-method paperclip --no-cache-verification
+
 Each stage writes intermediate output to tables/hits/.
 The normalizer then validates and writes app-ready files to tables/final/.
 Both subdirectories are committed to the repo.
@@ -85,6 +96,18 @@ def _ts() -> str:
     return datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
+def _row_count(path: Path) -> str:
+    """' (N rows)' for a TSV, '' otherwise (e.g. scilite's own .json hits) - a cheap line
+    count, not a full pandas load, so this never becomes the slow part of logging."""
+    if path.suffix != ".tsv":
+        return ""
+    try:
+        n = sum(1 for _ in open(path)) - 1  # subtract header
+        return f" ({n} rows)"
+    except Exception:
+        return ""
+
+
 # ---------------------------------------------------------------------------
 # Stage runner with skip-if-fresh logic
 # ---------------------------------------------------------------------------
@@ -119,11 +142,16 @@ def run_stage(
     stem = hits_pattern.replace("*", "").replace(ext, "")
     output_path = HITS_DIR / f"{stem}{timestamp}{ext}"
 
+    logger.info(f"[{stage_name}] starting…")
     try:
         result = stage.run(input_path, output_path, **stage_kwargs)
+        if result and result.exists():
+            logger.info(f"[{stage_name}] finished -> {result.name}{_row_count(result)}")
+        else:
+            logger.warning(f"[{stage_name}] finished but produced no output file")
         return result
     except Exception as e:
-        logger.error(f"[{stage_name}] failed: {e}")
+        logger.error(f"[{stage_name}] failed: {e}", exc_info=True)
         return None
 
 
@@ -175,6 +203,7 @@ def run_stages_concurrently(
         to_run.append((stage_name, stage, output_path, stage_kwargs))
 
     if to_run:
+        logger.info(f"Starting {len(to_run)} concurrent stage(s): {[s for s, *_ in to_run]}")
         with ThreadPoolExecutor(max_workers=len(to_run)) as executor:
             future_to_name = {
                 executor.submit(stage.run, input_path, output_path, **stage_kwargs): stage_name
@@ -183,12 +212,52 @@ def run_stages_concurrently(
             for future in as_completed(future_to_name):
                 stage_name = future_to_name[future]
                 try:
-                    results[stage_name] = future.result()
+                    result = future.result()
+                    results[stage_name] = result
+                    if result and result.exists():
+                        logger.info(f"[{stage_name}] finished -> {result.name}{_row_count(result)}")
+                    else:
+                        logger.warning(f"[{stage_name}] finished but produced no output file")
                 except Exception as e:
-                    logger.error(f"[{stage_name}] failed: {e}")
+                    logger.error(f"[{stage_name}] failed: {e}", exc_info=True)
                     results[stage_name] = None
 
     return results
+
+
+def prefetch_articles(dg, missing_links: list[str], cache_path: Path, sects_required=5) -> None:
+    """Fetch PMC articles absent from the shared parquet cache.
+
+    Runs before the pub_datasets/pub_supplementary/pub_grants/pub_software/pub_models
+    stages launch, so all five read from ``cache_path`` instead of each independently
+    re-fetching the same articles. Only ``missing_links`` — computed by the caller via
+    ``dg.data_fetcher.backup_store.has_publication()`` against the already-warmed cache
+    — are ever fetched: ``DataGatherer.fetch_data()`` holds every result (cache hit or
+    not) in memory for the whole call and flushes only once at the end, so passing it
+    links already in the cache would re-inflate memory for nothing (this OOM'd a
+    full_rebuild; see the equivalent fix in
+    staging/validate_fetched_publications.py::prefetch_fulltext).
+
+    Args:
+        dg: DataGatherer constructed with raw_data_df_parquet_filepath=cache_path.
+        missing_links: PMC links absent from cache_path (already filtered by the caller).
+        cache_path: Stable .parquet path, reused and updated across runs.
+        sects_required: Minimum sections for a fetch to count as complete — must
+            match the downstream pub_metadata stages' own requirement.
+    """
+    logger.info(f"prefetch_articles called with {len(missing_links)} missing link(s), cache_path={cache_path}")
+    if not missing_links:
+        logger.info(f"[prefetch_articles] nothing missing from {cache_path.name}")
+        logger.info("prefetch_articles returning (nothing to fetch)")
+        return
+
+    existing_cache = str(cache_path) if cache_path.exists() else None
+    dg.fetch_data(
+        missing_links, local_fetch_file=existing_cache, write_df_to_path=str(cache_path),
+        sects_required=sects_required,
+    )
+    logger.info(f"Prefetched {len(missing_links)} articles → {cache_path.name}")
+    logger.info(f"prefetch_articles returning (fetched {len(missing_links)} article(s))")
 
 
 # ---------------------------------------------------------------------------
@@ -213,11 +282,12 @@ def run_normalizer(
     stem = final_pattern.replace("*", "").replace(".tsv", "")
     output_path = FINAL_DIR / f"{stem}{timestamp}.tsv"
 
+    logger.info(f"[normalizer/{target}] starting…")
     try:
         from staging.normalizer import normalize
         return normalize(hits_path, target, output_path)
     except Exception as e:
-        logger.error(f"[normalizer/{target}] failed: {e}")
+        logger.error(f"[normalizer/{target}] failed: {e}", exc_info=True)
         return None
 
 
@@ -227,7 +297,7 @@ def run_normalizer(
 
 def run_incremental_update(
     inventory: Path,
-    query_method: str,
+    query_methods: list[str],
     max_results: int,
     ncbi_api_key: str | None,
     verbose: bool,
@@ -238,6 +308,11 @@ def run_incremental_update(
     logger.info("=" * 60)
     logger.info("UPDATE")
     logger.info("=" * 60)
+
+    if len(query_methods) > 1:
+        logger.warning(f"update mode only supports one query method — using '{query_methods[0]}', "
+                        f"ignoring {query_methods[1:]}. Use full_rebuild for multi-method/misc runs.")
+    query_method = query_methods[0]
 
     from pipelines.pubmed_search import PubmedStage
 
@@ -266,12 +341,75 @@ def run_incremental_update(
 
 
 # ---------------------------------------------------------------------------
+# Multi-method PubMed search (misc/combine_hits path)
+# ---------------------------------------------------------------------------
+
+def _run_multi_method_pubmed_search(
+    inventory: Path,
+    query_methods: list[str],
+    max_results: int,
+    ncbi_api_key: str | None,
+    verbose: bool,
+    skip_stages: list[str],
+    force: bool,
+    log_file: Path | None,
+) -> Path | None:
+    """Run PubmedStage once per query method, then combine into one hits file.
+
+    Used when more than one query method is requested, or the single requested
+    method is 'paperclip' — that method is architecturally closer to this
+    combine_hits path than the standard single-NCBI-query flow. Each method
+    gets its own hits_pattern (pubmed_hits_<method>_*.tsv) so same-day
+    restartability doesn't mistake one method's output for another's.
+
+    Returns:
+        Path to the combined tables/hits/combine_hits_{ts}.tsv, or None if
+        every method's search produced no output.
+    """
+    if "pubmed_search" in skip_stages:
+        logger.info("[pubmed_search] skipped (--skip flag) — using latest combine_hits_*.tsv")
+        return _latest(HITS_DIR, "combine_hits_*.tsv")
+
+    from pipelines.pubmed_search import PubmedStage
+    method_hits: list[Path] = []
+    for method in query_methods:
+        hits_path = run_stage(
+            f"pubmed_search_{method}", PubmedStage(),
+            input_path=inventory,
+            hits_pattern=f"pubmed_hits_{method}_*.tsv",
+            stage_kwargs=dict(
+                query_method=method, years=3, max_results=max_results,
+                ncbi_api_key=ncbi_api_key, verbose=verbose, log_file=log_file,
+            ),
+            skip_stages=[],
+            force=force,
+        )
+        if hits_path and hits_path.exists():
+            method_hits.append(hits_path)
+        else:
+            logger.warning(f"query method '{method}' produced no output — excluded from combine")
+
+    if not method_hits:
+        logger.error("All query methods failed — no hits to combine.")
+        return None
+
+    from staging.combine_hits import combine_query_method_hits
+    combined = combine_query_method_hits(method_hits)
+    HITS_DIR.mkdir(parents=True, exist_ok=True)
+    combine_hits_path = HITS_DIR / f"combine_hits_{_ts()}.tsv"
+    combined.to_csv(combine_hits_path, sep="\t", index=False)
+    logger.info(f"[pubmed_search] combined {len(query_methods)} method(s) -> "
+                f"{combine_hits_path.name} ({len(combined)} rows)")
+    return combine_hits_path
+
+
+# ---------------------------------------------------------------------------
 # Quarterly mode
 # ---------------------------------------------------------------------------
 
 def run_full_rebuild(
     inventory: Path,
-    query_method: str,
+    query_methods: list[str],
     max_results: int,
     ncbi_api_key: str | None,
     github_token: str | None,
@@ -282,167 +420,72 @@ def run_full_rebuild(
     force: bool = False,
     log_file: Path | None = None,
     use_cache: bool = True,
+    cache_verification: bool = True,
 ) -> None:
     logger.info("=" * 60)
     logger.info("FULL REBUILD")
     logger.info("=" * 60)
 
-    # --- Stage 1: PubMed ---
-    from pipelines.pubmed_search import PubmedStage
-    pubmed_hits = run_stage(
-        "pubmed_search", PubmedStage(),
-        input_path=inventory,
-        hits_pattern="pubmed_hits_*.tsv",
-        stage_kwargs=dict(
-            query_method=query_method,
-            years=3,
-            max_results=max_results,
-            ncbi_api_key=ncbi_api_key,
-            verbose=verbose,
-            log_file=log_file,
-        ),
-        skip_stages=skip_stages,
-        force=force,
+    # paperclip alone is architecturally closer to the misc/combine_hits path than the
+    # standard single-NCBI-query flow, so it triggers this branch too - and so does running
+    # page_navigation at all, since its discovered publications only have somewhere to land
+    # via the misc_publications path (see extract_new_corpus_publications below).
+    misc_mode = (
+        len(query_methods) > 1
+        or query_methods == ["paperclip"]
+        or "page_navigation" not in skip_stages
     )
-    if pubmed_hits and pubmed_hits.exists():
-        run_normalizer(pubmed_hits, "publications", "pubmed_central_*.tsv", force=force)
+    new_corpus_final_path: Path | None = None
 
-    # --- Stage 4: Publication metadata — datasets/supplementary/grants/software (needs pubmed_hits) ---
-    # These four are fully independent (separate DataGatherer calls, separate
-    # output files, separate caches) and each just blocks on its own Anthropic
-    # Batch job, so they run concurrently rather than one after another.
-    extra_repos_path: Path | None = None  # GitHub repos discovered via pub_software, fed to github_search below
-    if pubmed_hits and pubmed_hits.exists():
-        from pipelines.pub_datasets import PubDatasetsStage
-        from pipelines.pub_supplementary import PubSupplementaryStage
-        from pipelines.pub_grants import PubGrantsStage
-        from pipelines.pub_software import PubSoftwareStage
-        from pipelines.pub_models import PubModelsStage
-        from pipelines.pub_metadata_shared import load_pmc_links, prefetch_articles
+    # Defined here (not down at Stage 4) so the verification step below can warm the same
+    # cache pub_datasets/etc. read from - verification's confirmed subset is a subset of
+    # what pub_metadata_input ends up being, so fetching it once here means Stage 4 finds
+    # it already cached instead of re-fetching the same articles a second time.
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    fetch_cache_path = CACHE_DIR / "fetched_fulltext_batch.parquet"
 
-        # Fetch each article's full text once, up front, so the four stages below
-        # (which all need the same PMC full text) read from a shared cache instead
-        # of each independently re-fetching the same ~1000 articles over the network.
-        # Stable filename (no per-run timestamp) — prefetch_articles reads-and-updates
-        # this same file every run, so already-fetched articles are never refetched.
-        CACHE_DIR.mkdir(parents=True, exist_ok=True)
-        fetch_cache_path = CACHE_DIR / "pub_fulltext_cache.parquet"
-        prefetch_articles(
-            load_pmc_links(pubmed_hits), fetch_cache_path,
-            log_level="DEBUG" if verbose else "INFO",
-            log_file_str=str(log_file) if log_file else None,
-            sects_required=[],
+    # Hardcoded, not a CLI flag: when page_navigation is skipped, still fold the latest
+    # already-discovered new_corpus table into this run's verification/misc_publications
+    # instead of contributing nothing. Flip to False to make a skipped page_navigation
+    # mean "no page-navigation data at all this run," e.g. for a quick pub_metadata-only
+    # iteration where reusing stale discoveries isn't wanted.
+    include_page_navigation_output = True
+
+    # --- Stage 1: PubMed ---
+    if misc_mode:
+        pubmed_hits = _run_multi_method_pubmed_search(
+            inventory, query_methods, max_results, ncbi_api_key, verbose, skip_stages, force, log_file,
         )
-
-        pub_metadata_kwargs = dict(
-            anthropic_key=anthropic_key, verbose=verbose, log_file=log_file,
-            use_cache=use_cache, fetch_cache_path=fetch_cache_path,
-        )
-        pub_metadata_results = run_stages_concurrently(
-            specs=[
-                ("pub_datasets", PubDatasetsStage(), "pub_datasets_*.tsv", pub_metadata_kwargs),
-                ("pub_supplementary", PubSupplementaryStage(), "pub_supplementary_*.tsv", pub_metadata_kwargs),
-                ("pub_grants", PubGrantsStage(), "pub_grants_*.tsv", pub_metadata_kwargs),
-                ("pub_software", PubSoftwareStage(), "pub_software_*.tsv", pub_metadata_kwargs),
-                ("pub_models", PubModelsStage(), "pub_models_*.tsv", pub_metadata_kwargs),
-            ],
-            input_path=pubmed_hits,
-            skip_stages=skip_stages,
-            force=force,
-        )
-
-        pub_datasets_hits = pub_metadata_results["pub_datasets"]
-        if pub_datasets_hits and pub_datasets_hits.exists():
-            run_normalizer(pub_datasets_hits, "pub_datasets", "pub_datasets_*.tsv", force=force)
-
-        supp_hits = pub_metadata_results["pub_supplementary"]
-        if supp_hits and supp_hits.exists():
-            run_normalizer(supp_hits, "supplementary", "pub_supplementary_*.tsv", force=force)
-
-        grants_hits = pub_metadata_results["pub_grants"]
-        if grants_hits and grants_hits.exists():
-            run_normalizer(grants_hits, "pub_grants", "pub_grants_*.tsv", force=force)
-
-        software_hits = pub_metadata_results["pub_software"]
-        if software_hits and software_hits.exists():
-            run_normalizer(software_hits, "pub_software", "pub_software_*.tsv", force=force)
-
-            # GitHub repos mentioned in papers (found by pub_software) don't go straight
-            # into "code" — they need the same tree-walk/README/FAIR-check enrichment as
-            # repos found via GitHub Code Search, so they're handed to github_search
-            # (via --extra-repos) and get concatenated in before repo_analysis runs.
-            import pandas as pd
-            sw_df = pd.read_csv(software_hits, sep="\t", dtype=str).fillna("")
-            if "url" in sw_df.columns:
-                gh_matches = sw_df[sw_df["url"].str.contains(r"github\.com/[\w.-]+/[\w.-]+", regex=True, na=False)]
-                if not gh_matches.empty:
-                    pubs_df = pd.read_csv(pubmed_hits, sep="\t", dtype=str).fillna("")
-                    joined = gh_matches.merge(
-                        pubs_df[["PubMed Central Link", "Resource Name", "Abbreviation", "Diseases Included"]],
-                        left_on="source_url", right_on="PubMed Central Link", how="left",
-                    )
-                    candidates = joined[
-                        ["Resource Name", "Abbreviation", "Diseases Included", "url", "source_url"]
-                    ].rename(columns={"url": "Repository Link", "source_url": "Source"})
-                    extra_repos_path = HITS_DIR / f"extra_repos_from_software_{_ts()}.tsv"
-                    candidates.to_csv(extra_repos_path, sep="\t", index=False)
-                    logger.info(f"{len(candidates)} GitHub repo(s) from pub_software → {extra_repos_path.name}")
-
-        models_hits = pub_metadata_results["pub_models"]
-        if models_hits and models_hits.exists():
-            run_normalizer(models_hits, "pub_models", "pub_models_*.tsv", force=force)
+        # The standard publications table isn't rebuilt in this mode — misc_publications
+        # (built just below, after page_navigation and before pub_metadata) is the source
+        # of truth instead.
     else:
-        logger.warning("Skipping pub_datasets/pub_supplementary/pub_grants/pub_software/pub_models: no pubmed_hits available")
-
-    # --- Stage 6: SciLite annotations (Europe PMC) ---
-    if pubmed_hits and pubmed_hits.exists():
-        from pipelines.scilite import SciLiteStage
-        run_stage(
-            "scilite", SciLiteStage(),
-            input_path=pubmed_hits,
-            hits_pattern="annotations_*.json",
-            stage_kwargs=dict(verbose=verbose, log_file=log_file),
-            skip_stages=skip_stages,
-            force=force,
-        )
-        scilite_hits = _latest(HITS_DIR, "scilite_annotations_*.tsv")
-        if scilite_hits:
-            run_normalizer(scilite_hits, "scilite", "scilite_annotations_*.tsv", force=force)
-    else:
-        logger.warning("Skipping scilite: no pubmed_hits available")
-
-    # --- Stage 2: GitHub search ---
-    if not github_token:
-        logger.warning("GITHUB_TOKEN not set — skipping github_search and repo_analysis")
-    else:
-        from pipelines.github_search import GithubSearchStage
-        github_hits = run_stage(
-            "github_search", GithubSearchStage(),
+        from pipelines.pubmed_search import PubmedStage
+        pubmed_hits = run_stage(
+            "pubmed_search", PubmedStage(),
             input_path=inventory,
-            hits_pattern="github_hits_*.tsv",
+            hits_pattern="pubmed_hits_*.tsv",
             stage_kwargs=dict(
-                github_token=github_token, verbose=verbose, log_file=log_file,
-                extra_repos_path=extra_repos_path,
+                query_method=query_methods[0],
+                years=3,
+                max_results=max_results,
+                ncbi_api_key=ncbi_api_key,
+                verbose=verbose,
+                log_file=log_file,
             ),
             skip_stages=skip_stages,
             force=force,
         )
+        if pubmed_hits and pubmed_hits.exists():
+            run_normalizer(pubmed_hits, "publications", "pubmed_central_*.tsv", force=force)
 
-        # --- Stage 3: Repo AI analysis ---
-        if github_hits and github_hits.exists():
-            from pipelines.repo_analysis import RepoAnalysisStage
-            analyzed_hits = run_stage(
-                "repo_analysis", RepoAnalysisStage(),
-                input_path=github_hits,
-                hits_pattern="github_analyzed_*.tsv",
-                stage_kwargs=dict(anthropic_key=anthropic_key, verbose=verbose, log_file=log_file, use_cache=use_cache),
-                skip_stages=skip_stages,
-                force=force,
-            )
-            if analyzed_hits and analyzed_hits.exists():
-                run_normalizer(analyzed_hits, "code", "gits_to_reannotate_completed_*.tsv", force=force)
-
-    # --- Stage 5: Page navigation ---
+    # --- Stage 5: Page navigation (moved ahead of pub_metadata) ---
+    # Only matters in misc_mode - and misc_mode is defined to be True whenever
+    # page_navigation isn't skipped, so this block is a guaranteed no-op whenever
+    # misc_mode is False (skip_stages necessarily contains "page_navigation" then).
+    # Runs here, before pub_metadata/scilite, so its discovered publications can be
+    # merged + verified in time to feed pub_metadata's *input*, not just its own
+    # separate misc_publications output.
     if "page_navigation" not in skip_stages:
         from pipelines.page_navigation import _setup_profile, PROFILE_ENV_VAR
         default_profile = os.path.expanduser("~/.card-catalog-firefox-profile")
@@ -477,12 +520,243 @@ def run_full_rebuild(
                 force=force,
             )
             if nav_hits and nav_hits.exists():
-                run_normalizer(nav_hits, "new_corpus", "new_corpus_*.tsv", force=force)
+                new_corpus_final_path = run_normalizer(nav_hits, "new_corpus", "new_corpus_*.tsv", force=force)
+    elif include_page_navigation_output:
+        # page_navigation was skipped this run - fall back to the latest already-discovered
+        # new_corpus table rather than contributing nothing, same spirit as pubmed_search's
+        # own skip falling back to the latest combine_hits instead of an empty corpus.
+        new_corpus_final_path = _latest(FINAL_DIR, "new_corpus_*.tsv")
+        if new_corpus_final_path:
+            logger.info(f"[page_navigation] skipped — reusing existing {new_corpus_final_path.name}")
+        else:
+            logger.warning("[page_navigation] skipped and no existing new_corpus_*.tsv found — nothing to reuse")
+    else:
+        logger.info("[page_navigation] skipped and not reusing existing new_corpus_*.tsv")
 
-    # --- Final step: join SciLite annotations and cited datasets into publications ---
-    from staging.publication_glue import join_annotations
-    logger.info("Joining SciLite annotations and cited datasets into publications…")
-    join_annotations()
+    # --- Verify (cache-aware) + build misc_publications (moved ahead of pub_metadata) ---
+    # pub_metadata_input is what pub_datasets/pub_supplementary/pub_grants/pub_software/
+    # pub_models/scilite actually run against below: the raw pubmed_hits in the standard
+    # single-method path (unchanged), or - in misc_mode - the confirmed, deduped subset of
+    # the verified/merged hits, so those AI-extraction stages spend their budget only on
+    # (resource, paper) pairs already confirmed genuine, not the full noisy candidate pool.
+    pub_metadata_input = pubmed_hits
+    if misc_mode:
+        if pubmed_hits and pubmed_hits.exists():
+            logger.info("Verifying combined hits (cache-aware) and building misc_publications…")
+            import pandas as pd
+            from staging.validate_fetched_publications import validate_publications_df, DEFAULT_CACHE_PATH
+            from staging.combine_hits import combine_query_method_hits
+            from staging.publication_glue import extract_new_corpus_publications, resolve_missing_pmcids
+
+            hits_paths = [pubmed_hits]
+            if new_corpus_final_path and new_corpus_final_path.exists():
+                nav_pubs = extract_new_corpus_publications(new_corpus_final_path, ncbi_api_key=ncbi_api_key)
+                if not nav_pubs.empty:
+                    nav_pubs_path = HITS_DIR / f"new_corpus_publications_{_ts()}.tsv"
+                    nav_pubs.to_csv(nav_pubs_path, sep="\t", index=False)
+                    logger.info(f"[page_navigation] {len(nav_pubs)} publication reference(s) -> {nav_pubs_path.name}")
+                    hits_paths.append(nav_pubs_path)
+
+            combined_df = (
+                combine_query_method_hits(hits_paths) if len(hits_paths) > 1
+                else pd.read_csv(hits_paths[0], sep="\t", dtype=str).fillna("")
+            )
+
+            # DOI-only rows get a PMC ID resolved here (pub_jobs/scilite both need one) -
+            # then re-combined so a row that turns out to be the same paper as one already
+            # carrying that PMC ID collapses into it, instead of surviving as an untethered
+            # duplicate (combine_query_method_hits' union-find already ran once above, on
+            # the pre-resolution identifiers, so it needs a second pass on the enriched data).
+            combined_df = resolve_missing_pmcids(combined_df, ncbi_api_key=ncbi_api_key)
+            resolved_path = HITS_DIR / f"combine_hits_pmcid_resolved_{_ts()}.tsv"
+            combined_df.to_csv(resolved_path, sep="\t", index=False)
+            logger.info("Re-collapsing duplicates after PMC ID resolution…")
+            combined_df = combine_query_method_hits([resolved_path])
+
+            # fulltext_dg_prompt (not the plain "fulltext" method) - matches the offline
+            # batch backfill's method, so its seeded cache entries (see
+            # seed_cache_from_batch_results) actually get hit instead of re-verified live.
+            verified = validate_publications_df(
+                combined_df, resource_col="Resource Name", methods=["fulltext_dg_prompt"],
+                cache_path=DEFAULT_CACHE_PATH, no_cache=not cache_verification,
+                fetch_cache_path=fetch_cache_path,
+            )
+            verified_hits_path = HITS_DIR / f"misc_publications_{_ts()}.tsv"
+            verified.to_csv(verified_hits_path, sep="\t", index=False)
+            logger.info(f"[pub_verification] wrote {len(verified)} verified row(s) -> {verified_hits_path.name}")
+            run_normalizer(verified_hits_path, "misc_publications", "misc_publications_*.tsv", force=force)
+
+            confirmed_df = verified[verified["Verification Status"] == "confirmed"].copy()
+            confirmed_hits_path = HITS_DIR / f"misc_publications_confirmed_{_ts()}.tsv"
+            confirmed_df.to_csv(confirmed_hits_path, sep="\t", index=False)
+            logger.info(f"[pub_verification] {len(confirmed_df)}/{len(verified)} row(s) confirmed -> "
+                        f"{confirmed_hits_path.name} (feeds pub_datasets/supplementary/grants/software/models/scilite)")
+            pub_metadata_input = confirmed_hits_path
+        else:
+            logger.warning("Skipping verification/misc_publications: no combined pubmed hits available")
+            pub_metadata_input = None
+
+    # --- Stage 4: Publication metadata — datasets/supplementary/grants/software (needs pub_metadata_input) ---
+    # These five are fully independent (separate DataGatherer calls, separate
+    # output files, separate caches) and each just blocks on its own Anthropic
+    # Batch job, so they run concurrently rather than one after another.
+    extra_repos_path: Path | None = None  # GitHub repos discovered via pub_software, fed to github_search below
+    if pub_metadata_input and pub_metadata_input.exists():
+        from pipelines.pub_datasets import PubDatasetsStage
+        from pipelines.pub_supplementary import PubSupplementaryStage
+        from pipelines.pub_grants import PubGrantsStage
+        from pipelines.pub_software import PubSoftwareStage
+        from pipelines.pub_models import PubModelsStage
+        from pipelines.pub_metadata_shared import load_pmc_links
+        from data_gatherer.data_gatherer import DataGatherer
+
+        # Fetch each article's full text once, up front, so the four stages below
+        # (which all need the same PMC full text) read from the same shared cache
+        # verification's own prefetch already warmed (see fetch_cache_path definition
+        # near the top of this function) instead of each independently re-fetching.
+        # dg is constructed here (not inside prefetch_articles) so its BackupDataStore
+        # is warmed against fetch_cache_path up front, letting us filter pmc_links down
+        # to genuinely missing ones before ever calling fetch_data() — see
+        # prefetch_articles's docstring for why that filtering matters.
+        pmc_links = load_pmc_links(pub_metadata_input)
+        existing_cache = str(fetch_cache_path) if fetch_cache_path.exists() else None
+        prefetch_dg = DataGatherer(
+            llm_name="claude-haiku-4-5",
+            log_level="DEBUG" if verbose else "INFO",
+            log_file_override=str(log_file) if log_file else None,
+            clear_previous_logs=False,
+            raw_data_df_parquet_filepath=existing_cache,
+        )
+        missing_links = [
+            url for url in pmc_links if not prefetch_dg.data_fetcher.backup_store.has_publication(url)
+        ]
+        logger.info(f"[pub_metadata] {len(pmc_links) - len(missing_links)}/{len(pmc_links)} PMC links "
+                    f"already cached, fetching {len(missing_links)} missing")
+        prefetch_articles(prefetch_dg, missing_links, fetch_cache_path, sects_required=[])
+
+        pub_metadata_kwargs = dict(
+            anthropic_key=anthropic_key, verbose=verbose, log_file=log_file,
+            use_cache=use_cache, fetch_cache_path=fetch_cache_path,
+        )
+        pub_metadata_results = run_stages_concurrently(
+            specs=[
+                ("pub_datasets", PubDatasetsStage(), "pub_datasets_*.tsv", pub_metadata_kwargs),
+                ("pub_supplementary", PubSupplementaryStage(), "pub_supplementary_*.tsv", pub_metadata_kwargs),
+                ("pub_grants", PubGrantsStage(), "pub_grants_*.tsv", pub_metadata_kwargs),
+                ("pub_software", PubSoftwareStage(), "pub_software_*.tsv", pub_metadata_kwargs),
+                ("pub_models", PubModelsStage(), "pub_models_*.tsv", pub_metadata_kwargs),
+            ],
+            input_path=pub_metadata_input,
+            skip_stages=skip_stages,
+            force=force,
+        )
+
+        pub_datasets_hits = pub_metadata_results["pub_datasets"]
+        if pub_datasets_hits and pub_datasets_hits.exists():
+            run_normalizer(pub_datasets_hits, "pub_datasets", "pub_datasets_*.tsv", force=force)
+
+        supp_hits = pub_metadata_results["pub_supplementary"]
+        if supp_hits and supp_hits.exists():
+            run_normalizer(supp_hits, "supplementary", "pub_supplementary_*.tsv", force=force)
+
+        grants_hits = pub_metadata_results["pub_grants"]
+        if grants_hits and grants_hits.exists():
+            run_normalizer(grants_hits, "pub_grants", "pub_grants_*.tsv", force=force)
+
+        software_hits = pub_metadata_results["pub_software"]
+        if software_hits and software_hits.exists():
+            run_normalizer(software_hits, "pub_software", "pub_software_*.tsv", force=force)
+
+            # GitHub repos mentioned in papers (found by pub_software) don't go straight
+            # into "code" — they need the same tree-walk/README/FAIR-check enrichment as
+            # repos found via GitHub Code Search, so they're handed to github_search
+            # (via --extra-repos) and get concatenated in before repo_analysis runs.
+            import pandas as pd
+            sw_df = pd.read_csv(software_hits, sep="\t", dtype=str).fillna("")
+            if "url" in sw_df.columns:
+                gh_matches = sw_df[sw_df["url"].str.contains(r"github\.com/[\w.-]+/[\w.-]+", regex=True, na=False)]
+                if not gh_matches.empty:
+                    pubs_df = pd.read_csv(pub_metadata_input, sep="\t", dtype=str).fillna("")
+                    joined = gh_matches.merge(
+                        pubs_df[["PubMed Central Link", "Resource Name", "Abbreviation", "Diseases Included"]],
+                        left_on="source_url", right_on="PubMed Central Link", how="left",
+                    )
+                    candidates = joined[
+                        ["Resource Name", "Abbreviation", "Diseases Included", "url", "source_url"]
+                    ].rename(columns={"url": "Repository Link", "source_url": "Source"})
+                    extra_repos_path = HITS_DIR / f"extra_repos_from_software_{_ts()}.tsv"
+                    candidates.to_csv(extra_repos_path, sep="\t", index=False)
+                    logger.info(f"{len(candidates)} GitHub repo(s) from pub_software → {extra_repos_path.name}")
+
+        models_hits = pub_metadata_results["pub_models"]
+        if models_hits and models_hits.exists():
+            run_normalizer(models_hits, "pub_models", "pub_models_*.tsv", force=force)
+    else:
+        logger.warning("Skipping pub_datasets/pub_supplementary/pub_grants/pub_software/pub_models: no pub_metadata_input available")
+
+    # --- Stage 6: SciLite annotations (Europe PMC) ---
+    if pub_metadata_input and pub_metadata_input.exists():
+        from pipelines.scilite import SciLiteStage
+        run_stage(
+            "scilite", SciLiteStage(),
+            input_path=pub_metadata_input,
+            hits_pattern="annotations_*.json",
+            stage_kwargs=dict(verbose=verbose, log_file=log_file),
+            skip_stages=skip_stages,
+            force=force,
+        )
+        scilite_hits = _latest(HITS_DIR, "scilite_annotations_*.tsv")
+        if scilite_hits:
+            run_normalizer(scilite_hits, "scilite", "scilite_annotations_*.tsv", force=force)
+    else:
+        logger.warning("Skipping scilite: no pub_metadata_input available")
+
+    # --- Stage 2: GitHub search ---
+    if not github_token:
+        logger.warning("GITHUB_TOKEN not set — skipping github_search and repo_analysis")
+    else:
+        from pipelines.github_search import GithubSearchStage
+        github_hits = run_stage(
+            "github_search", GithubSearchStage(),
+            input_path=inventory,
+            hits_pattern="github_hits_*.tsv",
+            stage_kwargs=dict(
+                github_token=github_token, verbose=verbose, log_file=log_file,
+                extra_repos_path=extra_repos_path,
+            ),
+            skip_stages=skip_stages,
+            force=force,
+        )
+
+        # --- Stage 3: Repo AI analysis ---
+        if github_hits and github_hits.exists():
+            from pipelines.repo_analysis import RepoAnalysisStage
+            analyzed_hits = run_stage(
+                "repo_analysis", RepoAnalysisStage(),
+                input_path=github_hits,
+                hits_pattern="github_analyzed_*.tsv",
+                stage_kwargs=dict(anthropic_key=anthropic_key, verbose=verbose, log_file=log_file, use_cache=use_cache),
+                skip_stages=skip_stages,
+                force=force,
+            )
+            if analyzed_hits and analyzed_hits.exists():
+                run_normalizer(analyzed_hits, "code", "gits_to_reannotate_completed_*.tsv", force=force)
+
+    # --- Final step: fold SciLite annotations + cited datasets into whichever publications
+    # table this run actually produced, then join cell models to publications/studies via
+    # the same SciLite data ---
+    from staging.publication_glue import join_annotations, join_cellular_model_publications
+    if misc_mode:
+        if pub_metadata_input:
+            logger.info("Joining SciLite annotations and cited datasets into misc_publications…")
+            join_annotations(pub_pattern="misc_publications_*.tsv")
+            join_cellular_model_publications(pub_pattern="misc_publications_*.tsv")
+        else:
+            logger.warning("Skipping join_annotations/cell-model join: misc_publications was never built this run")
+    else:
+        logger.info("Joining SciLite annotations and cited datasets into publications…")
+        join_annotations()
+        join_cellular_model_publications(pub_pattern="pubmed_central_*.tsv")
 
     logger.info("=" * 60)
     logger.info("FULL REBUILD COMPLETE")
@@ -508,8 +782,18 @@ def main() -> None:
         help="Path to resource inventory file (default: latest resources-inventory-* in tables/)",
     )
     parser.add_argument(
-        "--query-method", choices=["original", "v2", "v3", "v4"], default="v3",
-        help="PubMed query method (default: v3)",
+        "--query-method", nargs="+", default=["v3"],
+        help="One or more PubMed query methods: original, v2, v3, v4, v5, paperclip, or "
+             "'all' (expands to all six). Multiple methods (or the single method "
+             "'paperclip') run each method separately, combine the results via "
+             "staging/combine_hits.py, and route through the cache-aware verification "
+             "step into tables/final/misc_publications_*.tsv instead of the standard "
+             "publications table (default: v3)",
+    )
+    parser.add_argument(
+        "--no-cache-verification", action="store_true",
+        help="For the multi-method/paperclip verification step: re-verify every "
+             "(resource, doc_id) pair, ignoring already-cached verdicts",
     )
     parser.add_argument(
         "--max-results", "-m", type=int, default=150,
@@ -589,14 +873,17 @@ def main() -> None:
 
     skip_stages = args.skip or []
 
+    _ALL_QUERY_METHODS = ["original", "v2", "v3", "v4", "v5", "paperclip"]
+    query_methods = _ALL_QUERY_METHODS if args.query_method == ["all"] else args.query_method
+
     if args.mode == "update":
-        run_incremental_update(inventory, args.query_method, args.max_results, ncbi_key, args.verbose, skip_stages, force=args.force, log_file=log_file)
+        run_incremental_update(inventory, query_methods, args.max_results, ncbi_key, args.verbose, skip_stages, force=args.force, log_file=log_file)
     elif args.mode == "full_rebuild":
         run_full_rebuild(
-            inventory, args.query_method, args.max_results,
+            inventory, query_methods, args.max_results,
             ncbi_key, github_token, anthropic_key, firefox_profile,
             args.verbose, skip_stages, force=args.force, log_file=log_file,
-            use_cache=not args.no_cache,
+            use_cache=not args.no_cache, cache_verification=not args.no_cache_verification,
         )
 
 

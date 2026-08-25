@@ -54,7 +54,10 @@ def search_pubmed_with_retry(url: str, max_retries: int = 3, base_delay: int = 6
     identical, and therefore doomed, on every retry.
     """
     logged_url = mask_api_key(url)
-    logger.info(f"Fetching URL: {logged_url}")
+    # DEBUG, not INFO - fires on every single HTTP request (esearch/esummary/efetch
+    # calls per resource per query method), and the more useful per-resource summary
+    # ("[v4] N unique IDs for 'study'", etc.) already sits right next to each call site.
+    logger.debug(f"Fetching URL: {logged_url}")
     use_post = len(url) > 2000
     if use_post:
         base_url, _, query_string = url.partition("?")
@@ -150,15 +153,18 @@ def extract_article_details(article_xml: ET.Element) -> Optional[Dict]:
         
         logger.debug(f"Found {len(keywords)} keywords")
 
-        # Get PMC ID if available
+        # Get PMC ID and DOI if available
         pmc_id = None
+        doi = ""
         article_ids = article_xml.findall('.//ArticleId')
         for article_id in article_ids:
-            if article_id.get('IdType') == 'pmc':
+            if article_id.get('IdType') == 'pmc' and pmc_id is None:
                 pmc_id = article_id.text
                 pmc_id = re.sub(r"PMC", "", pmc_id)  # Remove PMC prefix
                 logger.debug(f"Found PMC ID: {pmc_id}")
-                break
+            elif article_id.get('IdType') == 'doi' and not doi:
+                doi = article_id.text or ""
+                logger.debug(f"Found DOI: {doi}")
 
         # Create PMC link if available by adding prefix
         pmc_link = f"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC{pmc_id}/" if pmc_id else ""
@@ -192,6 +198,7 @@ def extract_article_details(article_xml: ET.Element) -> Optional[Dict]:
             "Affiliations": "; ".join(affiliations),
             "Keywords": "; ".join(keywords),
             "PubMed Central Link": pmc_link,
+            "DOI": doi,
             "Publication Date": pub_date,
         }
     except Exception as e:

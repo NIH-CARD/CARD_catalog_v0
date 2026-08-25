@@ -53,6 +53,14 @@ def _latest_hits(pattern: str) -> Path | None:
     return files[-1] if files else None
 
 
+def _latest_tables_root(pattern: str) -> Path | None:
+    """Like _latest(), but searches tables/ itself rather than tables/final/ - for
+    manually-maintained root-level inputs (e.g. iNDI_inventory_*) that aren't pipeline
+    output."""
+    files = sorted(_FINAL_DIR.parent.glob(pattern))
+    return files[-1] if files else None
+
+
 def _pmcid_from(s: str) -> str:
     m = re.search(r"PMC\d+", str(s))
     return m.group(0) if m else ""
@@ -207,6 +215,317 @@ def build_misc_publications(combine_hits_path: Path | None = None,
 
     _log_query_method_performance(result)
     return output_path
+
+
+_NEW_CORPUS_FAMILY_RE = re.compile(r"^new_corpus\.(.+)\[\d+\]$")
+_DOI_RE = re.compile(r"10\.\d{4,9}/[^\s\"'<>]+")
+
+
+_BARE_PMID_RE = re.compile(r"^\d{7,9}$")
+
+
+def _extract_doc_ref(cell: str) -> dict | None:
+    """Best-effort PMC ID / DOI / PMID extraction from one new_corpus.<page>[i] cell.
+
+    Cells are inconsistently shaped across scraped sites - a bare PMC ID, a bare DOI, a
+    bare numeric PMID, or (for sites whose citation JSON got flattened into a scalar by
+    data_gatherer) an HTML-entity-escaped fragment that can contain a DOI and a pubmed URL
+    together. DOI is checked before treating anything as a bare PMID - reversed, a garbled
+    cell with both would be misclassified as PMID-only.
+
+    Returns:
+        {"PubMed Central Link": ...} or {"DOI": ...} for an immediately fetchable cell;
+        {"PMID": ...} for a bare PMID - not directly fetchable (_row_fetch_url() in
+        validate_fetched_publications.py has no PMID branch), so the caller batches these
+        through _fetch_pmid_metadata() to resolve a DOI/PMC link (or, failing that, at
+        least an Abstract) before deciding whether to keep the row; None if nothing usable
+        matches, so the caller can drop the cell.
+    """
+    value = html.unescape(str(cell)).strip()
+    if not value:
+        return None
+    pmcid = _pmcid_from(value)
+    if pmcid:
+        return {"PubMed Central Link": f"https://www.ncbi.nlm.nih.gov/pmc/articles/{pmcid}/"}
+    m = _DOI_RE.search(value)
+    if m:
+        return {"DOI": m.group(0).rstrip(".,;\"')<")}
+    if _BARE_PMID_RE.match(value):
+        return {"PMID": value}
+    return None
+
+
+def _fetch_pmid_metadata(pmids: list[str], ncbi_api_key: str | None = None) -> dict[str, dict]:
+    """Batch-resolve bare PMIDs via NCBI efetch, reusing scrape_publications.py's own
+    standard pubmed_search machinery (_fetch_and_parse_batch/extract_article_details -
+    the same efetch call that already backs the original/v2/v3/v4 query methods).
+
+    Lets a PMID-only new_corpus reference upgrade to a DOI- or PMC-linked row (so it merges
+    correctly with any other row for the same paper via combine_query_method_hits' identity
+    matching, rather than surviving as an untethered duplicate) or, when PubMed has neither
+    on file, at least attaches an Abstract so fetch_abstract_only()'s own fallback has real
+    text to verify against instead of nothing.
+
+    Args:
+        pmids: Distinct bare PMIDs to resolve.
+        ncbi_api_key: Raises the NCBI rate limit from 3/s to 10/s if given.
+
+    Returns:
+        {pmid: {"PMID", "Title", "Abstract", "Authors", "Affiliations", "Keywords",
+        "PubMed Central Link", "DOI", "Publication Date"}} - only for PMIDs PubMed
+        actually has a record for.
+    """
+    if not pmids:
+        return {}
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scrapers"))
+    from scrape_publications import _fetch_and_parse_batch
+
+    suffix = f"&api_key={ncbi_api_key}" if ncbi_api_key else ""
+    records = _fetch_and_parse_batch(pmids, suffix)
+    logger.info(f"[new_corpus] efetch'd {len(records)}/{len(pmids)} bare-PMID reference(s)")
+    return {r["PMID"]: r for r in records if r.get("PMID")}
+
+
+def _build_url_to_resource_map(inventory_path: Path) -> dict[str, dict]:
+    """Map every Access URL / Alternative URL (trailing slash stripped) to its resource's
+    Name/Abbreviation - the fallback join for new_corpus tables predating
+    pipelines/page_navigation.py's own Resource Name/Abbreviation pass-through fix."""
+    inv = pd.read_csv(inventory_path, sep="\t", dtype=str).fillna("")
+    mapping: dict[str, dict] = {}
+    for _, row in inv.iterrows():
+        info = {"Resource Name": row.get("Resource Name", ""), "Abbreviation": row.get("Abbreviation", "")}
+        access = row.get("Access URL", "").strip().rstrip("/")
+        if access:
+            mapping[access] = info
+        alt_raw = row.get("Alternative URLs", "").strip()
+        if alt_raw:
+            try:
+                alt_list = ast.literal_eval(alt_raw) if isinstance(alt_raw, str) else []
+            except (ValueError, SyntaxError):
+                alt_list = []
+            for u in alt_list:
+                u = str(u).strip().rstrip("/")
+                if u:
+                    mapping[u] = info
+    return mapping
+
+
+def resolve_missing_pmcids(df: pd.DataFrame, ncbi_api_key: str | None = None) -> pd.DataFrame:
+    """Fill in PubMed Central Link for every row that has a DOI but no PMC link, via NCBI's
+    ID Converter API - the purpose-built DOI/PMID/PMCID crosswalk (unlike
+    _fetch_pmid_metadata's efetch, which only accepts a PMID). Both pub_jobs (full-text
+    fetch prefers PMC) and scilite (Europe PMC's own annotation API is PMC-ID-keyed) need a
+    PMC ID to do anything useful with these rows.
+
+    Falls back to an exact, normalized-Title match against another row in the same
+    DataFrame that already has a PMC link, for DOIs idconv has nothing for (e.g. a preprint
+    with no PMC deposit) - deliberately not fuzzy/partial matching, and only for titles long
+    enough (>20 normalized chars) to not risk collapsing two different papers that happen to
+    share a short, generic title.
+
+    Resolving into the same "PubMed Central Link" field _row_identity_keys() (in
+    combine_hits.py) already matches on - rather than a bespoke lookup - means a row found
+    only by its DOI and another row already carrying that same paper's real PMC ID collapse
+    into one the next time combine_query_method_hits() runs, instead of surviving as an
+    untethered duplicate.
+
+    Args:
+        df: combine_hits-shaped rows (needs DOI, PubMed Central Link, Title columns).
+        ncbi_api_key: Passed through to the idconv query (raises the NCBI rate limit).
+
+    Returns:
+        Copy of df with PubMed Central Link filled in wherever resolvable.
+    """
+    if "DOI" not in df.columns or "PubMed Central Link" not in df.columns:
+        return df
+
+    df = df.copy()
+    has_pmc = df["PubMed Central Link"].fillna("").str.strip() != ""
+    has_doi = df["DOI"].fillna("").str.strip() != ""
+    needs_lookup = df[~has_pmc & has_doi]
+    dois = sorted(needs_lookup["DOI"].unique())
+    if not dois:
+        logger.info("[pmcid-resolve] no DOI-only rows to resolve")
+        return df
+
+    import requests
+    suffix = f"&api_key={ncbi_api_key}" if ncbi_api_key else ""
+    doi_to_pmcid: dict[str, str] = {}
+    batch_size = 200  # idconv's documented per-request cap
+    for i in range(0, len(dois), batch_size):
+        batch = dois[i:i + batch_size]
+        url = f"https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids={','.join(batch)}&format=json{suffix}"
+        try:
+            resp = requests.get(url, timeout=30)
+            resp.raise_for_status()
+            for rec in resp.json().get("records", []):
+                if rec.get("pmcid") and rec.get("doi"):
+                    doi_to_pmcid[rec["doi"]] = rec["pmcid"]
+        except Exception as e:
+            logger.warning(f"[pmcid-resolve] idconv batch {i}-{i + len(batch)} failed: {e}")
+
+    n_via_doi = 0
+    for idx in needs_lookup.index:
+        pmcid = doi_to_pmcid.get(df.at[idx, "DOI"])
+        if pmcid:
+            df.at[idx, "PubMed Central Link"] = f"https://www.ncbi.nlm.nih.gov/pmc/articles/{pmcid}/"
+            n_via_doi += 1
+    logger.info(f"[pmcid-resolve] resolved {n_via_doi}/{len(dois)} DOI(s) -> PMC ID via idconv")
+
+    if "Title" in df.columns:
+        def _norm_title(t: str) -> str:
+            return re.sub(r"[^a-z0-9]+", "", str(t).lower())
+
+        title_to_pmc = {}
+        for _, row in df.iterrows():
+            link = str(row.get("PubMed Central Link", "")).strip()
+            key = _norm_title(row.get("Title", ""))
+            if link and len(key) > 20:
+                title_to_pmc.setdefault(key, link)
+
+        has_pmc = df["PubMed Central Link"].fillna("").str.strip() != ""
+        still_missing = df[~has_pmc & has_doi]
+        n_via_title = 0
+        for idx in still_missing.index:
+            key = _norm_title(df.at[idx, "Title"]) if "Title" in df.columns else ""
+            if len(key) > 20 and key in title_to_pmc:
+                df.at[idx, "PubMed Central Link"] = title_to_pmc[key]
+                n_via_title += 1
+        logger.info(f"[pmcid-resolve] resolved {n_via_title} more via exact title match")
+
+    return df
+
+
+def extract_new_corpus_publications(
+    new_corpus_path: Path | None = None,
+    inventory_path: Path | None = None,
+    ncbi_api_key: str | None = None,
+) -> pd.DataFrame:
+    """Explode a new_corpus table's per-page ``new_corpus.<url>[i]`` columns into one row
+    per (resource, discovered publication reference), in combine_hits shape, tagged
+    ``Fetched With = "page navigation: <page url>"`` - the specific page the reference was
+    found on (not source_url_for_metadata, which is the resource's own entry-point page and
+    typically a different, less specific URL).
+
+    Resource Name/Abbreviation are read directly if the table already has them (added going
+    forward by pipelines/page_navigation.py); otherwise falls back to joining
+    source_url_for_metadata/dataset_webpage against the resource inventory's Access URL/
+    Alternative URLs. Cells with no extractable doc identifier are dropped and counted; for
+    legacy tables (no Resource Name column), rows with no inventory match are also dropped
+    and counted - both are logged, never silently absorbed into "covered everything".
+
+    Bare PMIDs (no PMC/DOI directly in the cell - confirmed on real data to be ~29% of
+    everything page navigation finds, not noise) are batch-resolved via
+    _fetch_pmid_metadata() rather than dropped: a PMID that PubMed also lists a DOI or PMC
+    ID for is upgraded to that identifier, so it naturally merges with any other row for the
+    same paper once this table is combined via combine_query_method_hits() (matching on
+    shared PMID/DOI/PMC ID/Paperclip Doc ID - the dedup already happens there, not here).
+    Only a PMID efetch can't resolve at all (not in PubMed) is dropped.
+
+    Args:
+        new_corpus_path: new_corpus_*.tsv to read (default: latest in tables/final/).
+        inventory_path: resources-inventory-* file for the legacy URL->resource fallback
+            join (default: latest in tables/, via validate_fetched_publications' own finder).
+        ncbi_api_key: Passed through to _fetch_pmid_metadata (raises the NCBI rate limit).
+
+    Returns:
+        DataFrame with Resource Name, Abbreviation, Diseases Included, Coarse/Granular Data
+        Modality, Fetched With, PMID/DOI/PubMed Central Link (whichever were resolved), and
+        - for efetch-resolved rows only - Title/Abstract/Authors/Affiliations/Keywords/
+        Publication Date. One row per discovered reference. Empty if nothing extractable.
+    """
+    new_corpus_path = new_corpus_path or _latest("new_corpus_*.tsv")
+    if not new_corpus_path:
+        logger.error("No new_corpus TSV found in tables/final/")
+        return pd.DataFrame()
+
+    df = pd.read_csv(new_corpus_path, sep="\t", dtype=str).fillna("")
+    logger.info(f"[new_corpus] loaded {len(df)} rows from {new_corpus_path.name}")
+
+    has_resource_name = "Resource Name" in df.columns
+    url_to_resource: dict[str, dict] = {}
+    if not has_resource_name:
+        from staging.validate_fetched_publications import _find_latest_inventory
+        inventory_path = inventory_path or _find_latest_inventory()
+        if inventory_path:
+            url_to_resource = _build_url_to_resource_map(inventory_path)
+        else:
+            logger.warning("[new_corpus] no Resource Name column and no inventory found - "
+                            "every row will be dropped for missing resource identity")
+
+    family_cols: dict[str, list[str]] = {}
+    for col in df.columns:
+        m = _NEW_CORPUS_FAMILY_RE.match(col)
+        if m:
+            family_cols.setdefault(m.group(1), []).append(col)
+
+    lookup_col = "source_url_for_metadata" if "source_url_for_metadata" in df.columns else (
+        "dataset_webpage" if "dataset_webpage" in df.columns else None
+    )
+
+    rows = []
+    pending_pmid_rows = []  # rows still needing efetch resolution before being kept/dropped
+    n_no_ref = 0
+    n_no_resource = 0
+    for _, row in df.iterrows():
+        if has_resource_name:
+            resource_name = row.get("Resource Name", "")
+            abbreviation = row.get("Abbreviation", "")
+        else:
+            key = row.get(lookup_col, "").strip().rstrip("/") if lookup_col else ""
+            match = url_to_resource.get(key)
+            if not match:
+                n_no_resource += 1
+                continue
+            resource_name = match.get("Resource Name", "")
+            abbreviation = match.get("Abbreviation", "")
+
+        base = {
+            "Resource Name": resource_name,
+            "Abbreviation": abbreviation,
+            "Diseases Included": row.get("diseases_included", ""),
+            "Coarse Data Modality": row.get("coarse_data_modality", ""),
+            "Granular Data Modality": row.get("granular_data_modality", ""),
+        }
+        for page_url, cols in family_cols.items():
+            for col in cols:
+                cell = row.get(col, "")
+                if not cell.strip():
+                    continue
+                ref = _extract_doc_ref(cell)
+                if ref is None:
+                    n_no_ref += 1
+                    continue
+                out = {**base, "Fetched With": f"page navigation: {page_url}", **ref}
+                if "PMID" in ref and len(ref) == 1:
+                    pending_pmid_rows.append(out)
+                else:
+                    rows.append(out)
+
+    if pending_pmid_rows:
+        distinct_pmids = sorted({r["PMID"] for r in pending_pmid_rows})
+        metadata = _fetch_pmid_metadata(distinct_pmids, ncbi_api_key=ncbi_api_key)
+        n_unresolved = 0
+        for pending in pending_pmid_rows:
+            fetched = metadata.get(pending["PMID"])
+            if not fetched:
+                n_unresolved += 1
+                continue
+            resolved = dict(pending)
+            for key in ("PubMed Central Link", "DOI", "Title", "Abstract",
+                        "Authors", "Affiliations", "Keywords", "Publication Date"):
+                if fetched.get(key):
+                    resolved[key] = fetched[key]
+            rows.append(resolved)
+        logger.info(f"[new_corpus] resolved {len(pending_pmid_rows) - n_unresolved}/{len(pending_pmid_rows)} "
+                    f"bare-PMID reference(s) via efetch ({n_unresolved} not found in PubMed - dropped)")
+
+    result = pd.DataFrame(rows)
+    msg = f"[new_corpus] extracted {len(result)} publication reference(s); dropped {n_no_ref} unparseable cell(s)"
+    if not has_resource_name:
+        msg += f", {n_no_resource} row(s) with no resource match"
+    logger.info(msg)
+    return result
 
 
 _REAL_VERDICTS = {"confirmed", "not_confirmed", "insufficient_evidence"}
