@@ -27,6 +27,7 @@ import unicodedata
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import pandas as pd
 
@@ -327,12 +328,62 @@ def _normalize_pub_grants(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+_GENERIC_GIT_HOST_NAMES = {"github", "gitlab", "bitbucket"}
+
+
+def _repo_name_from_git_url(url: str) -> str:
+    """Extract the repo segment ('<owner>/<repo>' -> '<repo>') from a GitHub/
+    GitLab/Bitbucket URL. Returns '' if url isn't a repo link on one of those
+    hosts (e.g. a bare user/org page with no repo segment)."""
+    url = (url or "").strip()
+    if not url:
+        return ""
+    parsed = urlparse(url)
+    host = parsed.netloc.lower()
+    if not any(h in host for h in ("github.com", "gitlab", "bitbucket")):
+        return ""
+    segments = [s for s in parsed.path.strip("/").split("/") if s]
+    if len(segments) < 2:
+        return ""
+    repo = segments[1]
+    return repo[:-4] if repo.endswith(".git") else repo
+
+
 def _normalize_pub_software(df: pd.DataFrame) -> pd.DataFrame:
-    return df
+    """Drop rows with no extracted software mention (only source_url populated) -
+    same class of no-op placeholder rows as _normalize_pub_models, see there.
+    Also: when software_name is just the generic host name ("GitHub"/"GitLab"/
+    "Bitbucket") but url is an actual repo link, replace it with the repo name
+    parsed from url - the host name alone isn't a useful software identifier
+    when the real repo name is sitting right there in the url."""
+    before = len(df)
+    out = df[df["software_name"].str.strip() != ""].reset_index(drop=True)
+    dropped = before - len(out)
+    if dropped:
+        logger.warning(f"{dropped} pub_software rows dropped — no software mention extracted (only source_url populated)")
+
+    generic_mask = out["software_name"].str.strip().str.lower().isin(_GENERIC_GIT_HOST_NAMES)
+    repo_names = out["url"].map(_repo_name_from_git_url)
+    fillable = generic_mask & (repo_names != "")
+    if fillable.any():
+        out.loc[fillable, "software_name"] = repo_names[fillable]
+        logger.info(f"{fillable.sum()} pub_software rows renamed from generic host name to repo name")
+
+    return out
 
 
 def _normalize_pub_models(df: pd.DataFrame) -> pd.DataFrame:
-    return df
+    """Drop rows with no extracted model mention (only source_url populated) -
+    these carry no information and data_gatherer's own process_model_response
+    already drops them for freshly-extracted rows; older cached rows from before
+    that filter existed can still slip through pipelines/pub_models.py's
+    source_url-based cache union, so they're caught here too."""
+    before = len(df)
+    out = df[df["model_name"].str.strip() != ""].reset_index(drop=True)
+    dropped = before - len(out)
+    if dropped:
+        logger.warning(f"{dropped} pub_models rows dropped — no model mention extracted (only source_url populated)")
+    return out
 
 
 def _normalize_pub_verification(df: pd.DataFrame) -> pd.DataFrame:
