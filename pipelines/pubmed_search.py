@@ -10,7 +10,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from pipelines.base import PipelineStage
+from pipelines.base import PipelineStage, redact_secrets
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +31,8 @@ class PubmedStage(PipelineStage):
         verbose: bool = False,
         log_file: Path | None = None,
     ) -> Path:
+        args = {k: v for k, v in locals().items() if k not in ("self", "input_path", "output_path")}
+        logger.info(f"run called with input_path={input_path}, output_path={output_path}, args={redact_secrets(args)}")
         cmd = [
             sys.executable, str(SCRAPERS_DIR / "scrape_publications.py"),
             "--input", str(input_path),
@@ -47,9 +49,12 @@ class PubmedStage(PipelineStage):
             cmd += ["--log-file", str(log_file)]
 
         logger.info(f"Running scraper → {output_path.name}")
-        result = subprocess.run(cmd, cwd=str(SCRAPERS_DIR))
-        if result.returncode != 0:
-            raise RuntimeError(f"PubMed scraper exited with code {result.returncode}")
+        try:
+            subprocess.run(cmd, cwd=str(SCRAPERS_DIR), check=True, stderr=subprocess.PIPE, text=True)
+        except subprocess.CalledProcessError as e:
+            stderr = (e.stderr or "(no stderr captured)")[-2000:]
+            logger.error(f"PubMed scraper exited with code {e.returncode}: {stderr}")
+            raise RuntimeError(f"PubMed scraper exited with code {e.returncode}") from e
 
         # Log output schema and row count
         try:
