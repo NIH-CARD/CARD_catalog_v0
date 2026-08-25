@@ -75,10 +75,14 @@ class RepoAnalysisStage(PipelineStage):
                 cmd += ["--log-file", str(log_file)]
 
             logger.info(f"Running batch AI analysis on {len(new_repos_df)} new repos → {output_path.name}")
-            result = subprocess.run(cmd, cwd=str(SCRAPERS_DIR))
+            try:
+                subprocess.run(cmd, cwd=str(SCRAPERS_DIR), check=True, stderr=subprocess.PIPE, text=True)
+            except subprocess.CalledProcessError as e:
+                stderr = (e.stderr or "(no stderr captured)")[-2000:]
+                logger.error(f"Batch AI analysis exited with code {e.returncode}: {stderr}")
+                new_input_path.unlink(missing_ok=True)
+                raise RuntimeError(f"Batch AI analysis exited with code {e.returncode}") from e
             new_input_path.unlink(missing_ok=True)
-            if result.returncode != 0:
-                raise RuntimeError(f"Batch AI analysis exited with code {result.returncode}")
             if output_path.exists():
                 analyzed_df = pd.read_csv(output_path, sep="\t", dtype=str).fillna("")
 
