@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from pipelines.base import PipelineStage
+from pipelines.base import PipelineStage, redact_secrets
 from pipelines.pub_metadata_shared import load_pmc_links
 from staging.cache_utils import combine_cached_and_new, latest_final
 
@@ -36,6 +36,8 @@ class PubSupplementaryStage(PipelineStage):
         use_cache: bool = True,
         fetch_cache_path: Path | None = None,
     ) -> Path:
+        args = {k: v for k, v in locals().items() if k not in ("self", "input_path", "output_path")}
+        logger.info(f"run called with input_path={input_path}, output_path={output_path}, args={redact_secrets(args)}")
         from data_gatherer.data_gatherer import DataGatherer
         from data_gatherer.llm.response_schema import supplementary_files_keywords_schema
 

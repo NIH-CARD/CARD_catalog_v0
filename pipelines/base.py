@@ -1,8 +1,28 @@
 """
 Base class for all CARD Catalog pipeline stages.
 """
+import re
 from abc import ABC, abstractmethod
 from pathlib import Path
+
+_SECRET_NAME_PATTERN = re.compile(r"key|token", re.IGNORECASE)
+
+
+def redact_secrets(args: dict) -> dict:
+    """Redact any argument whose name looks like a credential (contains 'key' or
+    'token') so API keys/tokens never land in log files. Recurses into a nested
+    'kwargs' dict (stages that take **kwargs) so secrets passed through it are
+    redacted too.
+    """
+    result = {}
+    for k, v in args.items():
+        if _SECRET_NAME_PATTERN.search(k):
+            result[k] = "<redacted>"
+        elif k == "kwargs" and isinstance(v, dict):
+            result[k] = redact_secrets(v)
+        else:
+            result[k] = v
+    return result
 
 
 class PipelineStage(ABC):

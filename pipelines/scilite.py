@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from pipelines.base import PipelineStage
+from pipelines.base import PipelineStage, redact_secrets
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +36,8 @@ class SciLiteStage(PipelineStage):
         verbose: bool = False,
         log_file: Path | None = None,
     ) -> Path:
+        args = {k: v for k, v in locals().items() if k not in ("self", "input_path", "output_path")}
+        logger.info(f"run called with input_path={input_path}, output_path={output_path}, args={redact_secrets(args)}")
         if str(SCRAPERS_DIR) not in sys.path:
             sys.path.insert(0, str(SCRAPERS_DIR))
         from scrape_annotations import (

@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from pipelines.base import PipelineStage
+from pipelines.base import PipelineStage, redact_secrets
 from staging.cache_utils import combine_cached_and_new, latest_final
 
 logger = logging.getLogger(__name__)
@@ -36,6 +36,8 @@ class RepoAnalysisStage(PipelineStage):
         log_file: Path | None = None,
         use_cache: bool = True,
     ) -> Path:
+        args = {k: v for k, v in locals().items() if k not in ("self", "input_path", "output_path")}
+        logger.info(f"run called with input_path={input_path}, output_path={output_path}, args={redact_secrets(args)}")
         github_df = pd.read_csv(input_path, sep="\t", dtype=str).fillna("")
 
         cached_df = None

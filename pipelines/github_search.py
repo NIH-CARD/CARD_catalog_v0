@@ -13,7 +13,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from pipelines.base import PipelineStage
+from pipelines.base import PipelineStage, redact_secrets
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +31,8 @@ class GithubSearchStage(PipelineStage):
         log_file: Path | None = None,
         extra_repos_path: Path | None = None,
     ) -> Path:
+        args = {k: v for k, v in locals().items() if k not in ("self", "input_path", "output_path")}
+        logger.info(f"run called with input_path={input_path}, output_path={output_path}, args={redact_secrets(args)}")
         cmd = [
             sys.executable, str(SCRAPERS_DIR / "scrape_github.py"),
             "--input", str(input_path),
@@ -48,7 +50,10 @@ class GithubSearchStage(PipelineStage):
             cmd += ["--extra-repos", str(extra_repos_path)]
 
         logger.info(f"running scraper → {output_path.name}")
-        result = subprocess.run(cmd, cwd=str(SCRAPERS_DIR))
-        if result.returncode != 0:
-            raise RuntimeError(f"GitHub scraper exited with code {result.returncode}")
+        try:
+            subprocess.run(cmd, cwd=str(SCRAPERS_DIR), check=True, stderr=subprocess.PIPE, text=True)
+        except subprocess.CalledProcessError as e:
+            stderr = (e.stderr or "(no stderr captured)")[-2000:]
+            logger.error(f"GitHub scraper exited with code {e.returncode}: {stderr}")
+            raise RuntimeError(f"GitHub scraper exited with code {e.returncode}") from e
         return output_path

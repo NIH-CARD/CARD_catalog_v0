@@ -25,7 +25,7 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from pipelines.base import PipelineStage
+from pipelines.base import PipelineStage, redact_secrets
 from staging.validate_fetched_publications import ingest_fulltext_batch_results
 
 logger = logging.getLogger(__name__)
@@ -46,6 +46,8 @@ class PubVerificationStage(PipelineStage):
         output_path: Path,
         **kwargs,
     ) -> Path:
+        logger.info(f"run called with input_path={input_path}, output_path={output_path}, "
+                    f"kwargs={redact_secrets(kwargs)}")
         results_dir = input_path if input_path else DEFAULT_RESULTS_DIR
         if not results_dir.exists() or not any(results_dir.glob("fulltext_batch_*_results.jsonl")):
             logger.warning(f"no batch results found in {results_dir} — skipping")
