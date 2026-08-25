@@ -112,6 +112,15 @@ class PageNavigationStage(PipelineStage):
 
         new_out_df = None
         if not new_expanded_df.empty:
+            # process_metadata()'s own output drops any pass_cols_to_prompt columns - without
+            # this map, a resulting new_corpus row has no way to be attributed back to a
+            # resource. Keyed by dataset_webpage, since that's what process_metadata records
+            # back as each output row's source_url_for_metadata.
+            url_to_resource = (
+                new_expanded_df.drop_duplicates("dataset_webpage")
+                .set_index("dataset_webpage")[["Resource Name", "Abbreviation"]]
+                .to_dict("index")
+            )
             dg = DataGatherer(llm_name="claude-haiku-4-5", log_level=log_level, log_file_override=str(log_file) if log_file else None, clear_previous_logs=False)
             outputs = dg.process_metadata(
                 new_expanded_df,
@@ -134,6 +143,11 @@ class PageNavigationStage(PipelineStage):
             if outputs:
                 new_out_df = pd.DataFrame(outputs)
                 new_out_df["_schema"] = "study_sanity_check_w_rationale"
+                if "source_url_for_metadata" in new_out_df.columns:
+                    new_out_df["Resource Name"] = new_out_df["source_url_for_metadata"].map(
+                        lambda u: url_to_resource.get(u, {}).get("Resource Name", ""))
+                    new_out_df["Abbreviation"] = new_out_df["source_url_for_metadata"].map(
+                        lambda u: url_to_resource.get(u, {}).get("Abbreviation", ""))
 
         out_df = combine_cached_and_new(cached_df, new_out_df)
         if out_df is not None:
