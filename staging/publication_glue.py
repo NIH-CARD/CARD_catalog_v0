@@ -11,6 +11,13 @@ here:
 - build_misc_publications(): joins pub_verification's vLLM-based verdicts
   into a copy of combine_hits.tsv (misc_publications_*.tsv), leaving the
   original combine_hits file untouched.
+- extract_new_corpus_publications(): explodes a new_corpus table (page
+  navigation's discovered-publication columns) into combine_hits-shaped rows,
+  so they can be folded into the same misc_publications pipeline.
+- resolve_missing_pmcids(): fills in PubMed Central Link for DOI-only rows via
+  NCBI's ID Converter API (falling back to an exact-title match) - both
+  pub_jobs (full-text fetch prefers PMC) and scilite (Europe PMC's own
+  annotation API is PMC-ID-keyed) need one to do anything with these rows.
 
 Not staging/combine_hits.py's job: that one deduplicates/collapses multiple
 raw hits files sharing the same schema (Union-Find row-matching) before
@@ -24,8 +31,11 @@ manually via::
 """
 from __future__ import annotations
 
+import ast
+import html
 import logging
 import re
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -66,8 +76,8 @@ def _pmcid_from(s: str) -> str:
     return m.group(0) if m else ""
 
 
-def join_annotations() -> Path | None:
-    """Join SciLite annotations and pub_datasets into the publications TSV.
+def join_annotations(pub_pattern: str = "pubmed_central_*.tsv") -> Path | None:
+    """Join SciLite annotations and pub_datasets into a publications-shaped TSV.
 
     Adds columns:
         - ``Diseases (Annotated)`` — semicolon-delimited Tag Names (type=Diseases)
@@ -75,12 +85,21 @@ def join_annotations() -> Path | None:
         - ``Chemicals``            — semicolon-delimited Tag Names (type=Chemicals)
         - ``Cited Datasets``       — semicolon-delimited dataset identifiers
 
+    Matches purely on PMC ID extracted from each row's PubMed Central Link, so any table
+    with that column works - the standard pubmed_central table (default) or, in misc_mode,
+    misc_publications (still single-valued for that column even though Resource Name/
+    Abbreviation/etc. are semicolon-joined there).
+
+    Args:
+        pub_pattern: Glob (in tables/final/) for the publications-shaped TSV to enrich in
+            place (default: "pubmed_central_*.tsv").
+
     Returns:
-        Path to the updated publications TSV, or None if publications file not found.
+        Path to the updated TSV, or None if no file matching pub_pattern was found.
     """
-    pub_path = _latest("pubmed_central_*.tsv")
+    pub_path = _latest(pub_pattern)
     if not pub_path:
-        logger.error("No publications TSV found in tables/final/")
+        logger.error(f"No TSV matching '{pub_pattern}' found in tables/final/")
         return None
 
     logger.info(f"Loading publications: {pub_path.name}")
@@ -151,6 +170,114 @@ def join_annotations() -> Path | None:
     pubs.to_csv(pub_path, sep="\t", index=False)
     logger.info(f"Enriched publications written → {pub_path.name}")
     return pub_path
+
+
+def join_cellular_model_publications(
+    indi_pattern: str = "iNDI_inventory_*",
+    scilite_pattern: str = "scilite_annotations_*.tsv",
+    pub_pattern: str = "misc_publications_*.tsv",
+) -> Path | None:
+    """Join cellular models to the publications that mention their variant, via SciLite's
+    rs-number annotations, and from there to the study/resource each publication is tied to.
+
+    iNDI inventory's own "dbSNP" column (e.g. "rs387906627") is the join key against
+    SciLite's "Accession Numbers" / subType "RefSNP" annotations (Tag Name is the same rs
+    number, PMC-ID-scoped) - a match means that paper's text mentions this cell model's
+    variant. From the matched PMC ID, Resource Name is then looked up via the publications
+    table's own PMC link, giving the study/resource that publication is tied to.
+
+    Adds two columns to a copy of the iNDI inventory (written to tables/final/, the
+    original root-level file is never modified):
+        - ``Linked Publications`` — semicolon-delimited PMC IDs whose SciLite annotations
+          mention this row's dbSNP rs number
+        - ``Linked Studies``      — semicolon-delimited Resource Name(s) those publications
+          are tied to (via pub_pattern), when resolvable
+
+    Args:
+        indi_pattern: Glob (in tables/, not tables/final/ - it's a manually-maintained
+            root-level file, not pipeline output) for the cell models inventory.
+        scilite_pattern: Glob (in tables/final/) for the SciLite annotations table.
+        pub_pattern: Glob (in tables/final/) for the publications-shaped table to resolve
+            Resource Name from (default: misc_publications).
+
+    Returns:
+        Path to the written cellular_models TSV, or None if the iNDI inventory or SciLite
+        annotations weren't found.
+    """
+    indi_path = _latest_tables_root(indi_pattern)
+    if not indi_path:
+        logger.error(f"No TSV matching '{indi_pattern}' found in tables/")
+        return None
+
+    scilite_path = _latest(scilite_pattern)
+    if not scilite_path:
+        logger.error(f"No TSV matching '{scilite_pattern}' found in tables/final/")
+        return None
+
+    logger.info(f"Loading cell models: {indi_path.name}")
+    models = pd.read_csv(indi_path, sep="\t", dtype=str).fillna("")
+    logger.info(f"  {len(models)} cell model(s) loaded")
+
+    logger.info(f"Loading SciLite annotations: {scilite_path.name}")
+    sc = pd.read_csv(scilite_path, sep="\t", dtype=str).fillna("")
+    rs_hits = sc[(sc.get("Type", "") == "Accession Numbers") & (sc.get("subType", "") == "RefSNP")]
+    logger.info(f"  {len(rs_hits)} RefSNP annotation row(s) found")
+
+    rs_to_pmcs: dict[str, list[str]] = {}
+    for _, row in rs_hits.iterrows():
+        rs = row.get("Tag Name", "").strip()
+        pmc = row.get("PMC ID", "").strip()
+        if not rs or not pmc:
+            continue
+        pmcs = rs_to_pmcs.setdefault(rs, [])
+        if pmc not in pmcs:
+            pmcs.append(pmc)
+
+    pmc_to_resources: dict[str, list[str]] = {}
+    pub_path = _latest(pub_pattern)
+    if pub_path:
+        logger.info(f"Loading publications: {pub_path.name}")
+        pubs = pd.read_csv(pub_path, sep="\t", dtype=str).fillna("")
+        pmc_col = "PubMed Central Link" if "PubMed Central Link" in pubs.columns else "PubMed_Central_Link"
+        for _, row in pubs.iterrows():
+            pmc = _pmcid_from(row.get(pmc_col, ""))
+            resource = row.get("Resource Name", "").strip()
+            if not pmc or not resource:
+                continue
+            # Resource Name is semicolon-multi-valued in misc_publications (one publication
+            # can be tied to more than one study) - split it back out.
+            for name in (n.strip() for n in resource.split(";")):
+                if not name:
+                    continue
+                names = pmc_to_resources.setdefault(pmc, [])
+                if name not in names:
+                    names.append(name)
+    else:
+        logger.warning(f"No TSV matching '{pub_pattern}' found in tables/final/ — "
+                        "Linked Studies will be empty")
+
+    def _linked_publications(dbsnp: str) -> str:
+        return ";".join(rs_to_pmcs.get(dbsnp.strip(), []))
+
+    def _linked_studies(dbsnp: str) -> str:
+        pmcs = rs_to_pmcs.get(dbsnp.strip(), [])
+        names: list[str] = []
+        for pmc in pmcs:
+            for name in pmc_to_resources.get(pmc, []):
+                if name not in names:
+                    names.append(name)
+        return ";".join(names)
+
+    models["Linked Publications"] = models["dbSNP"].apply(_linked_publications)
+    models["Linked Studies"] = models["dbSNP"].apply(_linked_studies)
+    n_linked = (models["Linked Publications"] != "").sum()
+    logger.info(f"[cell-models] {n_linked}/{len(models)} cell model(s) linked to at least one publication")
+
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_path = _FINAL_DIR / f"cellular_models_{ts}.tsv"
+    models.to_csv(output_path, sep="\t", index=False)
+    logger.info(f"Cellular models with publication links written → {output_path.name}")
+    return output_path
 
 
 def build_misc_publications(combine_hits_path: Path | None = None,
