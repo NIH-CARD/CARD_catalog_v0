@@ -339,6 +339,85 @@ def _normalize_pub_verification(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+_MISC_PUB_MULTIVALUE_COLS = [
+    "Resource Name", "Abbreviation", "Diseases Included",
+    "Coarse Data Modality", "Granular Data Modality", "Fetched With",
+]
+_MISC_PUB_SINGLEVALUE_COLS = [
+    "PMID", "DOI", "PubMed Central Link", "Authors", "Affiliations",
+    "Title", "Abstract", "Keywords", "Publication Date",
+    "Verification Status", "Paperclip Repo", "Paperclip Doc ID",
+]
+_MISC_PUB_RESOURCE_PREFIXED_COLS = [("Rationale", "Inclusion Criteria"), ("Claim Text", "Claim Text")]
+
+
+def _normalize_misc_publications(df: pd.DataFrame) -> pd.DataFrame:
+    """Filter combine_hits + vLLM-verification rows to confirmed (resource, publication)
+    links only, then collapse to one row per publication - the same paper linked to
+    several resources becomes one row instead of several.
+
+    Resource-specific columns (Resource Name, Diseases Included, Coarse/Granular Data
+    Modality, Abbreviation, Fetched With) become semicolon-joined multi-value fields
+    across the group, deduplicated via _normalize_list_field. Rationale becomes
+    "Inclusion Criteria" and, together with Claim Text, is prefixed per-resource
+    ("<Resource Name>: <text>") rather than deduplicated - each resource's inclusion was
+    judged independently by the LLM, so one resource's rationale must stay attached to
+    it, not merged away. Any literal ';' inside free text is escaped to ',' first (same
+    fix staging/combine_hits.py applies to Fetched With) so joining/splitting on ';'
+    doesn't fragment one entry into two.
+
+    Publication-specific columns (Title, Abstract, Authors, PMID, DOI, ...) take the
+    longest non-empty value across the group's rows - same paper, so these should already
+    agree; the longest wins if one copy is more complete than another (same convention
+    staging/combine_hits.py uses for its own non-list columns).
+    """
+    from staging.validate_fetched_publications import _resolve_doc_id
+
+    if "Verification Status" not in df.columns:
+        logger.error("misc_publications: no Verification Status column — cannot filter")
+        return df
+
+    confirmed = df[df["Verification Status"] == "confirmed"].copy()
+    logger.info(f"misc_publications: {len(confirmed)}/{len(df)} row(s) are confirmed")
+    if confirmed.empty:
+        return confirmed
+
+    confirmed["_doc_id"] = confirmed.apply(lambda row: _resolve_doc_id(row.to_dict()), axis=1)
+    confirmed = confirmed[confirmed["_doc_id"].astype(bool)]
+
+    rows = []
+    for _, group in confirmed.groupby("_doc_id", sort=False):
+        merged = {}
+        for col in _MISC_PUB_SINGLEVALUE_COLS:
+            if col not in group.columns:
+                continue
+            values = [str(v) for v in group[col] if str(v).strip()]
+            merged[col] = max(values, key=len) if values else ""
+        for col in _MISC_PUB_MULTIVALUE_COLS:
+            if col not in group.columns:
+                continue
+            values = [str(v).strip().replace(";", ",") for v in group[col] if str(v).strip()]
+            merged[col] = _normalize_list_field(";".join(values))
+        for src_col, out_col in _MISC_PUB_RESOURCE_PREFIXED_COLS:
+            if src_col not in group.columns:
+                continue
+            parts = []
+            for _, row in group.iterrows():
+                text = str(row.get(src_col, "")).strip()
+                if not text:
+                    continue
+                resource = str(row.get("Resource Name", "")).strip().replace(";", ",")
+                safe_text = text.replace(";", ",")
+                parts.append(f"{resource}: {safe_text}" if resource else safe_text)
+            merged[out_col] = ";".join(parts)
+        rows.append(merged)
+
+    result = pd.DataFrame(rows)
+    logger.info(f"misc_publications: {len(confirmed)} confirmed (resource, publication) row(s) "
+                f"-> {len(result)} unique publication(s)")
+    return result
+
+
 def _normalize_new_corpus(df: pd.DataFrame) -> pd.DataFrame:
     if "Access_URL" in df.columns:
         df["Access_URL"] = df["Access_URL"].apply(_first_url_from_list)
@@ -403,7 +482,7 @@ def _normalize_scilite(df: pd.DataFrame) -> pd.DataFrame:
 
 _NORMALIZERS = {
     "publications": _normalize_publications,
-    "misc_publications": _normalize_publications,
+    "misc_publications": _normalize_misc_publications,
     "code": _normalize_code,
     "pub_datasets": _normalize_pub_datasets,
     "supplementary": _normalize_supplementary,
