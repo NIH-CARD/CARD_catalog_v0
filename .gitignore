@@ -74,6 +74,7 @@ docs/plans/paperclip/experiments/*.tsv
 docs/plans/paperclip/validation/*.log
 docs/plans/paperclip/validation/*.tsv
 scrapers/.paperclip_validation_cache.json
+staging/.fetched_publication_validation_cache.json
 docs/plans/paperclip/validation/smoke_test_cache.json
 docs/plans/paperclip/validation/smoke_test_cache_evidence.json
 docs/plans/paperclip/validation/paperclip_full_**
