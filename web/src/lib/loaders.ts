@@ -5,6 +5,7 @@ import type {
   FairIssue,
   PubDataset,
   PubGrant,
+  PubModel,
   PubSoftware,
   Publication,
   Resource,
@@ -26,6 +27,8 @@ export const loadPubGrants = () =>
   loadTsv<PubGrant>("/data/pub_grants.tsv");
 export const loadPubSoftware = () =>
   loadTsv<PubSoftware>("/data/pub_software.tsv");
+export const loadPubModels = () =>
+  loadTsv<PubModel>("/data/pub_models.tsv");
 export const loadSciLite = () =>
   loadTsv<SciLiteAnnotation>("/data/scilite_annotations.tsv");
 export const loadCellularModels = () =>

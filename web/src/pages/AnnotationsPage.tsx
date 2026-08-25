@@ -17,6 +17,8 @@ import { matchesFacet, matchesQuery } from "../lib/filter";
 import {
   loadPubDatasets,
   loadPubGrants,
+  loadPubModels,
+  loadPubSoftware,
   loadSciLite,
   loadSupplementary,
 } from "../lib/loaders";
@@ -26,6 +28,8 @@ import type {
   FacetSpec,
   PubDataset,
   PubGrant,
+  PubModel,
+  PubSoftware,
   SciLiteAnnotation,
   Supplementary,
 } from "../types";
@@ -69,6 +73,12 @@ function SubNav() {
       </NavLink>
       <NavLink to="/annotations/grants" className={itemCls}>
         💰 Grants
+      </NavLink>
+      <NavLink to="/annotations/software" className={itemCls}>
+        🧩 Software
+      </NavLink>
+      <NavLink to="/annotations/models" className={itemCls}>
+        🤗 Models
       </NavLink>
       <NavLink to="/annotations/scilite" className={itemCls}>
         🏷️ SciLite Annotations
@@ -447,7 +457,6 @@ const GR_SEARCH: (keyof PubGrant & string)[] = [
   "grant_number",
   "recipient",
   "funding_context_from_paper",
-  "pub_title",
 ];
 const grCol = createColumnHelper<PubGrant>();
 
@@ -516,26 +525,24 @@ function GrantsTab() {
           );
         },
       }),
-      grCol.accessor("pub_title", {
+      grCol.accessor("source_url", {
         header: "Publication",
+        // pub_grants has no title column of its own (only the source PMC link) -
+        // was previously declared on PubGrant anyway but never populated, so this
+        // always fell through to the URL-as-link-text branch below regardless.
         cell: (info) => {
-          const url = info.row.original.source_url;
-          const title = info.getValue();
-          if (!title && !url) return null;
-          return url ? (
+          const url = info.getValue();
+          if (!url) return null;
+          return (
             <a
               href={url}
               target="_blank"
               rel="noreferrer"
               className="text-xs text-accent hover:underline line-clamp-2 max-w-md"
-              title={title}
+              title={url}
             >
-              {title || url}
+              {url}
             </a>
-          ) : (
-            <span className="text-xs text-slate-600 line-clamp-2 max-w-md">
-              {title}
-            </span>
           );
         },
       }),
@@ -819,6 +826,332 @@ function SciliteTab() {
 }
 
 // ---------------------------------------------------------------------------
+// Software sub-page
+// ---------------------------------------------------------------------------
+
+const SW_FACETS: readonly FacetSpec<PubSoftware>[] = [
+  { field: "software_name", label: "Software", multivalue: false },
+  { field: "version", label: "Version", multivalue: false },
+  { field: "mention_type", label: "Mention Type", multivalue: false },
+];
+const SW_SEARCH: (keyof PubSoftware & string)[] = [
+  "software_name",
+  "version",
+  "mention_type",
+  "context_from_paper",
+];
+const swCol = createColumnHelper<PubSoftware>();
+
+function SoftwareTab() {
+  const [rows, setRows] = useState<PubSoftware[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [sp] = useSearchParams();
+  const pmcFilter = sp.get("pmc");
+
+  useEffect(() => {
+    loadPubSoftware().then(setRows).catch((e: Error) => setError(e.message));
+  }, []);
+
+  const fields = useMemo(() => SW_FACETS.map((f) => f.field), []);
+  const { selections, query, setFacet, setQuery, clearAll, totalSelected } =
+    useFacets(fields as readonly (keyof PubSoftware & string)[]);
+
+  const scoped = useMemo(() => {
+    if (!rows) return [];
+    if (!pmcFilter) return rows;
+    return rows.filter((r) => pmcidFrom(r.source_url) === pmcFilter);
+  }, [rows, pmcFilter]);
+
+  const filtered = useMemo(() => {
+    return scoped.filter((r) => {
+      for (const spec of SW_FACETS) {
+        if (!matchesFacet(r, spec, selections[spec.field] ?? new Set())) return false;
+      }
+      return matchesQuery(r, SW_SEARCH, query);
+    });
+  }, [scoped, selections, query]);
+
+  const columns = useMemo(
+    () => [
+      swCol.accessor("software_name", {
+        header: "Software",
+        size: 180,
+        cell: (info) => (
+          <span className="text-xs text-slate-700">{info.getValue()}</span>
+        ),
+      }),
+      swCol.accessor("version", {
+        header: "Version",
+        size: 100,
+        cell: (info) => (
+          <span className="font-mono text-xs">{info.getValue()}</span>
+        ),
+      }),
+      swCol.accessor("mention_type", {
+        header: "Mention Type",
+        size: 120,
+        cell: (info) => (
+          <span className="text-xs text-slate-600">{info.getValue()}</span>
+        ),
+      }),
+      swCol.accessor("context_from_paper", {
+        header: "Context",
+        size: 420,
+        cell: (info) => {
+          const text = info.getValue();
+          if (!text) return null;
+          return (
+            <p className="text-xs text-slate-700 line-clamp-6" title={text}>
+              {text}
+            </p>
+          );
+        },
+      }),
+      swCol.accessor("url", {
+        header: "Software URL",
+        size: 200,
+        cell: (info) => {
+          const url = info.getValue();
+          if (!url) return null;
+          return (
+            <a
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-accent hover:underline line-clamp-2 max-w-md"
+              title={url}
+            >
+              {url}
+            </a>
+          );
+        },
+      }),
+      swCol.accessor("source_url", {
+        header: "Publication",
+        cell: (info) => {
+          const url = info.getValue();
+          if (!url) return null;
+          return (
+            <a
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-accent hover:underline line-clamp-2 max-w-md"
+              title={url}
+            >
+              {url}
+            </a>
+          );
+        },
+      }),
+    ],
+    [],
+  );
+
+  return (
+    <PageShell
+      query={query}
+      onQueryChange={setQuery}
+      title="Annotations"
+      count={
+        rows
+          ? `${filtered.length.toLocaleString()} of ${scoped.length.toLocaleString()}`
+          : "Loading…"
+      }
+      rail={
+        <FilterRail<PubSoftware>
+          specs={SW_FACETS}
+          rows={scoped}
+          selections={selections as Record<string, Set<string>>}
+          onFacetChange={(field, next) =>
+            setFacet(field as (typeof SW_FACETS)[number]["field"], next)
+          }
+          totalSelected={totalSelected}
+          onClearAll={clearAll}
+          error={error}
+        />
+      }
+    >
+      <SubNav />
+      <PmcBanner />
+      {rows ? (
+        <>
+          <div className="mb-3 flex justify-end">
+            <ExportButton rows={filtered} filename="pub_software" />
+          </div>
+          <DataTable<PubSoftware> rows={filtered} columns={columns} />
+        </>
+      ) : (
+        <div className="text-sm text-slate-500">Loading software…</div>
+      )}
+    </PageShell>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Models sub-page
+// ---------------------------------------------------------------------------
+
+const MD_FACETS: readonly FacetSpec<PubModel>[] = [
+  { field: "model_name", label: "Model", multivalue: false },
+  { field: "version", label: "Version", multivalue: false },
+  { field: "mention_type", label: "Mention Type", multivalue: false },
+];
+const MD_SEARCH: (keyof PubModel & string)[] = [
+  "model_name",
+  "version",
+  "mention_type",
+  "context_from_paper",
+];
+const mdCol = createColumnHelper<PubModel>();
+
+function ModelsTab() {
+  const [rows, setRows] = useState<PubModel[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [sp] = useSearchParams();
+  const pmcFilter = sp.get("pmc");
+
+  useEffect(() => {
+    loadPubModels().then(setRows).catch((e: Error) => setError(e.message));
+  }, []);
+
+  const fields = useMemo(() => MD_FACETS.map((f) => f.field), []);
+  const { selections, query, setFacet, setQuery, clearAll, totalSelected } =
+    useFacets(fields as readonly (keyof PubModel & string)[]);
+
+  const scoped = useMemo(() => {
+    if (!rows) return [];
+    if (!pmcFilter) return rows;
+    return rows.filter((r) => pmcidFrom(r.source_url) === pmcFilter);
+  }, [rows, pmcFilter]);
+
+  const filtered = useMemo(() => {
+    return scoped.filter((r) => {
+      for (const spec of MD_FACETS) {
+        if (!matchesFacet(r, spec, selections[spec.field] ?? new Set())) return false;
+      }
+      return matchesQuery(r, MD_SEARCH, query);
+    });
+  }, [scoped, selections, query]);
+
+  const columns = useMemo(
+    () => [
+      mdCol.accessor("model_name", {
+        header: "Model",
+        size: 180,
+        cell: (info) => (
+          <span className="text-xs text-slate-700">{info.getValue()}</span>
+        ),
+      }),
+      mdCol.accessor("version", {
+        header: "Version",
+        size: 100,
+        cell: (info) => (
+          <span className="font-mono text-xs">{info.getValue()}</span>
+        ),
+      }),
+      mdCol.accessor("mention_type", {
+        header: "Mention Type",
+        size: 120,
+        cell: (info) => (
+          <span className="text-xs text-slate-600">{info.getValue()}</span>
+        ),
+      }),
+      mdCol.accessor("context_from_paper", {
+        header: "Context",
+        size: 420,
+        cell: (info) => {
+          const text = info.getValue();
+          if (!text) return null;
+          return (
+            <p className="text-xs text-slate-700 line-clamp-6" title={text}>
+              {text}
+            </p>
+          );
+        },
+      }),
+      mdCol.accessor("url", {
+        header: "Model URL",
+        size: 200,
+        cell: (info) => {
+          const url = info.getValue();
+          if (!url) return null;
+          return (
+            <a
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-accent hover:underline line-clamp-2 max-w-md"
+              title={url}
+            >
+              {url}
+            </a>
+          );
+        },
+      }),
+      mdCol.accessor("source_url", {
+        header: "Publication",
+        cell: (info) => {
+          const url = info.getValue();
+          if (!url) return null;
+          return (
+            <a
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-accent hover:underline line-clamp-2 max-w-md"
+              title={url}
+            >
+              {url}
+            </a>
+          );
+        },
+      }),
+    ],
+    [],
+  );
+
+  return (
+    <PageShell
+      query={query}
+      onQueryChange={setQuery}
+      title="Annotations"
+      count={
+        rows
+          ? `${filtered.length.toLocaleString()} of ${scoped.length.toLocaleString()}`
+          : "Loading…"
+      }
+      rail={
+        <FilterRail<PubModel>
+          specs={MD_FACETS}
+          rows={scoped}
+          selections={selections as Record<string, Set<string>>}
+          onFacetChange={(field, next) =>
+            setFacet(field as (typeof MD_FACETS)[number]["field"], next)
+          }
+          totalSelected={totalSelected}
+          onClearAll={clearAll}
+          error={error}
+        />
+      }
+    >
+      <SubNav />
+      <PmcBanner />
+      {rows ? (
+        <>
+          <div className="mb-3 flex justify-end">
+            <ExportButton rows={filtered} filename="pub_models" />
+          </div>
+          <DataTable<PubModel> rows={filtered} columns={columns} />
+        </>
+      ) : (
+        <div className="text-sm text-slate-500">Loading models…</div>
+      )}
+    </PageShell>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Datasets section router
 // ---------------------------------------------------------------------------
 
@@ -828,6 +1161,8 @@ export function AnnotationsPage() {
       <Route index element={<DatasetsTab />} />
       <Route path="supplementary" element={<SupplementaryTab />} />
       <Route path="grants" element={<GrantsTab />} />
+      <Route path="software" element={<SoftwareTab />} />
+      <Route path="models" element={<ModelsTab />} />
       <Route path="scilite" element={<SciliteTab />} />
       <Route path="*" element={<Navigate to="" replace />} />
     </Routes>

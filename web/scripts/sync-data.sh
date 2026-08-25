@@ -34,6 +34,7 @@ copy_latest "pub_datasets_*.tsv"               pub_datasets.tsv         "$FINAL_
 copy_latest "pub_supplementary_*.tsv"          pub_supplementary.tsv    "$FINAL_DIR"
 copy_latest "pub_grants_*.tsv"                 pub_grants.tsv           "$FINAL_DIR"
 copy_latest "pub_software_*.tsv"               pub_software.tsv         "$FINAL_DIR"
+copy_latest "pub_models_*.tsv"                 pub_models.tsv           "$FINAL_DIR"
 copy_latest "scilite_annotations_*.tsv"        scilite_annotations.tsv  "$FINAL_DIR"
 
 # Resources inventory & iNDI live at the tables/ root, not in final/
@@ -54,9 +55,12 @@ for f in modality_synonyms.json disease_synonyms.json; do
   fi
 done
 
-# Logos for the Home page
+# Logos for the Home page. card_logo.png is NOT synced here - it's a web-specific
+# light-color variant maintained directly in public/logos/ (see "card logo (light
+# color) update"), not a mirror of ../logos/card_logo.png; syncing it would
+# clobber that customization on every pipeline run.
 mkdir -p public/logos
-for f in ADDI.png card_logo.png stacked_DT.png; do
+for f in ADDI.png stacked_DT.png; do
   if [[ -f "../logos/$f" ]]; then
     cp "../logos/$f" "public/logos/$f"
     echo "  ../logos/$f -> public/logos/$f"

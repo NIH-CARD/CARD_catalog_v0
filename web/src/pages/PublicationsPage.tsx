@@ -135,7 +135,8 @@ export function PublicationsPage() {
       {
         field: "Resource Name",
         label: "Study",
-        multivalue: false,
+        multivalue: true,
+        delimiter: ";",
       },
       {
         field: "Diseases Included",
@@ -341,7 +342,7 @@ export function PublicationsPage() {
       col.accessor("Resource Name", {
         header: "Study",
         size: 160,
-        cell: (info) => <span className="text-slate-700">{info.getValue()}</span>,
+        cell: (info) => <Chips value={info.getValue()} delimiter=";" max={3} />,
       }),
       col.accessor("Diseases Included", {
         header: "Diseases",

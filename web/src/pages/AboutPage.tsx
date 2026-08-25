@@ -60,8 +60,26 @@ const TABLE_SCHEMAS: { name: string; route: string; file: string; columns: strin
     route: "/annotations/grants",
     file: "pub_grants.tsv",
     columns: [
-      "pub_title", "source_url", "raw_data_format", "funder_name", "grant_number",
+      "source_url", "funder_name", "grant_number",
       "funding_context_from_paper", "recipient",
+    ],
+  },
+  {
+    name: "Software",
+    route: "/annotations/software",
+    file: "pub_software.tsv",
+    columns: [
+      "source_url", "software_name", "version", "mention_type",
+      "url", "context_from_paper",
+    ],
+  },
+  {
+    name: "Models",
+    route: "/annotations/models",
+    file: "pub_models.tsv",
+    columns: [
+      "source_url", "model_name", "version", "mention_type",
+      "url", "context_from_paper",
     ],
   },
   {

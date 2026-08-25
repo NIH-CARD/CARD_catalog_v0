@@ -85,9 +85,7 @@ export interface Supplementary {
 }
 
 export interface PubGrant {
-  pub_title: string;
   source_url: string;
-  raw_data_format: string;
   funder_name: string;
   grant_number: string;
   funding_context_from_paper: string;
@@ -95,10 +93,17 @@ export interface PubGrant {
 }
 
 export interface PubSoftware {
-  pub_title: string;
   source_url: string;
-  raw_data_format: string;
   software_name: string;
+  version: string;
+  mention_type: string;
+  url: string;
+  context_from_paper: string;
+}
+
+export interface PubModel {
+  source_url: string;
+  model_name: string;
   version: string;
   mention_type: string;
   url: string;
