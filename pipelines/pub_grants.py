@@ -78,10 +78,15 @@ class PubGrantsStage(PipelineStage):
                 raw_data_df_parquet_filepath=fetch_cache_str,
             )
             grants_batch_output_path = str(output_path.with_suffix(".batch.jsonl"))
-            grants_result = dg_grants.run_integrated_batch_processing(
-                url_list=new_pmc_links,
-                batch_file_path='',
-                output_file_path=grants_batch_output_path,
+            # run_integrated_batch_processing() calls DataGatherer.fetch_data() internally,
+            # which holds every fetched/parsed document in memory for the whole call — chunk
+            # new_pmc_links so that accumulation is bounded per call, not per full backlog.
+            # Submit every chunk's batch job up front (no waiting), then poll them all
+            # together — the batch jobs run concurrently on Anthropic's side instead of
+            # one chunk waiting on completion before the next is even submitted.
+            chunks = chunked(new_pmc_links)
+            pending = submit_batch_chunks(
+                dg_grants, chunks, grants_batch_output_path,
                 prompt_name="CLAUDE_FDR_FewShot_grant",
                 prompts_subdir="funding_prompts",
                 relevant_content_flag="FUND",
@@ -89,22 +94,25 @@ class PubGrantsStage(PipelineStage):
                 response_format=grant_response_schema_gpt,
                 api_provider="anthropic",
                 local_fetch_file=fetch_cache_str,
-                wait_for_completion=True,
             )
-            if isinstance(grants_result, dict) and grants_result.get("output_file_path"):
-                grants_df = dg_grants.from_batch_resp_file_to_df(
-                    grants_result["output_file_path"], skip_validation=True, expected_key="grants",
-                )
-                if grants_df is not None and not grants_df.empty:
-                    grants_df = grants_df.rename(columns={"title": "pub_title"})
-                    grants_df = grants_df.drop(columns=[
-                        c for c in ("retrieval_stats", "custom_id", "article_id", "page_id", "url")
-                        if c in grants_df.columns
-                    ])
-                    grants_df["_schema"] = "GrantRecord"
-            else:
-                logger.error(f"Grants batch did not complete successfully: {grants_result}")
-                grants_df = None
+            batch_dfs = []
+            for item in await_batches(dg_grants, pending):
+                if item["output_file_path"]:
+                    chunk_df = dg_grants.from_batch_resp_file_to_df(
+                        item["output_file_path"], skip_validation=True, expected_key="grants",
+                    )
+                    if chunk_df is not None and not chunk_df.empty:
+                        batch_dfs.append(chunk_df)
+                else:
+                    logger.error(f"Grants batch {item['batch_id']} did not complete successfully")
+            if batch_dfs:
+                grants_df = pd.concat(batch_dfs, ignore_index=True)
+                grants_df = grants_df.rename(columns={"title": "pub_title"})
+                grants_df = grants_df.drop(columns=[
+                    c for c in ("retrieval_stats", "custom_id", "article_id", "page_id", "url")
+                    if c in grants_df.columns
+                ])
+                grants_df["_schema"] = "GrantRecord"
 
         combined_grants = combine_cached_and_new(cached_grants_df, grants_df)
         if combined_grants is not None:

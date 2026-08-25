@@ -27,6 +27,10 @@ logger = logging.getLogger(__name__)
 
 dataset_response_schema_with_use_description_and_short = {
     "type": "json_schema",
+    # name is required by the vLLM/OpenAI Responses API path (llm_client.py's
+    # _call_vllm) but ignored by the Anthropic batch path (create_anthropic_request
+    # never reads response_format at all) - harmless to carry either way.
+    "name": "dataset_extraction",
     "schema": {
         "type": "object",
         "properties": {
@@ -79,6 +83,8 @@ class PubDatasetsStage(PipelineStage):
         self,
         input_path: Path,
         output_path: Path,
+        # Anthropic Batch API by default. Set False to run synchronously against the
+        # self-hosted vLLM model instead (its batch path has no vLLM api_provider option).
         batch_mode: bool = True,
         full_document_read: bool = True,
         *,
@@ -122,37 +128,49 @@ class PubDatasetsStage(PipelineStage):
 
         datasets_raw = None
         if new_pmc_links:
-            dg = DataGatherer(llm_name="claude-haiku-4-5", log_level=log_level, log_file_override=log_file_str,
+            # Must match an entry in data_gatherer's entire_document_models allow-list
+            # (data_gatherer.py:125-127) or DataGatherer silently sets full_document_read=False
+            # regardless of what's passed here, falling back to semantic-retrieval/embeddings.
+            llm_name = "claude-haiku-4-5-20251001" if batch_mode else "vllm-openai/gpt-oss-20b"
+            dg = DataGatherer(llm_name=llm_name, log_level=log_level, log_file_override=log_file_str,
             clear_previous_logs=False, process_entire_document=full_document_read,
             raw_data_df_parquet_filepath=fetch_cache_str)
             if batch_mode:
-                batch_result = dg.run_integrated_batch_processing(
-                    url_list=new_pmc_links,
-                    batch_file_path='',
-                    output_file_path=batch_output_path,
+                # run_integrated_batch_processing() calls DataGatherer.fetch_data() internally,
+                # which holds every fetched/parsed document in memory for the whole call — chunk
+                # new_pmc_links so that accumulation is bounded per call, not per full backlog.
+                # Submit every chunk's batch job up front (no waiting), then poll them all
+                # together — the batch jobs run concurrently on Anthropic's side instead of
+                # one chunk waiting on completion before the next is even submitted.
+                chunks = chunked(new_pmc_links)
+                pending = submit_batch_chunks(
+                    dg, chunks, batch_output_path,
                     section_filter="data_availability_statement",
                     prompt_name="CLAUDE_FDR_FewShot_shortDescr",
                     response_format=dataset_response_schema_with_use_description_and_short,
                     semantic_retrieval=True,
                     api_provider="anthropic",
                     local_fetch_file=fetch_cache_str,
-                    wait_for_completion=True,
                 )
-                # run_integrated_batch_processing returns a dict (not a DataFrame) on the
-                # Anthropic batch path, regardless of wait_for_completion — convert explicitly.
-                if isinstance(batch_result, dict) and batch_result.get("output_file_path"):
-                    datasets_raw = dg.from_batch_resp_file_to_df(
-                        batch_result["output_file_path"], skip_validation=True, expected_key="datasets",
-                    )
-                    if datasets_raw is not None and not datasets_raw.empty:
-                        datasets_raw = datasets_raw.rename(columns={"title": "pub_title"})
-                        datasets_raw = datasets_raw.drop(columns=[
-                            c for c in ("retrieval_stats", "custom_id", "article_id", "page_id", "url")
-                            if c in datasets_raw.columns
-                        ])
-                else:
-                    logger.error(f"Dataset batch did not complete successfully: {batch_result}")
-                    datasets_raw = None
+                batch_dfs = []
+                for item in await_batches(dg, pending):
+                    # run_integrated_batch_processing returns a dict (not a DataFrame) on the
+                    # Anthropic batch path — convert explicitly.
+                    if item["output_file_path"]:
+                        chunk_df = dg.from_batch_resp_file_to_df(
+                            item["output_file_path"], skip_validation=True, expected_key="datasets",
+                        )
+                        if chunk_df is not None and not chunk_df.empty:
+                            batch_dfs.append(chunk_df)
+                    else:
+                        logger.error(f"Dataset batch {item['batch_id']} did not complete successfully")
+                if batch_dfs:
+                    datasets_raw = pd.concat(batch_dfs, ignore_index=True)
+                    datasets_raw = datasets_raw.rename(columns={"title": "pub_title"})
+                    datasets_raw = datasets_raw.drop(columns=[
+                        c for c in ("retrieval_stats", "custom_id", "article_id", "page_id", "url")
+                        if c in datasets_raw.columns
+                    ])
 
             else:
                 datasets_raw = dg.process_articles(

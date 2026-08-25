@@ -125,10 +125,15 @@ class PubSoftwareStage(PipelineStage):
             code_id_patterns = dg_software.parser.get_code_hosting_id_patterns()
 
             software_batch_output_path = str(output_path.with_suffix(".batch.jsonl"))
-            software_result = dg_software.run_integrated_batch_processing(
-                url_list=new_pmc_links,
-                batch_file_path='',
-                output_file_path=software_batch_output_path,
+            # run_integrated_batch_processing() calls DataGatherer.fetch_data() internally,
+            # which holds every fetched/parsed document in memory for the whole call — chunk
+            # new_pmc_links so that accumulation is bounded per call, not per full backlog.
+            # Submit every chunk's batch job up front (no waiting), then poll them all
+            # together — the batch jobs run concurrently on Anthropic's side instead of
+            # one chunk waiting on completion before the next is even submitted.
+            chunks = chunked(new_pmc_links)
+            pending = submit_batch_chunks(
+                dg_software, chunks, software_batch_output_path,
                 prompt_name="CLAUDE_RTR_FewShot_software",
                 prompts_subdir="software_prompts",
                 relevant_content_flag="CODE",
@@ -138,20 +143,23 @@ class PubSoftwareStage(PipelineStage):
                 regex_search_id_patterns=code_id_patterns,
                 brute_force_RegEx_ID_ptrs=True,
                 local_fetch_file=fetch_cache_str,
-                wait_for_completion=True,
             )
-            if isinstance(software_result, dict) and software_result.get("output_file_path"):
-                software_df = _software_batch_results_to_df(dg_software, software_result["output_file_path"])
-                if software_df is not None and not software_df.empty:
-                    software_df = software_df.rename(columns={"title": "pub_title"})
-                    software_df = software_df.drop(columns=[
-                        c for c in ("retrieval_stats", "custom_id", "article_id", "page_id", "article_url")
-                        if c in software_df.columns
-                    ])
-                    software_df["_schema"] = "SoftwareMention"
-            else:
-                logger.error(f"Software batch did not complete successfully: {software_result}")
-                software_df = None
+            batch_dfs = []
+            for item in await_batches(dg_software, pending):
+                if item["output_file_path"]:
+                    chunk_df = _software_batch_results_to_df(dg_software, item["output_file_path"])
+                    if chunk_df is not None and not chunk_df.empty:
+                        batch_dfs.append(chunk_df)
+                else:
+                    logger.error(f"Software batch {item['batch_id']} did not complete successfully")
+            if batch_dfs:
+                software_df = pd.concat(batch_dfs, ignore_index=True)
+                software_df = software_df.rename(columns={"title": "pub_title"})
+                software_df = software_df.drop(columns=[
+                    c for c in ("retrieval_stats", "custom_id", "article_id", "page_id", "article_url")
+                    if c in software_df.columns
+                ])
+                software_df["_schema"] = "SoftwareMention"
 
         combined_software = combine_cached_and_new(cached_software_df, software_df)
         if combined_software is not None:
