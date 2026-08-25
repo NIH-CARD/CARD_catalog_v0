@@ -101,6 +101,7 @@ def _load_doc_id_lookup(combine_hits_path: Path, pre_merge_index: dict | None = 
                 methods = (methods - {"other"}) | resolved
         key = (row.get("Resource Name", ""), doc_id)
         lookup.setdefault(key, set()).update(methods)
+    logger.info(f"[_load_doc_id_lookup] loaded {len(lookup)} (resource_name, doc_id) -> methods entries ")
     return lookup
 
 
