@@ -28,7 +28,7 @@ copy_latest() {
 }
 
 echo "Syncing pipeline outputs → $DST_DIR/"
-copy_latest "pubmed_central_*.tsv"             publications.tsv         "$FINAL_DIR"
+copy_latest "misc_publications_*.tsv"          publications.tsv         "$FINAL_DIR"
 copy_latest "gits_to_reannotate_completed_*.tsv" code_repos.tsv         "$FINAL_DIR"
 copy_latest "pub_datasets_*.tsv"               pub_datasets.tsv         "$FINAL_DIR"
 copy_latest "pub_supplementary_*.tsv"          pub_supplementary.tsv    "$FINAL_DIR"
@@ -38,7 +38,7 @@ copy_latest "scilite_annotations_*.tsv"        scilite_annotations.tsv  "$FINAL_
 
 # Resources inventory & iNDI live at the tables/ root, not in final/
 copy_latest "resources-inventory-*"            resources.tsv            "$TABLES_DIR"
-copy_latest "iNDI_inventory_*"                 cellular_models.tsv      "$TABLES_DIR"
+copy_latest "cellular_models_*.tsv"             cellular_models.tsv      "$FINAL_DIR"
 
 # FAIR compliance log lives in tables/hits/
 HITS_DIR="../tables/hits"
