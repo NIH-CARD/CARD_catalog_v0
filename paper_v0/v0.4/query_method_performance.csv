@@ -1,0 +1,7 @@
+Method,Candidates,Adjudicated,Confirmed,Precision,Resources covered,Coverage rate,Pooled recall,Exclusive confirmed
+paperclip,1112,1088,619,56.9%,206,86.9%,8.9%,450
+v5,21179,20771,3007,14.5%,192,81.0%,43.2%,1488
+v4,12393,12174,4266,35.0%,157,66.2%,61.3%,58
+v2,13054,12798,4219,33.0%,157,66.2%,60.6%,107
+original,10292,10123,3442,34.0%,143,60.3%,49.5%,153
+v3,8517,8383,3392,40.5%,142,59.9%,48.7%,65
