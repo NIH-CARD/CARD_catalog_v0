@@ -3,6 +3,7 @@ import { AboutPage } from "./pages/AboutPage";
 import { AnnotationsPage } from "./pages/AnnotationsPage";
 import { CellularModelsPage } from "./pages/CellularModelsPage";
 import { CodePage } from "./pages/CodePage";
+import { DocsPage } from "./pages/DocsPage";
 import { HomePage } from "./pages/HomePage";
 import { PublicationsPage } from "./pages/PublicationsPage";
 import { ResourcesPage } from "./pages/ResourcesPage";
@@ -22,6 +23,7 @@ export default function App() {
         <Route path="/annotations/*" element={<AnnotationsPage />} />
         <Route path="/cellular-models" element={<CellularModelsPage />} />
         <Route path="/about" element={<AboutPage />} />
+        <Route path="/docs" element={<DocsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

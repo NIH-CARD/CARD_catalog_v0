@@ -41,16 +41,12 @@ export function HomePage() {
     loadResources().then((r) =>
       setCounts((c) => ({ ...c, resources: r.length })),
     );
-    loadPublications().then((p) => {
-      const pmids = new Set(p.map((r) => r.PMID).filter(Boolean));
-      setCounts((c) => ({ ...c, publications: pmids.size || p.length }));
-    });
-    loadCodeRepos().then((r) => {
-      const repos = new Set(
-        r.map((row) => row["Repository Link"]).filter(Boolean),
-      );
-      setCounts((c) => ({ ...c, code: repos.size || r.length }));
-    });
+    loadPublications().then((p) =>
+      setCounts((c) => ({ ...c, publications: p.length })),
+    );
+    loadCodeRepos().then((r) =>
+      setCounts((c) => ({ ...c, code: r.length })),
+    );
     loadCellularModels().then((m) =>
       setCounts((c) => ({ ...c, cellLines: m.length })),
     );
@@ -95,7 +91,7 @@ export function HomePage() {
         <div className="text-center mb-8">
           <h1 className="text-4xl font-semibold text-slate-900 mb-2">CARD Catalog</h1>
           <h3 className="text-lg text-slate-500 font-normal">
-            Center for Alzheimer&apos;s and Related Dementias Data Catalog
+            Center for Alzheimer&apos;s and Related Dementias Catalog
           </h3>
         </div>
 
@@ -202,8 +198,9 @@ export function HomePage() {
           </p>
           <p>
             Data sourced from multiple repositories and regularly updated
-            (quarterly scrapes). See the About page for details on data collection
-            and processing.
+            (quarterly scrapes). See{" "}
+            <Link to="/docs" className="text-accent hover:underline">Docs</Link>{" "}
+            for details on data collection and processing.
           </p>
           <p>
             <strong>Contact:</strong>{" "}

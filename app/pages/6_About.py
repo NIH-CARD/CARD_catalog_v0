@@ -41,7 +41,7 @@ def main():
         """
         ## Overview
 
-        The **CARD Catalog** (Center for Alzheimer's and Related Dementias Data Catalog)
+        The **CARD Catalog** (Center for Alzheimer's and Related Dementias Catalog)
         is a comprehensive resource for discovering datasets, publications, and code repositories
         related to Alzheimer's Disease and Related Dementias (ADRD) research.
 

@@ -1,5 +1,5 @@
 """
-CARD Catalog - Center for Alzheimer's and Related Dementias Data Catalog
+CARD Catalog - Center for Alzheimer's and Related Dementias Catalog
 
 Main entry point for the Streamlit application.
 This is a minimal landing page that routes to other pages.
@@ -87,7 +87,7 @@ def main():
                 CARD Catalog
             </h1>
             <h3 style='color: {COLORS["grey"]}; font-weight: normal; margin-top: 0;'>
-                Center for Alzheimer's and Related Dementias Data Catalog
+                Center for Alzheimer's and Related Dementias Catalog
             </h3>
         </div>
         """,

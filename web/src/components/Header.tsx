@@ -8,6 +8,7 @@ const NAV = [
   { to: "/annotations", label: "Annotations" },
   { to: "/cellular-models", label: "Cellular Models" },
   { to: "/about", label: "About" },
+  { to: "/docs", label: "Docs" },
 ];
 
 interface Props {
