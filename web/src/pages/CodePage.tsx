@@ -24,7 +24,7 @@ const GRAPH_FIELD_OPTIONS = [
 ];
 
 const FACETS: readonly FacetSpec<CodeRepo>[] = [
-  { field: "Resource Name", label: "Resource Name", multivalue: false },
+  { field: "Resource Name", label: "Resource Name", multivalue: true, delimiter: ";" },
   { field: "Languages", multivalue: true },
   { field: "Diseases Included", multivalue: true },
   { field: "Data Types", multivalue: true },
@@ -72,7 +72,8 @@ export function CodePage() {
     () => [
       col.accessor("Resource Name", {
         header: "Resource Name",
-        cell: (info) => <span className="text-slate-700">{info.getValue()}</span>,
+        size: 220,
+        cell: (info) => <Chips value={info.getValue()} max={2} />,
       }),
       col.accessor("Abbreviation", {
         header: "Abbrev.",

@@ -32,8 +32,8 @@ const TABLE_SCHEMAS: { name: string; route: string; file: string; columns: strin
     file: "code_repos.tsv",
     columns: [
       "Resource Name", "Abbreviation", "Diseases Included", "Repository Link", "Source",
-      "Owner", "Contributors", "Languages", "Biomedical Relevance", "Code Summary",
-      "Data Types", "Tooling", "FAIR Score", "FAIR Issues",
+      "Owner", "Contributors", "Languages", "Biomedical Relevance", "Relevance Rationale",
+      "Code Summary", "Data Types", "Tooling", "FAIR Score", "FAIR Issues",
     ],
   },
   {
@@ -195,7 +195,8 @@ export function DocsPage() {
         </p>
         <ul className="text-sm space-y-2 text-slate-700 list-disc list-inside">
           <li><strong>Code Summary</strong> — description of repository purpose and functionality</li>
-          <li><strong>Biomedical Relevance</strong> — YES / NO / UNCLEAR classification</li>
+          <li><strong>Biomedical Relevance</strong> — YES / NO / UNCLEAR / INSUFFICIENT INFORMATION classification</li>
+          <li><strong>Relevance Rationale</strong> — the model's explanation for that classification</li>
           <li><strong>Data Types</strong> — types of data the code operates on (MRI, genomics, clinical…)</li>
           <li><strong>Tooling</strong> — frameworks and libraries identified (TensorFlow, FSL, scikit-learn…)</li>
         </ul>

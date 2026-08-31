@@ -105,6 +105,7 @@ class CodeRepoRow(_Base):
     Contributors: str = ""
     Languages: str = ""
     Biomedical_Relevance: str = ""
+    Relevance_Rationale: str = ""
     Code_Summary: str = ""
     Data_Types: str = ""
     Tooling: str = ""
@@ -119,7 +120,8 @@ class CodeRepoRow(_Base):
     @field_validator(
         "Resource_Name", "Abbreviation", "Diseases_Included", "Repository_Link",
         "Source", "Owner", "Contributors", "Languages", "Biomedical_Relevance",
-        "Code_Summary", "Data_Types", "Tooling", "FAIR_Score", "FAIR_Issues",
+        "Relevance_Rationale", "Code_Summary", "Data_Types", "Tooling",
+        "FAIR_Score", "FAIR_Issues",
         mode="before",
     )
     @classmethod
@@ -129,8 +131,8 @@ class CodeRepoRow(_Base):
     COLUMNS: ClassVar[list[str]] = [
         "Resource Name", "Abbreviation", "Diseases Included",
         "Repository Link", "Source", "Owner", "Contributors", "Languages",
-        "Biomedical Relevance", "Code Summary", "Data Types", "Tooling",
-        "FAIR Score", "FAIR Issues",
+        "Biomedical Relevance", "Relevance Rationale", "Code Summary",
+        "Data Types", "Tooling", "FAIR Score", "FAIR Issues",
     ]
 
 

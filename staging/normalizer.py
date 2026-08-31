@@ -255,6 +255,22 @@ def _split_relevance_verdict(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _commas_to_semicolons_outside_parens(text: str) -> str:
+    """Convert stray ',' list-separators to the app-wide ';' convention, but leave
+    commas inside parentheses alone (e.g. 'Genetic PD (LRRK2, GBA, SNCA mutations)'
+    is one term, not three) - the resource inventory mixes both separators for
+    Diseases Included inconsistently."""
+    out = []
+    depth = 0
+    for ch in text:
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth = max(0, depth - 1)
+        out.append(";" if ch == "," and depth == 0 else ch)
+    return "".join(out)
+
+
 def _dedup_repos(df: pd.DataFrame) -> pd.DataFrame:
     """Collapse duplicate rows for the same repo (github_search matches once per
     resource whose search terms it hits) into one row per Repository Link.
@@ -321,14 +337,18 @@ def _normalize_flattened_list_column(series: pd.Series) -> pd.Series:
 
 
 def _normalize_code(df: pd.DataFrame) -> pd.DataFrame:
+    if "Diseases Included" in df.columns:
+        df["Diseases Included"] = df["Diseases Included"].apply(_commas_to_semicolons_outside_parens)
+
     df = _split_relevance_verdict(df)
     df = _dedup_repos(df)
 
     for col in ["Data Types", "Tooling"]:
         if col in df.columns:
             df[col] = _normalize_flattened_list_column(df[col])
-    if "Languages" in df.columns:
-        df["Languages"] = df["Languages"].apply(_normalize_list_field)
+    for col in ["Languages", "Diseases Included"]:
+        if col in df.columns:
+            df[col] = df[col].apply(_normalize_list_field)
 
     # Merge FAIR compliance log — adds FAIR Score and FAIR Issues columns
     hits_dir = Path(__file__).parent.parent / "tables" / "hits"
