@@ -31,6 +31,8 @@ from urllib.parse import urlparse
 
 import pandas as pd
 
+from staging.cache_utils import latest_final
+
 logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -336,12 +338,58 @@ def _normalize_flattened_list_column(series: pd.Series) -> pd.Series:
     return series.apply(process)
 
 
+_GITHUB_OWNER_REPO_PATTERN = re.compile(r"github\.com/([\w.\-]+)/([\w.\-]+)", re.IGNORECASE)
+
+
+def _normalize_repo_url(url: str) -> str:
+    """Extract 'owner/repo' from a GitHub URL for cross-table matching - the same
+    repo gets cited with different variants across tables: trailing '/', trailing
+    '.git', 'www.' prefix, http vs https, and extra path segments like
+    '/tree/main' or '/blob/master/...'. Returns '' if url isn't a repo link."""
+    m = _GITHUB_OWNER_REPO_PATTERN.search(url.strip().lower())
+    if not m:
+        return ""
+    owner, repo = m.group(1), m.group(2)
+    return f"{owner}/{repo[:-4] if repo.endswith('.git') else repo}"
+
+
+def _backfill_source_from_pub_software(df: pd.DataFrame) -> pd.DataFrame:
+    """Fill in blank 'Source' for repos discovered via pub_software mentions.
+
+    A scrape_github.py bug (now fixed) dropped the Source column entirely for
+    a stretch of runs, and repo_analysis.py's cache-by-Repository-Link means
+    already-cached blank rows don't self-heal on their own even after that fix.
+    This runs on every normalize() call (not just newly-scraped rows), so it
+    keeps re-attempting the backfill against the current pub_software table
+    each time - not a one-off patch."""
+    if "Repository Link" not in df.columns or "Source" not in df.columns:
+        return df
+    sw_path = latest_final("pub_software_*.tsv")
+    if not sw_path:
+        return df
+
+    sw_df = pd.read_csv(sw_path, sep="\t", dtype=str).fillna("")
+    gh = sw_df[sw_df["url"].str.contains(r"github\.com/[\w.\-]+/[\w.\-]+", regex=True, na=False)].copy()
+    gh["_norm"] = gh["url"].apply(_normalize_repo_url)
+    lookup = gh.drop_duplicates("_norm", keep="first").set_index("_norm")["source_url"].to_dict()
+
+    blank_mask = df["Source"].str.strip() == ""
+    norm_links = df["Repository Link"].apply(_normalize_repo_url)
+    backfilled = norm_links.map(lookup)
+    fillable = blank_mask & backfilled.notna()
+    if fillable.any():
+        df.loc[fillable, "Source"] = backfilled[fillable]
+        logger.info(f"code: backfilled Source for {fillable.sum()} repo(s) from pub_software")
+    return df
+
+
 def _normalize_code(df: pd.DataFrame) -> pd.DataFrame:
     if "Diseases Included" in df.columns:
         df["Diseases Included"] = df["Diseases Included"].apply(_commas_to_semicolons_outside_parens)
 
     df = _split_relevance_verdict(df)
     df = _dedup_repos(df)
+    df = _backfill_source_from_pub_software(df)
 
     for col in ["Data Types", "Tooling"]:
         if col in df.columns:
