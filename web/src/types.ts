@@ -49,6 +49,7 @@ export interface CodeRepo {
   Contributors: string;
   Languages: string;
   "Biomedical Relevance": string;
+  "Relevance Rationale": string;
   "Code Summary": string;
   "Data Types": string;
   Tooling: string;

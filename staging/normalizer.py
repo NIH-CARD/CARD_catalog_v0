@@ -226,10 +226,109 @@ def _normalize_publications(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+_RELEVANCE_VERDICT_PATTERN = re.compile(
+    r"^\s*(YES|NO|UNCLEAR|INSUFFICIENT INFORMATION)\b[.:\-\s]*",
+    re.IGNORECASE,
+)
+
+
+def _split_relevance_verdict(df: pd.DataFrame) -> pd.DataFrame:
+    """Split 'Biomedical Relevance' into a clean verdict + a separate rationale -
+    the LLM returns them glued together as one sentence ("YES. This repo is...").
+    Biomedical Relevance becomes just the verdict token; Relevance Rationale gets
+    the rest."""
+    if "Biomedical Relevance" not in df.columns:
+        return df
+
+    def split(text: str) -> tuple[str, str]:
+        text = (text or "").strip()
+        if not text:
+            return "", ""
+        m = _RELEVANCE_VERDICT_PATTERN.match(text)
+        if not m:
+            return "", text
+        return m.group(1).upper(), text[m.end():].strip()
+
+    parts = df["Biomedical Relevance"].apply(split)
+    df["Biomedical Relevance"] = parts.apply(lambda t: t[0])
+    df["Relevance Rationale"] = parts.apply(lambda t: t[1])
+    return df
+
+
+def _dedup_repos(df: pd.DataFrame) -> pd.DataFrame:
+    """Collapse duplicate rows for the same repo (github_search matches once per
+    resource whose search terms it hits) into one row per Repository Link.
+    Resource Name/Abbreviation/Diseases Included merge into semicolon-joined lists
+    - a repo can genuinely relate to several resources; everything else describes
+    the repo itself and takes the first non-empty value across the group."""
+    if "Repository Link" not in df.columns:
+        return df
+
+    multi_value_cols = [c for c in ("Resource Name", "Abbreviation", "Diseases Included") if c in df.columns]
+    other_cols = [c for c in df.columns if c not in multi_value_cols and c != "Repository Link"]
+
+    def merge_group(group: pd.DataFrame) -> "pd.Series[str]":
+        out = {}
+        for col in multi_value_cols:
+            out[col] = _normalize_list_field(";".join(v for v in group[col] if v.strip()))
+        for col in other_cols:
+            out[col] = next((v for v in group[col] if v.strip()), "")
+        return pd.Series(out)
+
+    before = len(df)
+    deduped = df.groupby("Repository Link", sort=False).apply(merge_group).reset_index()
+    after = len(deduped)
+    if before != after:
+        logger.info(f"code: collapsed {before} rows → {after} unique repos ({before - after} duplicate resource-links merged)")
+    return deduped
+
+
+_PLACEHOLDER_LEADING_SENTENCE = re.compile(
+    r"^(not specified|not mentioned|not available|not provided|no specific|"
+    r"none specified|no information)\b[^.]*\.?\s*",
+    re.IGNORECASE,
+)
+_PLACEHOLDER_BARE_TERMS = {"n/a", "na", "none", "unknown", "unclear", "not specified", "not applicable"}
+
+
+def _split_flattened_list(text: str) -> list[str]:
+    """Split a cell that's actually a flattened bullet list ('- item1 - item2') into
+    real items - the LLM writes these as one string with ' - ' bullet separators
+    instead of the app's usual ';'-delimited multi-value convention."""
+    text = (text or "").strip()
+    if not text:
+        return []
+    parts = re.split(r"(?:^|\s)-\s+", text)
+    return [p.strip().rstrip(".").strip() for p in parts if p.strip()]
+
+
+def _strip_placeholder_item(item: str) -> str:
+    """Strip a leading 'not specified...' disclaimer sentence from one item, or drop
+    the item entirely if that's all it says (a bare non-answer like 'N/A', or a
+    disclaimer sentence with nothing real after it)."""
+    if item.lower() in _PLACEHOLDER_BARE_TERMS:
+        return ""
+    return _PLACEHOLDER_LEADING_SENTENCE.sub("", item).strip()
+
+
+def _normalize_flattened_list_column(series: pd.Series) -> pd.Series:
+    """Undo the LLM's flattened-bullet-list formatting and drop placeholder
+    non-answers, producing a real ';'-delimited multi-value field."""
+    def process(text: str) -> str:
+        items = [_strip_placeholder_item(i) for i in _split_flattened_list(text)]
+        return _normalize_list_field(";".join(i for i in items if i))
+    return series.apply(process)
+
+
 def _normalize_code(df: pd.DataFrame) -> pd.DataFrame:
-    for col in ["Diseases_Included", "Data_Types", "Tooling", "Languages"]:
+    df = _split_relevance_verdict(df)
+    df = _dedup_repos(df)
+
+    for col in ["Data Types", "Tooling"]:
         if col in df.columns:
-            df[col] = df[col].apply(_normalize_list_field)
+            df[col] = _normalize_flattened_list_column(df[col])
+    if "Languages" in df.columns:
+        df["Languages"] = df["Languages"].apply(_normalize_list_field)
 
     # Merge FAIR compliance log — adds FAIR Score and FAIR Issues columns
     hits_dir = Path(__file__).parent.parent / "tables" / "hits"

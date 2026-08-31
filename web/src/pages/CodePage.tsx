@@ -35,7 +35,7 @@ const FACETS: readonly FacetSpec<CodeRepo>[] = [
 const SEARCH_FIELDS: (keyof CodeRepo & string)[] = [
   "Resource Name",
   "Code Summary",
-  "Biomedical Relevance",
+  "Relevance Rationale",
   "Owner",
 ];
 
@@ -76,10 +76,8 @@ export function CodePage() {
       }),
       col.accessor("Abbreviation", {
         header: "Abbrev.",
-        size: 90,
-        cell: (info) => (
-          <span className="font-mono text-xs text-slate-600">{info.getValue()}</span>
-        ),
+        size: 140,
+        cell: (info) => <Chips value={info.getValue()} max={3} />,
       }),
       col.accessor("Repository Link", {
         header: "Repo",
@@ -136,11 +134,25 @@ export function CodePage() {
       }),
       col.accessor("Biomedical Relevance", {
         header: "Relevance",
-        cell: (info) => (
-          <span className="text-xs text-slate-600 line-clamp-2 max-w-xs" title={info.getValue()}>
-            {info.getValue()}
-          </span>
-        ),
+        size: 90,
+        cell: (info) => {
+          const verdict = info.getValue();
+          const color =
+            verdict === "YES" ? "text-emerald-600" : verdict === "NO" ? "text-red-500" : "text-amber-600";
+          return <span className={`text-xs font-semibold ${color}`}>{verdict}</span>;
+        },
+      }),
+      col.accessor("Relevance Rationale", {
+        header: "Relevance Rationale",
+        cell: (info) => {
+          const text = info.getValue();
+          if (!text) return null;
+          return (
+            <p className="text-xs text-slate-600 line-clamp-2 max-w-xs" title={text}>
+              {text}
+            </p>
+          );
+        },
       }),
       col.accessor("Tooling", {
         header: "Tooling",
@@ -240,6 +252,7 @@ export function CodePage() {
               dataTypes: r["Data Types"],
               tooling: r.Tooling,
               relevance: r["Biomedical Relevance"],
+              relevanceRationale: r["Relevance Rationale"],
               fairScore: r["FAIR Score"],
             }))}
           />
@@ -286,7 +299,8 @@ export function CodePage() {
                     <Field label="Languages" value={r.Languages} chips />
                     <Field label="Data Types" value={r["Data Types"]} chips />
                     <Field label="Tooling" value={r.Tooling} chips />
-                    <Field label="Biomedical Relevance" value={r["Biomedical Relevance"]} expandable maxChars={160} />
+                    <Field label="Biomedical Relevance" value={r["Biomedical Relevance"]} />
+                    <Field label="Relevance Rationale" value={r["Relevance Rationale"]} expandable maxChars={160} />
                     {r["Code Summary"] && (
                       <Section title="Summary">
                         <Field label="" value={r["Code Summary"]} expandable maxChars={300} />
