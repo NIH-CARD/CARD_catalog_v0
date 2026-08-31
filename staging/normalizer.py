@@ -513,6 +513,13 @@ _MISC_PUB_MULTIVALUE_COLS = [
     "Resource Name", "Abbreviation", "Diseases Included",
     "Coarse Data Modality", "Granular Data Modality", "Fetched With",
 ]
+# These two are already ';'-delimited per resource (the app-wide multi-value convention) -
+# unlike Resource Name/Abbreviation/Fetched With (single tokens per resource) and Coarse
+# Data Modality (comma-delimited natively) - so escaping their internal ';' to ',' before
+# the cross-resource join (below) would destroy real item separators, not protect against
+# stray ones. They get comma-to-semicolon normalization instead (the inventory mixes both
+# separators inconsistently - see _commas_to_semicolons_outside_parens).
+_MISC_PUB_ALREADY_SEMICOLON_DELIMITED = {"Diseases Included", "Granular Data Modality"}
 _MISC_PUB_SINGLEVALUE_COLS = [
     "PMID", "DOI", "PubMed Central Link", "Authors", "Affiliations",
     "Title", "Abstract", "Keywords", "Publication Date",
@@ -566,7 +573,13 @@ def _normalize_misc_publications(df: pd.DataFrame) -> pd.DataFrame:
         for col in _MISC_PUB_MULTIVALUE_COLS:
             if col not in group.columns:
                 continue
-            values = [str(v).strip().replace(";", ",") for v in group[col] if str(v).strip()]
+            if col in _MISC_PUB_ALREADY_SEMICOLON_DELIMITED:
+                values = [
+                    _commas_to_semicolons_outside_parens(str(v).strip())
+                    for v in group[col] if str(v).strip()
+                ]
+            else:
+                values = [str(v).strip().replace(";", ",") for v in group[col] if str(v).strip()]
             merged[col] = _normalize_list_field(";".join(values))
         for src_col, out_col in _MISC_PUB_RESOURCE_PREFIXED_COLS:
             if src_col not in group.columns:
