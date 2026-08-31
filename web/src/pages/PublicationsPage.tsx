@@ -114,14 +114,14 @@ export function PublicationsPage() {
   }, []);
 
   // Publications already carry annotation columns from the pipeline (staging/join_annotations.py).
-  // Derive Publication Year client-side from "Publication Date" (format: "Mon YYYY").
+  // Derive Publication Year client-side from "Publication Date" - format varies
+  // ("2026", "2025 Dec", "2025-05-05", "2026 Jan 21", and older "Mon YYYY" rows),
+  // so pull out a real 4-digit year token instead of assuming a fixed position.
   const allAugmented = useMemo<GraphPublication[]>(
     () =>
       (pubs ?? []).map((p) => ({
         ...p,
-        "Publication Year": p["Publication Date"]
-          ? p["Publication Date"].slice(-4)
-          : "",
+        "Publication Year": p["Publication Date"]?.match(/\b(19|20)\d{2}\b/)?.[0] ?? "",
       })) as GraphPublication[],
     [pubs],
   );
