@@ -55,6 +55,24 @@ for f in modality_synonyms.json disease_synonyms.json; do
   fi
 done
 
+# Annotation summary (static filename, overwritten each pipeline run) - lets the
+# Home page show a type breakdown without ever fetching the ~270MB SciLite table.
+if [[ -f "$FINAL_DIR/annotation_summary.json" ]]; then
+  cp "$FINAL_DIR/annotation_summary.json" "$DST_DIR/annotation_summary.json"
+  echo "  $FINAL_DIR/annotation_summary.json -> $DST_DIR/annotation_summary.json"
+else
+  echo "WARN: $FINAL_DIR/annotation_summary.json not found — skipping" >&2
+fi
+
+# SciLite per-(PMC ID, Type) aggregate (static filename) - the Connections page's
+# SciLite node source, so it never has to load the raw ~270MB table either.
+if [[ -f "$FINAL_DIR/scilite_pmc_type_counts.tsv" ]]; then
+  cp "$FINAL_DIR/scilite_pmc_type_counts.tsv" "$DST_DIR/scilite_pmc_type_counts.tsv"
+  echo "  $FINAL_DIR/scilite_pmc_type_counts.tsv -> $DST_DIR/scilite_pmc_type_counts.tsv"
+else
+  echo "WARN: $FINAL_DIR/scilite_pmc_type_counts.tsv not found — skipping" >&2
+fi
+
 # Logos for the Home page. card_logo.png is NOT synced here - it's a web-specific
 # light-color variant maintained directly in public/logos/ (see "card logo (light
 # color) update"), not a mirror of ../logos/card_logo.png; syncing it would
@@ -66,6 +84,11 @@ for f in ADDI.png stacked_DT.png; do
     echo "  ../logos/$f -> public/logos/$f"
   fi
 done
+
+# Full-catalog per-column baseline (value counts / mean+variance) for the
+# Connections "Cross-Table" AI Analysis prompt - rebuilt from the TSVs just
+# copied above, so it always reflects the latest pipeline output.
+npx tsx scripts/build-connections-stats.mjs
 
 echo "Done. Sizes:"
 ls -lh "$DST_DIR"

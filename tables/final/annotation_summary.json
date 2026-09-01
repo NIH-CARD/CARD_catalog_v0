@@ -1,0 +1,32 @@
+{
+  "stages": {
+    "Datasets": 12211,
+    "Supplementary Files": 32762,
+    "Grants": 45290,
+    "Software": 4243,
+    "Models": 206
+  },
+  "scilite_total": 956172,
+  "scilite_top_types": [
+    {
+      "type": "Diseases",
+      "count": 313141
+    },
+    {
+      "type": "Gene_Proteins",
+      "count": 307948
+    },
+    {
+      "type": "biological_process",
+      "count": 91918
+    },
+    {
+      "type": "Chemicals",
+      "count": 71999
+    },
+    {
+      "type": "Organisms",
+      "count": 55953
+    }
+  ]
+}

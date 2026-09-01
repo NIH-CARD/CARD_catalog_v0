@@ -42,7 +42,7 @@ function CardNode({ data }: NodeProps<CardNodeData>) {
   return (
     <>
       <Handle type="target" position={Position.Top} className="!opacity-0" />
-      {data.info ? <HoverInfo content={data.info}>{body}</HoverInfo> : body}
+      {data.info ? <HoverInfo content={data.info} pinnable>{body}</HoverInfo> : body}
       <Handle type="source" position={Position.Bottom} className="!opacity-0" />
     </>
   );

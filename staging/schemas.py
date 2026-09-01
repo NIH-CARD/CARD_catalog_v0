@@ -44,9 +44,6 @@ class PublicationRow(_Base):
     PMID: str = ""
     Resource_Name: str = ""
     Abbreviation: str = ""
-    Diseases_Included: str = ""
-    Coarse_Data_Modality: str = ""
-    Granular_Data_Modality: str = ""
     PubMed_Central_Link: str = ""
     Authors: str = ""
     Affiliations: str = ""
@@ -70,8 +67,7 @@ class PublicationRow(_Base):
     }
 
     @field_validator(
-        "PMID", "Resource_Name", "Abbreviation", "Diseases_Included",
-        "Coarse_Data_Modality", "Granular_Data_Modality", "PubMed_Central_Link",
+        "PMID", "Resource_Name", "Abbreviation", "PubMed_Central_Link",
         "Authors", "Affiliations", "Title", "Abstract", "Keywords",
         "Publication_Date", "Data_Completeness", "Fetched_With",
         "DOI", "Verification_Status", "Claim_Text", "Rationale", "Evidence",
@@ -84,7 +80,6 @@ class PublicationRow(_Base):
     # App-facing column order
     COLUMNS: ClassVar[list[str]] = [
         "PMID", "DOI", "Resource Name", "Abbreviation",
-        "Diseases Included", "Coarse Data Modality", "Granular Data Modality",
         "PubMed Central Link", "Authors", "Affiliations",
         "Title", "Abstract", "Keywords", "Publication Date", "Data Completeness",
         "Verification Status", "Claim Text", "Rationale", "Evidence",
@@ -98,7 +93,6 @@ class PublicationRow(_Base):
 class CodeRepoRow(_Base):
     Resource_Name: str = ""
     Abbreviation: str = ""
-    Diseases_Included: str = ""
     Repository_Link: str = ""
     Source: str = ""
     Owner: str = ""
@@ -118,7 +112,7 @@ class CodeRepoRow(_Base):
     }
 
     @field_validator(
-        "Resource_Name", "Abbreviation", "Diseases_Included", "Repository_Link",
+        "Resource_Name", "Abbreviation", "Repository_Link",
         "Source", "Owner", "Contributors", "Languages", "Biomedical_Relevance",
         "Relevance_Rationale", "Code_Summary", "Data_Types", "Tooling",
         "FAIR_Score", "FAIR_Issues",
@@ -129,7 +123,7 @@ class CodeRepoRow(_Base):
         return _coerce_str(v)
 
     COLUMNS: ClassVar[list[str]] = [
-        "Resource Name", "Abbreviation", "Diseases Included",
+        "Resource Name", "Abbreviation",
         "Repository Link", "Source", "Owner", "Contributors", "Languages",
         "Biomedical Relevance", "Relevance Rationale", "Code Summary",
         "Data Types", "Tooling", "FAIR Score", "FAIR Issues",

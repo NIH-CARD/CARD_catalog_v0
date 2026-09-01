@@ -742,21 +742,30 @@ def run_full_rebuild(
             if analyzed_hits and analyzed_hits.exists():
                 run_normalizer(analyzed_hits, "code", "gits_to_reannotate_completed_*.tsv", force=force)
 
-    # --- Final step: fold SciLite annotations + cited datasets into whichever publications
-    # table this run actually produced, then join cell models to publications/studies via
-    # the same SciLite data ---
-    from staging.publication_glue import join_annotations, join_cellular_model_publications
+    # --- Final step: join cell models to publications/studies via SciLite data.
+    # (Cross-table annotation/dataset columns on Publications itself were removed -
+    # that's now handled by the separate Connections precompute, not baked into
+    # the publications table.) ---
+    from staging.publication_glue import (
+        build_annotation_summary,
+        build_scilite_type_aggregate,
+        join_cellular_model_publications,
+    )
     if misc_mode:
         if pub_metadata_input:
-            logger.info("Joining SciLite annotations and cited datasets into misc_publications…")
-            join_annotations(pub_pattern="misc_publications_*.tsv")
+            logger.info("Joining cell models to misc_publications via SciLite…")
             join_cellular_model_publications(pub_pattern="misc_publications_*.tsv")
         else:
-            logger.warning("Skipping join_annotations/cell-model join: misc_publications was never built this run")
+            logger.warning("Skipping cell-model join: misc_publications was never built this run")
     else:
-        logger.info("Joining SciLite annotations and cited datasets into publications…")
-        join_annotations()
+        logger.info("Joining cell models to publications via SciLite…")
         join_cellular_model_publications(pub_pattern="pubmed_central_*.tsv")
+
+    logger.info("Building annotation summary (stage counts + SciLite top types)…")
+    build_annotation_summary()
+
+    logger.info("Building SciLite per-(PMC ID, Type) aggregate for Connections…")
+    build_scilite_type_aggregate()
 
     logger.info("=" * 60)
     logger.info("FULL REBUILD COMPLETE")

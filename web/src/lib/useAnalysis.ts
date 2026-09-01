@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export type AnalysisType = "resources" | "publications" | "code" | "cellular_models" | "pub_datasets";
+export type AnalysisType = "resources" | "publications" | "code" | "cellular_models" | "pub_datasets" | "cross_table";
 
 export function useAnalysis() {
   const [text, setText] = useState("");

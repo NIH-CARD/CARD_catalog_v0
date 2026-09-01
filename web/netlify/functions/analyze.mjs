@@ -1,6 +1,34 @@
 const MODEL = "claude-sonnet-4-6";
 const MAX_TOKENS = 4000;
 
+// Server-side, at request time - real "today," not the model's training cutoff.
+// Without this, a model asked to eyeball a Publication Year distribution has no
+// way to know a "2026" isn't from the future - it'll flag a perfectly normal
+// recent publication as a suspected date-parsing bug.
+function todayIso() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+const DEFAULT_SYSTEM =
+  "You are a critical data curator reviewing research catalog records for the NIH Center for Alzheimer's and Related Dementias (CARD). Your role combines scientific insight with rigorous skepticism: synthesize patterns across the data provided, but flag extraction artifacts, implausible records, and unsupported inferences rather than papering over them. Ground all quantitative claims in the data you are given. Do not hallucinate details not present in the input.";
+
+// A function, not a module-level constant - a Netlify function instance can
+// stay warm across day boundaries, so today's date must be computed fresh
+// per request, not baked in once at cold-start.
+function crossTableSystem() {
+  return `You are a senior neurodegenerative-disease researcher - a geneticist and biologist first, not a database engineer - doing exploratory discovery on a custom cross-table view of the CARD Catalog. Today's date is ${todayIso()}.
+
+Read this the way a domain expert reads a cohort/consortium landscape, not the way a data engineer reads a table dump. When you see a cohort name (BioFINDER, ADNI, ROSMAP...), a gene, a variant, or a biomarker modality, say what it means scientifically - which disease mechanism, which biomarker class, which patient population, which consortium's known research focus - not just that it appears N times. You're given two aligned pictures for the same columns - the full catalog's baseline distribution and the current subset's - so ground comparative claims like "this subset skews toward X relative to the catalog as a whole" in that contrast, not just in raw counts from one side alone.
+
+State comparisons directly and confidently once the evidence supports them - do not hedge every observation as "worth investigating further." Extraction artifacts, naming-variant fragmentation, and normalization issues are not your focus - mention one only in passing if it's clearly blocking a real scientific read, never as a headline finding.
+
+A recent or even near-future publication year is completely normal in a routinely-refreshed catalog - today is ${todayIso()}, so never flag a value merely for being "in the future" relative to your own training data.`;
+}
+
+function systemPromptFor(type) {
+  return type === "cross_table" ? crossTableSystem() : DEFAULT_SYSTEM;
+}
+
 function formatResources(rows) {
   return rows.map((r) =>
     `Resource: ${r.name} (${r.abbreviation})\n  Diseases: ${r.diseases}\n  Modality: ${r.modality}\n  Sample Size: ${r.sampleSize}\n  Type: ${r.type}`
@@ -238,6 +266,31 @@ Based on these cited datasets, provide:
 Use exact numbers and percentages. Always clarify scope: "this subset" or "the full catalog".`;
     }
 
+    case "cross_table": {
+      // Unlike the other types, the frontend sends one pre-built markdown
+      // report (rows[0].report) instead of per-row structured data - the
+      // wide table's shape is dynamic (depends on which tables the user
+      // merged in), so there's no fixed per-row formatter to write here.
+      // The report carries the query, a full-catalog baseline (every column
+      // of every merged table, precomputed - see build-connections-stats.mjs),
+      // and the same columns' value counts within the current subset - the
+      // pairing is what makes a real contrastive claim possible without
+      // needing abstract text (omitted here; may return in a future pass).
+      const report = truncateFormatted(rows[0]?.report ?? "");
+      return `Today's date is ${todayIso()}. Below is a merged cross-table view of the CARD Catalog, built from Publications joined with other tables via verified keys (PMC ID/DOI, Resource Name, or gene/bioentity matching): a full-catalog baseline for every column involved, followed by the same columns' value counts within the current (filtered/merged) subset.
+
+${report}
+
+As a domain expert, not a data auditor, provide:
+
+1. **Key Patterns**: What do the value distributions actually mean scientifically? Name real cohorts, genes, biomarkers, or modalities and say what they represent in AD/ADRD research - not just that a value is frequent.
+2. **Contrastive Read**: Compare the subset's distributions against the full-catalog baseline - is this subset over/under-representing a cohort, modality, or biomarker class relative to the whole catalog, and what would that mean scientifically?
+3. **Notable Outliers**: Sparse or unusual values worth a second look - framed as scientifically interesting, not as suspected errors.
+4. **Suggested Next Steps**: One or two concrete follow-up queries or filters a researcher would want to try next, based on what you found.
+
+Be direct and specific - name real values, real counts, and real comparisons.`;
+    }
+
     default:
       throw new Error(`Unknown analysis type: ${type}`);
   }
@@ -289,7 +342,7 @@ export default async (req) => {
       model: MODEL,
       max_tokens: MAX_TOKENS,
       stream: true,
-      system: "You are a critical data curator reviewing research catalog records for the NIH Center for Alzheimer's and Related Dementias (CARD). Your role combines scientific insight with rigorous skepticism: synthesize patterns across the data provided, but flag extraction artifacts, implausible records, and unsupported inferences rather than papering over them. Ground all quantitative claims in the data you are given. Do not hallucinate details not present in the input.",
+      system: systemPromptFor(type),
       messages: [{ role: "user", content: prompt }],
     }),
   });

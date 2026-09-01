@@ -2,12 +2,9 @@
 Publication glue: "publications as glue for scientific artefacts" (see
 staging/validate_fetched_publications.py's verification prompt) - this module
 enriches an already publication-shaped table with columns computed by a
-separate downstream process, keyed by (resource, doc). Two such joins live
-here:
+separate downstream process, keyed by (resource, doc). Several such joins
+live here:
 
-- join_annotations(): joins SciLite bioentity annotations (diseases, genes,
-  chemicals) and cited dataset identifiers from pub_datasets into the
-  publications table, in place.
 - build_misc_publications(): joins pub_verification's vLLM-based verdicts
   into a copy of combine_hits.tsv (misc_publications_*.tsv), leaving the
   original combine_hits file untouched.
@@ -18,6 +15,13 @@ here:
   NCBI's ID Converter API (falling back to an exact-title match) - both
   pub_jobs (full-text fetch prefers PMC) and scilite (Europe PMC's own
   annotation API is PMC-ID-keyed) need one to do anything with these rows.
+- build_annotation_summary(): row counts per pub-metadata stage table plus
+  SciLite's top annotation types, written as a small JSON. Exists because
+  scilite_annotations_*.tsv is ~270MB - the web app's Home page needs a type
+  breakdown but must never fetch that file itself to get one.
+- build_scilite_type_aggregate(): per-(PMC ID, Type) annotation counts, for
+  the same reason - the Connections page needs to draw a Publication <->
+  annotation-type edge without ever loading the raw SciLite table.
 
 Not staging/combine_hits.py's job: that one deduplicates/collapses multiple
 raw hits files sharing the same schema (Union-Find row-matching) before
@@ -33,6 +37,7 @@ from __future__ import annotations
 
 import ast
 import html
+import json
 import logging
 import re
 import sys
@@ -45,13 +50,6 @@ logger = logging.getLogger(__name__)
 
 _FINAL_DIR = Path(__file__).parent.parent / "tables" / "final"
 _HITS_DIR = Path(__file__).parent.parent / "tables" / "hits"
-
-_SCILITE_TYPE_TO_COLUMN = {
-    "Diseases": "Diseases (Annotated)",
-    "Gene_Proteins": "Genes / Proteins",
-    "Chemicals": "Chemicals",
-}
-
 
 def _latest(pattern: str) -> Path | None:
     files = sorted(_FINAL_DIR.glob(pattern))
@@ -75,101 +73,6 @@ def _pmcid_from(s: str) -> str:
     m = re.search(r"PMC\d+", str(s))
     return m.group(0) if m else ""
 
-
-def join_annotations(pub_pattern: str = "pubmed_central_*.tsv") -> Path | None:
-    """Join SciLite annotations and pub_datasets into a publications-shaped TSV.
-
-    Adds columns:
-        - ``Diseases (Annotated)`` — semicolon-delimited Tag Names (type=Diseases)
-        - ``Genes / Proteins``     — semicolon-delimited Tag Names (type=Gene_Proteins)
-        - ``Chemicals``            — semicolon-delimited Tag Names (type=Chemicals)
-        - ``Cited Datasets``       — semicolon-delimited dataset identifiers
-
-    Matches purely on PMC ID extracted from each row's PubMed Central Link, so any table
-    with that column works - the standard pubmed_central table (default) or, in misc_mode,
-    misc_publications (still single-valued for that column even though Resource Name/
-    Abbreviation/etc. are semicolon-joined there).
-
-    Args:
-        pub_pattern: Glob (in tables/final/) for the publications-shaped TSV to enrich in
-            place (default: "pubmed_central_*.tsv").
-
-    Returns:
-        Path to the updated TSV, or None if no file matching pub_pattern was found.
-    """
-    pub_path = _latest(pub_pattern)
-    if not pub_path:
-        logger.error(f"No TSV matching '{pub_pattern}' found in tables/final/")
-        return None
-
-    logger.info(f"Loading publications: {pub_path.name}")
-    pubs = pd.read_csv(pub_path, sep="\t", dtype=str).fillna("")
-    logger.info(f"  {len(pubs)} publications loaded")
-
-    # --- SciLite join ---
-    scilite_path = _latest("scilite_annotations_*.tsv")
-    for col in _SCILITE_TYPE_TO_COLUMN.values():
-        pubs[col] = ""
-
-    if scilite_path:
-        logger.info(f"Loading SciLite annotations: {scilite_path.name}")
-        sc = pd.read_csv(scilite_path, sep="\t", dtype=str).fillna("")
-        logger.info(f"  {len(sc)} annotation rows loaded")
-
-        # Build PMC → type → ordered unique Tag Names
-        pmc_type_names: dict[str, dict[str, list[str]]] = {}
-        for _, row in sc.iterrows():
-            pmc = row.get("PMC ID", "")
-            ann_type = row.get("Type", "")
-            name = row.get("Tag Name", "").strip()
-            if not pmc or ann_type not in _SCILITE_TYPE_TO_COLUMN or not name:
-                continue
-            entry = pmc_type_names.setdefault(pmc, {})
-            names_list = entry.setdefault(ann_type, [])
-            if name not in names_list:
-                names_list.append(name)
-
-        pmc_col = "PubMed Central Link" if "PubMed Central Link" in pubs.columns else "PubMed_Central_Link"
-        for col_type, out_col in _SCILITE_TYPE_TO_COLUMN.items():
-            pubs[out_col] = pubs[pmc_col].apply(
-                lambda link, t=col_type: ";".join(
-                    pmc_type_names.get(_pmcid_from(link), {}).get(t, [])
-                )
-            )
-    else:
-        logger.warning("No SciLite annotations TSV found — annotation columns will be empty")
-
-    # --- Pub datasets join ---
-    datasets_path = _latest("pub_datasets_*.tsv")
-    pubs["Cited Datasets"] = ""
-
-    if datasets_path:
-        logger.info(f"Loading pub_datasets: {datasets_path.name}")
-        ds = pd.read_csv(datasets_path, sep="\t", dtype=str).fillna("")
-        logger.info(f"  {len(ds)} dataset rows loaded")
-
-        pmc_datasets: dict[str, list[str]] = {}
-        src_col = "source_url" if "source_url" in ds.columns else "Source_URL"
-        id_col = "dataset_identifier" if "dataset_identifier" in ds.columns else "Dataset_Identifier"
-        for _, row in ds.iterrows():
-            pmc = _pmcid_from(row.get(src_col, ""))
-            did = str(row.get(id_col, "")).strip()
-            if not pmc or not did:
-                continue
-            ids = pmc_datasets.setdefault(pmc, [])
-            if did not in ids:
-                ids.append(did)
-
-        pmc_col = "PubMed Central Link" if "PubMed Central Link" in pubs.columns else "PubMed_Central_Link"
-        pubs["Cited Datasets"] = pubs[pmc_col].apply(
-            lambda link: ";".join(pmc_datasets.get(_pmcid_from(link), []))
-        )
-    else:
-        logger.warning("No pub_datasets TSV found — Cited Datasets column will be empty")
-
-    pubs.to_csv(pub_path, sep="\t", index=False)
-    logger.info(f"Enriched publications written → {pub_path.name}")
-    return pub_path
 
 
 def join_cellular_model_publications(
@@ -277,6 +180,104 @@ def join_cellular_model_publications(
     output_path = _FINAL_DIR / f"cellular_models_{ts}.tsv"
     models.to_csv(output_path, sep="\t", index=False)
     logger.info(f"Cellular models with publication links written → {output_path.name}")
+    return output_path
+
+
+_ANNOTATION_STAGE_TABLES: dict[str, str] = {
+    "Datasets": "pub_datasets_*.tsv",
+    "Supplementary Files": "pub_supplementary_*.tsv",
+    "Grants": "pub_grants_*.tsv",
+    "Software": "pub_software_*.tsv",
+    "Models": "pub_models_*.tsv",
+}
+
+
+def build_annotation_summary(
+    scilite_pattern: str = "scilite_annotations_*.tsv",
+    top_n_types: int = 5,
+) -> Path:
+    """Row counts per pub-metadata stage table, plus SciLite's top annotation types.
+
+    Written as a small fixed-name JSON (not timestamped - always overwritten) so the web
+    app's Home page can show an Annotations breakdown without ever fetching the ~270MB
+    scilite_annotations table itself just to count it.
+
+    Args:
+        scilite_pattern: Glob (in tables/final/) for the SciLite annotations table.
+        top_n_types: How many of SciLite's most frequent annotation Types to keep.
+
+    Returns:
+        Path to the written annotation_summary.json (stage counts / types default to
+        empty when a source table is missing - never raises).
+    """
+    stages: dict[str, int] = {}
+    for label, pattern in _ANNOTATION_STAGE_TABLES.items():
+        path = _latest(pattern)
+        if not path:
+            logger.warning(f"[annotation-summary] no TSV matching '{pattern}' found in tables/final/")
+            continue
+        stages[label] = sum(1 for _ in open(path, encoding="utf-8")) - 1  # header
+
+    scilite_path = _latest(scilite_pattern)
+    scilite_total = 0
+    top_types: list[dict] = []
+    if scilite_path:
+        logger.info(f"[annotation-summary] loading SciLite Type column: {scilite_path.name}")
+        types = pd.read_csv(scilite_path, sep="\t", usecols=["Type"], dtype=str)["Type"].fillna("")
+        scilite_total = len(types)
+        counts = types[types != ""].value_counts().head(top_n_types)
+        top_types = [{"type": t, "count": int(n)} for t, n in counts.items()]
+    else:
+        logger.warning(f"[annotation-summary] no TSV matching '{scilite_pattern}' found in tables/final/")
+
+    summary = {
+        "stages": stages,
+        "scilite_total": scilite_total,
+        "scilite_top_types": top_types,
+    }
+    output_path = _FINAL_DIR / "annotation_summary.json"
+    output_path.write_text(json.dumps(summary, indent=2))
+    logger.info(f"[annotation-summary] written -> {output_path.name}: "
+                f"stages={stages}, scilite_total={scilite_total}, top_types={top_types}")
+    return output_path
+
+
+_SCILITE_AGGREGATE_DIMENSIONS = ["PMC ID", "Type", "Tag Name", "Exact", "Section", "Provider", "Tag URI"]
+
+
+def build_scilite_type_aggregate(scilite_pattern: str = "scilite_annotations_*.tsv") -> Path | None:
+    """Per-annotation-concept counts, written as a small fixed-name TSV.
+
+    The Connections page needs to filter/connect on SciLite annotations without ever loading
+    scilite_annotations_*.tsv itself (~270MB, ~956k rows). This aggregate (grouped by
+    _SCILITE_AGGREGATE_DIMENSIONS - ~400k rows, ~65MB) is what it loads instead: one row per
+    distinct (PMC ID, Type, Tag Name, Exact, Section, Provider, Tag URI) combination actually
+    seen, with a Count of how many raw rows collapsed into it. Prefix/Postfix/Annotation ID
+    are deliberately excluded - Prefix/Postfix are the literal free-text sentence context
+    around each mention (near-unique per row, so keeping them would balloon this back toward
+    the full raw table with none of the size saved), and Annotation ID is a per-mention URL
+    that's unique by construction.
+
+    Args:
+        scilite_pattern: Glob (in tables/final/) for the SciLite annotations table.
+
+    Returns:
+        Path to the written scilite_pmc_type_counts.tsv, or None if no SciLite table
+        was found.
+    """
+    scilite_path = _latest(scilite_pattern)
+    if not scilite_path:
+        logger.error(f"No TSV matching '{scilite_pattern}' found in tables/final/")
+        return None
+
+    logger.info(f"[scilite-aggregate] loading {_SCILITE_AGGREGATE_DIMENSIONS} columns: {scilite_path.name}")
+    sc = pd.read_csv(scilite_path, sep="\t", usecols=_SCILITE_AGGREGATE_DIMENSIONS, dtype=str).fillna("")
+    sc = sc[(sc["PMC ID"] != "") & (sc["Type"] != "")]
+    agg = sc.groupby(_SCILITE_AGGREGATE_DIMENSIONS).size().reset_index(name="Count")
+
+    output_path = _FINAL_DIR / "scilite_pmc_type_counts.tsv"
+    agg.to_csv(output_path, sep="\t", index=False)
+    logger.info(f"[scilite-aggregate] {len(agg)} row(s) written -> {output_path.name}")
     return output_path
 
 
@@ -757,11 +758,3 @@ def _log_query_method_performance(df: pd.DataFrame) -> None:
                     f"{row['adjudicated']:>11d}{row['candidates']:>12d}")
 
     logger.info(f"{total_resources} distinct resource(s) total")
-
-
-if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(levelname)s - %(message)s",
-    )
-    join_annotations()

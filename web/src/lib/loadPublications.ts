@@ -30,3 +30,10 @@ export function pmcidFrom(s: string | undefined): string {
   const m = String(s).match(/PMC\d+/);
   return m ? m[0] : "";
 }
+
+/** Derive a publication year from "Publication Date" - not a real column, format varies
+ * ("2026", "2025 Dec", "2025-05-05", "2026 Jan 21", and older "Mon YYYY" rows), so pull
+ * out a real 4-digit year token instead of assuming a fixed position. */
+export function publicationYearFrom(date: string | undefined): string {
+  return date?.match(/\b(19|20)\d{2}\b/)?.[0] ?? "";
+}

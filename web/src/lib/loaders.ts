@@ -1,5 +1,6 @@
 import { loadTsv } from "./loadPublications";
 import type {
+  AnnotationSummary,
   CellularModel,
   CodeRepo,
   FairIssue,
@@ -10,6 +11,7 @@ import type {
   Publication,
   Resource,
   SciLiteAnnotation,
+  SciLitePmcTypeCount,
   Supplementary,
 } from "../types";
 
@@ -33,3 +35,13 @@ export const loadSciLite = () =>
   loadTsv<SciLiteAnnotation>("/data/scilite_annotations.tsv");
 export const loadCellularModels = () =>
   loadTsv<CellularModel>("/data/cellular_models.tsv");
+export const loadAnnotationSummary = (): Promise<AnnotationSummary> =>
+  fetch("/data/annotation_summary.json").then((r) => r.json());
+export const loadSciLitePmcTypeCounts = () =>
+  loadTsv<SciLitePmcTypeCount>("/data/scilite_pmc_type_counts.tsv");
+// Precomputed (scripts/build-connections-stats.mjs), not always present -
+// missing gracefully degrades to no baseline section rather than a page error.
+export const loadConnectionsStats = (): Promise<import("./connectionsGraph").ConnectionsStats | null> =>
+  fetch("/data/connections_stats.json")
+    .then((r) => (r.ok ? r.json() : null))
+    .catch(() => null);

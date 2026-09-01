@@ -14,7 +14,7 @@ import {
 import type { GraphPublication } from "../lib/paperGraph";
 
 type Granularity = "month" | "quarter" | "year";
-type BreakdownField = "none" | "Resource Name" | "Diseases Included" | "Coarse Data Modality";
+type BreakdownField = "none" | "Resource Name";
 type ChartType = "bar" | "line";
 type YMeasure =
   | "count"
@@ -102,7 +102,7 @@ function buildChartData(
   const totals = new Map<string, number>(); // series → total count (for top-N ranking)
   let totalRows = 0;
 
-  const delim = breakBy === "Coarse Data Modality" ? "," : ";";
+  const delim = ";";
 
   for (const row of rows) {
     const p = parsePeriod(row["Publication Date"], gran);
@@ -284,8 +284,6 @@ export function TrendsChart({ rows, allRows, filters }: Props) {
           >
             <option value="none">None — total count</option>
             <option value="Resource Name">Study</option>
-            <option value="Diseases Included">Disease</option>
-            <option value="Coarse Data Modality">Coarse Modality</option>
           </select>
         </div>
 

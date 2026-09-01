@@ -1,10 +1,8 @@
 export interface Publication {
   PMID: string;
+  DOI: string;
   "Resource Name": string;
   Abbreviation: string;
-  "Diseases Included": string;
-  "Coarse Data Modality": string;
-  "Granular Data Modality": string;
   "PubMed Central Link": string;
   Authors: string;
   Affiliations: string;
@@ -14,10 +12,6 @@ export interface Publication {
   "Publication Date": string;
   "Publication Year": string;
   "Data Completeness": string;
-  "Diseases (Annotated)": string;
-  "Genes / Proteins": string;
-  "Chemicals": string;
-  "Cited Datasets": string;
 }
 
 export interface Resource {
@@ -42,7 +36,6 @@ export interface Resource {
 export interface CodeRepo {
   "Resource Name": string;
   Abbreviation: string;
-  "Diseases Included": string;
   "Repository Link": string;
   Source: string;
   Owner: string;
@@ -140,6 +133,19 @@ export interface CellularModel {
   "Procurement link": string;
   "About this gene": string;
   "About this variant": string;
+  "Linked Publications": string;
+  "Linked Studies": string;
+}
+
+export interface SciLitePmcTypeCount {
+  "PMC ID": string;
+  Type: string;
+  "Tag Name": string;
+  Exact: string;
+  Section: string;
+  Provider: string;
+  "Tag URI": string;
+  Count: string;
 }
 
 export interface FairIssue {
@@ -148,6 +154,12 @@ export interface FairIssue {
   "Issue Type": string;
   Details: string;
   Timestamp: string;
+}
+
+export interface AnnotationSummary {
+  stages: Record<string, number>;
+  scilite_total: number;
+  scilite_top_types: { type: string; count: number }[];
 }
 
 export interface FacetCount {

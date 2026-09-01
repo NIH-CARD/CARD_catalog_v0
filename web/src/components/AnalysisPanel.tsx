@@ -32,6 +32,12 @@ const DESCRIPTIONS: Record<AnalysisType, string[]> = {
     "Extraction Quality & Red Flags: Suspect records, garbled fields, and implausible links",
     "Data Reuse & Access Patterns: Cross-study reuse and open vs. controlled access",
   ],
+  cross_table: [
+    "Key Patterns: What stands out across the value-count distributions in your merged table",
+    "Cross-Table Relationships: What the merged columns' co-occurrence suggests about how these tables relate",
+    "Data Quality Notes: Extraction artifacts, implausible concentrations, or gaps worth investigating",
+    "Suggested Next Steps: A follow-up query or filter worth trying next",
+  ],
 };
 
 function renderMarkdown(md: string): { __html: string } {

@@ -19,14 +19,12 @@ const GRAPH_FIELD_OPTIONS = [
   { field: "Languages" as const, label: "Languages", delimiter: ";" },
   { field: "Data Types" as const, label: "Data Types", delimiter: ";" },
   { field: "Tooling" as const, label: "Tooling", delimiter: ";" },
-  { field: "Diseases Included" as const, label: "Diseases", delimiter: ";" },
   { field: "Resource Name" as const, label: "Resource Name" },
 ];
 
 const FACETS: readonly FacetSpec<CodeRepo>[] = [
   { field: "Resource Name", label: "Resource Name", multivalue: true, delimiter: ";" },
   { field: "Languages", multivalue: true },
-  { field: "Diseases Included", multivalue: true },
   { field: "Data Types", multivalue: true },
   { field: "Tooling", multivalue: true },
   { field: "Biomedical Relevance", multivalue: false },

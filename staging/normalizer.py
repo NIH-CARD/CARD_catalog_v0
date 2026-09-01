@@ -182,6 +182,21 @@ def _join_url_list(value: Any) -> str:
     return s
 
 
+def _unwrap_list_repr(value: Any) -> str:
+    """Unwrap a stringified Python list (e.g. "['a', 'b']") into a ", "-joined string;
+    passes anything else through unchanged."""
+    if not value or pd.isna(value):
+        return ""
+    s = str(value).strip()
+    try:
+        items = ast.literal_eval(s)
+        if not isinstance(items, list):
+            raise TypeError(f"expected list, got {type(items).__name__}")
+        return ", ".join(str(i).strip() for i in items if str(i).strip())
+    except (ValueError, SyntaxError, TypeError):
+        return s
+
+
 def _fmt_month_year(raw: str) -> str:
     """Convert any date string to 'Mon YYYY' (e.g. 'Jan 2024'). Returns raw on failure."""
     if not raw or not raw.strip():
@@ -257,32 +272,16 @@ def _split_relevance_verdict(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def _commas_to_semicolons_outside_parens(text: str) -> str:
-    """Convert stray ',' list-separators to the app-wide ';' convention, but leave
-    commas inside parentheses alone (e.g. 'Genetic PD (LRRK2, GBA, SNCA mutations)'
-    is one term, not three) - the resource inventory mixes both separators for
-    Diseases Included inconsistently."""
-    out = []
-    depth = 0
-    for ch in text:
-        if ch == "(":
-            depth += 1
-        elif ch == ")":
-            depth = max(0, depth - 1)
-        out.append(";" if ch == "," and depth == 0 else ch)
-    return "".join(out)
-
-
 def _dedup_repos(df: pd.DataFrame) -> pd.DataFrame:
     """Collapse duplicate rows for the same repo (github_search matches once per
     resource whose search terms it hits) into one row per Repository Link.
-    Resource Name/Abbreviation/Diseases Included merge into semicolon-joined lists
-    - a repo can genuinely relate to several resources; everything else describes
-    the repo itself and takes the first non-empty value across the group."""
+    Resource Name/Abbreviation merge into semicolon-joined lists - a repo can
+    genuinely relate to several resources; everything else describes the repo
+    itself and takes the first non-empty value across the group."""
     if "Repository Link" not in df.columns:
         return df
 
-    multi_value_cols = [c for c in ("Resource Name", "Abbreviation", "Diseases Included") if c in df.columns]
+    multi_value_cols = [c for c in ("Resource Name", "Abbreviation") if c in df.columns]
     other_cols = [c for c in df.columns if c not in multi_value_cols and c != "Repository Link"]
 
     def merge_group(group: pd.DataFrame) -> "pd.Series[str]":
@@ -384,8 +383,7 @@ def _backfill_source_from_pub_software(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _normalize_code(df: pd.DataFrame) -> pd.DataFrame:
-    if "Diseases Included" in df.columns:
-        df["Diseases Included"] = df["Diseases Included"].apply(_commas_to_semicolons_outside_parens)
+    df = df.drop(columns=["Diseases Included"], errors="ignore")
 
     df = _split_relevance_verdict(df)
     df = _dedup_repos(df)
@@ -394,9 +392,8 @@ def _normalize_code(df: pd.DataFrame) -> pd.DataFrame:
     for col in ["Data Types", "Tooling"]:
         if col in df.columns:
             df[col] = _normalize_flattened_list_column(df[col])
-    for col in ["Languages", "Diseases Included"]:
-        if col in df.columns:
-            df[col] = df[col].apply(_normalize_list_field)
+    if "Languages" in df.columns:
+        df["Languages"] = df["Languages"].apply(_normalize_list_field)
 
     # Merge FAIR compliance log — adds FAIR Score and FAIR Issues columns
     hits_dir = Path(__file__).parent.parent / "tables" / "hits"
@@ -431,6 +428,16 @@ def _normalize_code(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _normalize_pub_datasets(df: pd.DataFrame) -> pd.DataFrame:
+    if "dataset_keywords" in df.columns:
+        df["dataset_keywords"] = (
+            df["dataset_keywords"].apply(_unwrap_list_repr).apply(lambda v: _normalize_list_field(v, delimiter=","))
+        )
+    if "dataset_identifier" in df.columns:
+        before = len(df)
+        df = df[df["dataset_identifier"].str.strip() != ""]
+        dropped = before - len(df)
+        if dropped:
+            logger.info(f"pub_datasets: dropped {dropped} row(s) with an empty dataset_identifier")
     return df
 
 
@@ -557,17 +564,7 @@ def _normalize_pub_verification(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-_MISC_PUB_MULTIVALUE_COLS = [
-    "Resource Name", "Abbreviation", "Diseases Included",
-    "Coarse Data Modality", "Granular Data Modality", "Fetched With",
-]
-# These two are already ';'-delimited per resource (the app-wide multi-value convention) -
-# unlike Resource Name/Abbreviation/Fetched With (single tokens per resource) and Coarse
-# Data Modality (comma-delimited natively) - so escaping their internal ';' to ',' before
-# the cross-resource join (below) would destroy real item separators, not protect against
-# stray ones. They get comma-to-semicolon normalization instead (the inventory mixes both
-# separators inconsistently - see _commas_to_semicolons_outside_parens).
-_MISC_PUB_ALREADY_SEMICOLON_DELIMITED = {"Diseases Included", "Granular Data Modality"}
+_MISC_PUB_MULTIVALUE_COLS = ["Resource Name", "Abbreviation", "Fetched With"]
 _MISC_PUB_SINGLEVALUE_COLS = [
     "PMID", "DOI", "PubMed Central Link", "Authors", "Affiliations",
     "Title", "Abstract", "Keywords", "Publication Date",
@@ -581,9 +578,13 @@ def _normalize_misc_publications(df: pd.DataFrame) -> pd.DataFrame:
     links only, then collapse to one row per publication - the same paper linked to
     several resources becomes one row instead of several.
 
-    Resource-specific columns (Resource Name, Diseases Included, Coarse/Granular Data
-    Modality, Abbreviation, Fetched With) become semicolon-joined multi-value fields
-    across the group, deduplicated via _normalize_list_field. Rationale becomes
+    Resource-specific columns (Resource Name, Abbreviation, Fetched With) become
+    semicolon-joined multi-value fields across the group, deduplicated via
+    _normalize_list_field. Diseases Included / Coarse Data Modality / Granular Data
+    Modality are deliberately not carried onto Publications - they describe the
+    Resource a paper relates to, not the paper itself, and baking them in here
+    duplicated what the Connections cross-table join is meant to express properly.
+    Rationale becomes
     "Inclusion Criteria" and, together with Claim Text, is prefixed per-resource
     ("<Resource Name>: <text>") rather than deduplicated - each resource's inclusion was
     judged independently by the LLM, so one resource's rationale must stay attached to
@@ -621,13 +622,7 @@ def _normalize_misc_publications(df: pd.DataFrame) -> pd.DataFrame:
         for col in _MISC_PUB_MULTIVALUE_COLS:
             if col not in group.columns:
                 continue
-            if col in _MISC_PUB_ALREADY_SEMICOLON_DELIMITED:
-                values = [
-                    _commas_to_semicolons_outside_parens(str(v).strip())
-                    for v in group[col] if str(v).strip()
-                ]
-            else:
-                values = [str(v).strip().replace(";", ",") for v in group[col] if str(v).strip()]
+            values = [str(v).strip().replace(";", ",") for v in group[col] if str(v).strip()]
             merged[col] = _normalize_list_field(";".join(values))
         for src_col, out_col in _MISC_PUB_RESOURCE_PREFIXED_COLS:
             if src_col not in group.columns:

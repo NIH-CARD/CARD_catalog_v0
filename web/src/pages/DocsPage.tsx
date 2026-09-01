@@ -20,10 +20,9 @@ const TABLE_SCHEMAS: { name: string; route: string; file: string; columns: strin
     route: "/publications",
     file: "publications.tsv",
     columns: [
-      "PMID", "Resource Name", "Abbreviation", "Diseases Included", "Coarse Data Modality",
-      "Granular Data Modality", "PubMed Central Link", "Authors", "Affiliations", "Title",
+      "PMID", "DOI", "Resource Name", "Abbreviation",
+      "PubMed Central Link", "Authors", "Affiliations", "Title",
       "Abstract", "Keywords", "Publication Date", "Publication Year", "Data Completeness",
-      "Diseases (Annotated)", "Genes / Proteins", "Chemicals", "Cited Datasets",
     ],
   },
   {
@@ -31,7 +30,7 @@ const TABLE_SCHEMAS: { name: string; route: string; file: string; columns: strin
     route: "/code",
     file: "code_repos.tsv",
     columns: [
-      "Resource Name", "Abbreviation", "Diseases Included", "Repository Link", "Source",
+      "Resource Name", "Abbreviation", "Repository Link", "Source",
       "Owner", "Contributors", "Languages", "Biomedical Relevance", "Relevance Rationale",
       "Code Summary", "Data Types", "Tooling", "FAIR Score", "FAIR Issues",
     ],
@@ -100,7 +99,7 @@ const TABLE_SCHEMAS: { name: string; route: string; file: string; columns: strin
       "Product Code", "Parental Line", "Gene", "Gene Variant", "Genotype", "dbSNP",
       "Condition", "Other Names", "Genome Assembly", "Protospacer Sequence",
       "Genomic Coordinate", "Genomic Sequence", "Procurement link", "About this gene",
-      "About this variant",
+      "About this variant", "Linked Publications", "Linked Studies",
     ],
   },
 ];

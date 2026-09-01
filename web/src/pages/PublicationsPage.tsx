@@ -19,13 +19,12 @@ import {
   loadSciLite,
   loadSupplementary,
 } from "../lib/loaders";
-import { pmcidFrom } from "../lib/loadPublications";
+import { pmcidFrom, publicationYearFrom } from "../lib/loadPublications";
 import {
   applyToPubs,
   PAPER_GRAPH_FIELD_OPTIONS,
   type GraphPublication,
 } from "../lib/paperGraph";
-import { useDiseaseCanonicalizer, useModalityCanonicalizer } from "../lib/synonyms";
 import { useFacets } from "../lib/useFacets";
 import type {
   FacetSpec,
@@ -98,7 +97,7 @@ export function PublicationsPage() {
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<"table" | "browse" | "graph" | "trends">("table");
   const [edgeSelected, setEdgeSelected] = useState<(keyof GraphPublication & string)[]>([
-    "Diseases (Annotated)",
+    "Resource Name",
   ]);
   const [minShared, setMinShared] = useState(1);
   const [maxNodes, setMaxNodes] = useState(60);
@@ -113,23 +112,16 @@ export function PublicationsPage() {
     loadSciLite().then(setSc).catch(() => undefined);
   }, []);
 
-  // Publications already carry annotation columns from the pipeline (staging/join_annotations.py).
-  // Derive Publication Year client-side from "Publication Date" - format varies
-  // ("2026", "2025 Dec", "2025-05-05", "2026 Jan 21", and older "Mon YYYY" rows),
-  // so pull out a real 4-digit year token instead of assuming a fixed position.
   const allAugmented = useMemo<GraphPublication[]>(
     () =>
       (pubs ?? []).map((p) => ({
         ...p,
-        "Publication Year": p["Publication Date"]?.match(/\b(19|20)\d{2}\b/)?.[0] ?? "",
+        "Publication Year": publicationYearFrom(p["Publication Date"]),
       })) as GraphPublication[],
     [pubs],
   );
 
-  const canonicalizeModality = useModalityCanonicalizer();
-  const canonicalizeDisease = useDiseaseCanonicalizer();
-
-  // Paper-grounded facets: SciLite types + cited datasets + publication metadata
+  // Paper-grounded facets: publication metadata
   const FACETS: readonly FacetSpec<GraphPublication>[] = useMemo(
     () => [
       {
@@ -137,26 +129,6 @@ export function PublicationsPage() {
         label: "Study",
         multivalue: true,
         delimiter: ";",
-      },
-      {
-        field: "Diseases Included",
-        label: "Diseases",
-        multivalue: true,
-        delimiter: ";",
-        canonicalize: canonicalizeDisease,
-      },
-      {
-        field: "Coarse Data Modality",
-        label: "Coarse Modality",
-        multivalue: true,
-        delimiter: ",",
-      },
-      {
-        field: "Granular Data Modality",
-        label: "Granular Modality",
-        multivalue: true,
-        delimiter: ";",
-        canonicalize: canonicalizeModality,
       },
       {
         field: "Keywords",
@@ -171,36 +143,12 @@ export function PublicationsPage() {
         delimiter: ";",
       },
       {
-        field: "Diseases (Annotated)",
-        label: "Diseases (SciLite)",
-        multivalue: true,
-        delimiter: ";",
-      },
-      {
-        field: "Genes / Proteins",
-        label: "Genes / Proteins (SciLite)",
-        multivalue: true,
-        delimiter: ";",
-      },
-      {
-        field: "Chemicals",
-        label: "Chemicals (SciLite)",
-        multivalue: true,
-        delimiter: ";",
-      },
-      {
-        field: "Cited Datasets",
-        label: "Cited Datasets",
-        multivalue: true,
-        delimiter: ";",
-      },
-      {
         field: "Publication Year",
         label: "Year",
         multivalue: false,
       },
     ],
-    [canonicalizeDisease, canonicalizeModality],
+    [],
   );
 
   const fieldNames = useMemo(() => FACETS.map((f) => f.field), [FACETS]);
@@ -255,8 +203,8 @@ export function PublicationsPage() {
   // Re-augment the *filtered* corpus with hub filter for the graph view
   const graphRows = useMemo<GraphPublication[]>(() => {
     const threshold = hubEnabled ? hubThresholdPct / 100 : 1.1;
-    return applyToPubs(null, filtered, threshold);
-  }, [filtered, hubEnabled, hubThresholdPct]);
+    return applyToPubs(filtered, threshold, edgeSelected);
+  }, [filtered, hubEnabled, hubThresholdPct, edgeSelected]);
 
   const trendsFilters = useMemo<TrendsFilterProps>(
     () => ({
@@ -344,15 +292,6 @@ export function PublicationsPage() {
         size: 160,
         cell: (info) => <Chips value={info.getValue()} delimiter=";" max={3} />,
       }),
-      col.accessor("Diseases Included", {
-        header: "Diseases",
-        size: 160,
-        cell: (info) => <Chips value={info.getValue()} max={3} />,
-      }),
-      col.accessor("Coarse Data Modality", {
-        header: "Modality",
-        cell: (info) => <Chips value={info.getValue()} delimiter="," max={3} />,
-      }),
       col.accessor("Keywords", {
         header: "Keywords",
         size: 160,
@@ -427,7 +366,6 @@ export function PublicationsPage() {
               study: p["Resource Name"],
               keywords: p.Keywords,
               abstract: p.Abstract?.slice(0, 200),
-              diseases: p["Diseases Included"],
             }))}
           />
           <div className="mb-3 flex items-center justify-between gap-3">
@@ -475,8 +413,6 @@ export function PublicationsPage() {
                   >
                     <Field label="Authors" value={p.Authors} expandable maxChars={120} />
                     <Field label="Affiliations" value={p.Affiliations} expandable maxChars={120} />
-                    <Field label="Diseases" value={p["Diseases Included"]} chips />
-                    <Field label="Modality" value={p["Coarse Data Modality"]} chips delimiter="," />
                     <Field label="Keywords" value={p.Keywords} chips delimiter=";" />
                     {p.Abstract && (
                       <Section title="Abstract">
@@ -538,8 +474,6 @@ export function PublicationsPage() {
                       { label: "Title", value: p.Title },
                       { label: "Study", value: p["Resource Name"] },
                       { label: "PMID", value: p.PMID },
-                      { label: "Diseases", value: p["Diseases Included"] },
-                      { label: "Coarse modality", value: p["Coarse Data Modality"] },
                       { label: "Authors", value: p.Authors },
                     ]}
                   />
