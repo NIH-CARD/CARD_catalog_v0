@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { marked } from "marked";
 import ReactFlow, { Background, Controls, Handle, Position, type Edge, type Node, type NodeTypes, type NodeProps } from "reactflow";
 import "reactflow/dist/style.css";
 import { createColumnHelper } from "@tanstack/react-table";
@@ -560,7 +561,10 @@ export function ConnectionsPage() {
               <summary className="px-3 py-2 text-xs text-slate-600 cursor-pointer select-none">
                 Value counts report
               </summary>
-              <pre className="px-3 pb-3 text-xs text-slate-700 whitespace-pre-wrap overflow-x-auto">{frozen.report}</pre>
+              <div
+                className="md-prose px-3 pb-3 text-xs text-slate-700 overflow-x-auto"
+                dangerouslySetInnerHTML={{ __html: marked(frozen.report, { async: false }) as string }}
+              />
             </details>
             <div className="p-3">
               <AnalysisPanel<{ report: string }>
