@@ -20,7 +20,7 @@ export function PageShell({
 }: Props) {
   return (
     <div className="min-h-screen flex flex-col">
-      <Header query={query} onQueryChange={onQueryChange ?? (() => {})} />
+      <Header query={query} onQueryChange={onQueryChange} />
       <div className="flex flex-1">
         {rail ?? null}
         <main className={`flex-1 px-6 py-4 overflow-hidden${rail ? "" : " max-w-full"}`}>

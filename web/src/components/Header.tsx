@@ -65,7 +65,7 @@ function GroupDivider() {
 
 export function Header({ query, onQueryChange }: Props) {
   return (
-    <header className="bg-accent text-white py-3 flex items-center gap-6 shadow">
+    <header className="bg-accent text-white py-3 flex items-center gap-6 shadow pr-6">
       {/* No horizontal padding on the header itself - this box starts at true
           x=0, same as FilterRail's `w-72` aside on table pages, so the divider
           at its right edge lands exactly where that sidebar's border does. */}
@@ -86,7 +86,7 @@ export function Header({ query, onQueryChange }: Props) {
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
           placeholder="Search title, abstract, authors…"
-          className="w-72 mr-6 px-3 py-1.5 rounded text-sm text-slate-800 placeholder-slate-400 bg-white/95 focus:outline-none focus:ring-2 focus:ring-white"
+          className="w-72 px-3 py-1.5 rounded text-sm text-slate-800 placeholder-slate-400 bg-white/95 focus:outline-none focus:ring-2 focus:ring-white"
         />
       )}
     </header>
