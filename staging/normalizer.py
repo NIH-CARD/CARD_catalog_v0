@@ -131,25 +131,57 @@ def _fix_pmc_link(link: str) -> str:
     return re.sub(r"PMCPMC(\d+)", r"PMC\1", str(link))
 
 
+def _reduce_trailing_initial(tokens: list[str]) -> list[str]:
+    """Coarsen a name's trailing given-name token to merge initial-vs-full-name
+    variants of the same person - "Nalls Mike A" -> "Nalls Mike" (drop a
+    trailing single-letter initial when a real given name precedes it) and
+    "Nalls MA" -> "Nalls M" (a concatenated-initials given name keeps only its
+    first letter). Leaves "Nalls Mike", "Nalls M", and "Nalls Michael"
+    untouched - each is already as reduced as it can safely get without
+    guessing (e.g. dropping a bare "M" would erase the only given-name
+    information the entry has)."""
+    if len(tokens) < 2:
+        return tokens
+    last = tokens[-1].rstrip(".")
+    if last.isalpha() and last.isupper():
+        if len(last) == 1 and len(tokens) >= 3:
+            return tokens[:-1]
+        if len(last) > 1 and len(tokens) == 2:
+            return [tokens[0], last[0]]
+        # A bare trailing initial with nothing before it to fall back to
+        # (e.g. "Nalls M.") - keep it, but still drop the period so it
+        # merges with an already-period-less "Nalls M" entry.
+        if len(last) == 1:
+            return tokens[:-1] + [last]
+    return tokens
+
+
 def _normalize_authors(authors: str) -> str:
+    """Re-delimit to ";" and dedupe an author list, without reordering names.
+
+    Some sources (the "paperclip" full-text fallback search) emit a
+    comma-delimited list instead of the standard semicolon delimiter, with no
+    semicolons present at all - detect that case and split on "," instead.
+    Deliberately does NOT reorder tokens within a name: this catalog's
+    dominant convention is "Surname First [Middle]" (e.g. "Bennett David A"),
+    while paperclip's is "First [Middle] Surname" - guessing which token is
+    the surname from word count/position alone is unreliable across both
+    conventions (multi-word surnames, suffixes), and previously did so
+    unconditionally, silently corrupting every name it touched.
+    """
     if not authors or pd.isna(authors) or authors == "":
         return ""
-    parts = [a.strip() for a in str(authors).split(";") if a.strip()]
-    normalized = []
-    for a in parts:
-        tokens = a.split()
-        if not tokens:
-            continue
-        last = tokens[-1]
-        first_mid = " ".join(tokens[:-1])
-        normalized.append(f"{last} {first_mid}".strip())
+    s = str(authors)
+    delimiter = "," if ";" not in s and "," in s else ";"
+    parts = [a.strip() for a in s.split(delimiter) if a.strip()]
     seen: set[str] = set()
     unique: list[str] = []
-    for a in normalized:
-        key = re.sub(r"\s+[A-Z]\s+", " ", a).lower()
+    for a in parts:
+        reduced = " ".join(_reduce_trailing_initial(a.split()))
+        key = reduced.lower()
         if key not in seen:
             seen.add(key)
-            unique.append(a)
+            unique.append(reduced)
     return "; ".join(unique)
 
 
@@ -617,8 +649,31 @@ def _normalize_misc_publications(df: pd.DataFrame) -> pd.DataFrame:
         for col in _MISC_PUB_SINGLEVALUE_COLS:
             if col not in group.columns:
                 continue
-            values = [str(v) for v in group[col] if str(v).strip()]
-            merged[col] = max(values, key=len) if values else ""
+            if col == "Authors" and "Fetched With" in group.columns:
+                # Prefer a non-paperclip-sourced Authors value when this same
+                # publication was ALSO found by a standard query method -
+                # that path either explicitly constructs "Surname Given"
+                # (PubMed EFetch) or already receives it that way (PMC
+                # esummary), unlike paperclip's own export, which mixes
+                # conventions depending on the source article and can't be
+                # reliably reordered by formatting alone. Only ~13% of
+                # paperclip-involved publications have this corroboration
+                # available; the rest still fall through to the general
+                # (paperclip-reordered-at-the-source, then reduced here) path.
+                is_paperclip = group["Fetched With"].fillna("").str.contains("paperclip", case=False)
+                corroborated = [
+                    str(v) for v, pc in zip(group[col], is_paperclip)
+                    if str(v).strip() and not pc
+                ]
+                values = corroborated if corroborated else [str(v) for v in group[col] if str(v).strip()]
+            else:
+                values = [str(v) for v in group[col] if str(v).strip()]
+            picked = max(values, key=len) if values else ""
+            # Authors needs its own delimiter/dedup normalization (see
+            # _normalize_authors) on top of the value picked above - e.g. a
+            # paperclip-sourced row's comma-delimited list would otherwise
+            # reach the final table unsplit.
+            merged[col] = _normalize_authors(picked) if col == "Authors" else picked
         for col in _MISC_PUB_MULTIVALUE_COLS:
             if col not in group.columns:
                 continue

@@ -3,6 +3,17 @@
   command = "npm ci && npm run sync-data && npm run build"
   publish = "dist"
 
+[build.environment]
+  # Pinned so `npm ci` validates package-lock.json (lockfileVersion 3, with
+  # tsx's nested esbuild optionalDependencies) with the same npm major used to
+  # generate it locally - Netlify's unpinned default previously resolved to
+  # an npm version that flagged those entries as missing even though the
+  # lockfile is otherwise valid (confirmed: an unmodified `npm ci` against
+  # the exact same committed lockfile succeeds cleanly on npm 11). Node 24 -
+  # not an older LTS like 20 (EOL April 2026) - to match the locally-tested
+  # environment and stay on an actively-supported release.
+  NODE_VERSION = "24"
+
 [functions]
   directory = "netlify/functions"
 

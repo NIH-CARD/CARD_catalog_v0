@@ -1089,6 +1089,32 @@ Hard limit: {max_turns} tool calls total (every search/grep/add counts, not just
     for c in added_claims:
         claims_added_by_doc.setdefault(c["doc_id"], []).append(c)
 
+    def _reorder_paperclip_authors(raw: str) -> str:
+        """Paperclip's own "authors" export is in natural "Given [Middle]
+        Surname" reading order (confirmed against real records, e.g. "John C.
+        Morris, Virginia D. Buckles" and "Manuela M X Tan; Michael A Lawton"),
+        unlike every other source feeding this column - the standard PubMed
+        EFetch path builds "Surname Given" explicitly, and PMC's esummary API
+        already returns names that way itself. Reorder here, at the source,
+        rather than guessing downstream from formatting alone (delimiter and
+        punctuation aren't reliable order signals - see staging/normalizer.py's
+        _normalize_authors for the general, non-paperclip-specific handling).
+        Also re-delimits to ";" - paperclip's own export mixes "," and ";"
+        between records.
+        """
+        if not raw or not raw.strip():
+            return raw
+        delimiter = "," if ";" not in raw and "," in raw else ";"
+        names = [n.strip() for n in raw.split(delimiter) if n.strip()]
+        reordered = []
+        for name in names:
+            tokens = name.split()
+            if len(tokens) < 2:
+                reordered.append(name)
+                continue
+            reordered.append(f"{tokens[-1]} {' '.join(tokens[:-1])}")
+        return "; ".join(reordered)
+
     def build_row(doc_id, status):
         p = paper_by_id.get(doc_id, {})
         doc_added = claims_added_by_doc.get(doc_id, [{}])
@@ -1102,7 +1128,7 @@ Hard limit: {max_turns} tool calls total (every search/grep/add counts, not just
             "Diseases Included": diseases,
             "Title": p.get("title", ""),
             "Abstract": "",
-            "Authors": p.get("authors", ""),
+            "Authors": _reorder_paperclip_authors(p.get("authors", "")),
             "Affiliations": "",
             "Keywords": "",
             "Publication Date": p.get("year", ""),

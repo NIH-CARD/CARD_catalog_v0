@@ -19,8 +19,11 @@ const SECONDARY_NAV = [
 ];
 
 interface Props {
-  query: string;
-  onQueryChange: (q: string) => void;
+  // Omit both on pages with no results list for the search box to filter
+  // (currently just the home page) - render no search input there at all,
+  // rather than one that silently discards everything typed into it.
+  query?: string;
+  onQueryChange?: (q: string) => void;
 }
 
 interface NavItem {
@@ -78,12 +81,14 @@ export function Header({ query, onQueryChange }: Props) {
       <div className="flex-1" />
       <GroupDivider />
       <NavGroup items={SECONDARY_NAV} secondary />
-      <input
-        value={query}
-        onChange={(e) => onQueryChange(e.target.value)}
-        placeholder="Search title, abstract, authors…"
-        className="w-72 mr-6 px-3 py-1.5 rounded text-sm text-slate-800 placeholder-slate-400 bg-white/95 focus:outline-none focus:ring-2 focus:ring-white"
-      />
+      {onQueryChange && (
+        <input
+          value={query}
+          onChange={(e) => onQueryChange(e.target.value)}
+          placeholder="Search title, abstract, authors…"
+          className="w-72 mr-6 px-3 py-1.5 rounded text-sm text-slate-800 placeholder-slate-400 bg-white/95 focus:outline-none focus:ring-2 focus:ring-white"
+        />
+      )}
     </header>
   );
 }
