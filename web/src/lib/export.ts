@@ -1,4 +1,6 @@
-function downloadFile(content: string, filename: string, mimeType: string) {
+import * as XLSX from "xlsx";
+
+function downloadFile(content: BlobPart, filename: string, mimeType: string) {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -27,16 +29,29 @@ function toTSV(rows: Record<string, unknown>[]): string {
   ].join("\n");
 }
 
+function toXLSXBuffer(rows: Record<string, unknown>[]): ArrayBuffer {
+  const sheet = XLSX.utils.json_to_sheet(rows);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, sheet, "Data");
+  return XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+}
+
 export function exportRows(
   rows: object[],
   filename: string,
-  format: "csv" | "tsv" | "json",
+  format: "csv" | "tsv" | "json" | "xlsx",
 ) {
   const cast = rows as Record<string, unknown>[];
   if (format === "json") {
     downloadFile(JSON.stringify(cast, null, 2), `${filename}.json`, "application/json");
   } else if (format === "csv") {
     downloadFile(toCSV(cast), `${filename}.csv`, "text/csv");
+  } else if (format === "xlsx") {
+    downloadFile(
+      toXLSXBuffer(cast),
+      `${filename}.xlsx`,
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    );
   } else {
     downloadFile(toTSV(cast), `${filename}.tsv`, "text/tab-separated-values");
   }

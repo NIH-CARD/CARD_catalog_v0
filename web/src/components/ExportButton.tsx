@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { exportRows } from "../lib/export";
 
-const FORMATS = ["csv", "tsv", "json"] as const;
+const FORMATS = ["csv", "tsv", "xlsx", "json"] as const;
 
 interface Props {
   rows: object[];
