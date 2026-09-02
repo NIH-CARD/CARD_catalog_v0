@@ -128,7 +128,7 @@ def create_figure():
     ax1.set_yticks(range(len(sorted_datatypes)))
     ax1.set_yticklabels(sorted_datatypes, fontsize=11, rotation=15, ha='right')
     ax1.set_xlabel('Number of Resources', fontsize=12, fontweight='bold')
-    ax1.set_title(f'A. Number of resources annotated with each coarse data modality, stratified by FAIR compliance level\n(n={len(datasets_df)} datasets)',
+    ax1.set_title(f'A. Resources by Coarse Data Modality,\nStratified by FAIR Compliance (n={len(datasets_df)})',
                   fontsize=13, fontweight='bold', pad=10)
     ax1.legend(title='FAIR Level', loc='upper right', fontsize=10)
     ax1.grid(axis='x', alpha=0.3)
@@ -202,7 +202,7 @@ def create_figure():
                         fontsize=11, rotation=15, ha='right')
     ax2.set_xlabel('FAIR Component', fontsize=12, fontweight='bold')
     ax2.set_ylabel('Programming Language', fontsize=12, fontweight='bold')
-    ax2.set_title('B. Code Repository FAIR Issues by Language\n(% repositories missing component)',
+    ax2.set_title('B. Code Repository FAIR Issues by Language (% repositories missing component)',
                   fontsize=13, fontweight='bold', pad=10)
 
     # Add percentage annotations
@@ -300,7 +300,7 @@ def create_figure():
                 print(f"    - {study}")
                 print(f"      Sample Size field: '{size_field}'")
         else:
-            print(f"  ✓ All {len(all_datasets_with_modality)} datasets have sample size data")
+            print(f"  ✓ All {len(all_datasets_with_modality)} resources have sample size data")
 
     print("="*70 + "\n")
 
@@ -331,6 +331,12 @@ def create_figure():
     ax3.legend(loc='upper right', fontsize=10)
     ax3.tick_params(axis='both', labelsize=10)
     ax3.grid(True, alpha=0.3, which='both')
+
+    # Why each n here is smaller than its Panel A total (not missing/lost
+    # data, but resources this panel correctly excludes - see the "MISSING
+    # SAMPLE SIZE DATA" diagnostic printed above for the per-modality
+    # breakdown) is explained in the manuscript's figure caption, not drawn
+    # onto the image itself.
 
     # Overall title - positioned well above panel titles
     fig.suptitle('CARD Catalog Landscape: Coarse Data Modality, Code Quality, and Sample Distributions',
