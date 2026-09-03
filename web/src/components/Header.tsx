@@ -7,8 +7,8 @@ const TABLE_NAV = [
   { to: "/resources", label: "Resources" },
   { to: "/publications", label: "Publications" },
   { to: "/code", label: "Code" },
-  { to: "/annotations", label: "Annotations" },
   { to: "/cellular-models", label: "Cellular Models" },
+  { to: "/annotations", label: "Annotations" },
 ];
 
 const CONNECTIONS_NAV = [{ to: "/connections", label: "Connections" }];

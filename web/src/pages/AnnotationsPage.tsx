@@ -158,9 +158,12 @@ function DatasetsTab() {
       }),
       dsCol.accessor("data_repository", {
         header: "Repository",
-        size: 100,
+        size: 200,
+        // Many values are bare URLs (up to 260 chars, no spaces) - without
+        // break-all the table has no wrap point and expands the column (and
+        // the table) to fit them instead of honoring `size` above.
         cell: (info) => (
-          <span className="text-xs text-slate-700">{info.getValue()}</span>
+          <span className="text-xs text-slate-700 break-all">{info.getValue()}</span>
         ),
       }),
       dsCol.accessor("citation_type", {
@@ -351,9 +354,12 @@ function SupplementaryTab() {
       spCol.accessor("caption", {
         header: "Caption",
         size: 80,
+        // Some captions are underscore-joined filenames (up to 135 chars with
+        // no space to wrap on) - without break-all that forces the column
+        // wide despite `size` above; line-clamp-3 alone only caps height.
         cell: (info) => (
           <span
-            className="text-xs text-slate-600 line-clamp-3"
+            className="text-xs text-slate-600 line-clamp-3 break-all"
             title={info.getValue()}
           >
             {info.getValue()}
@@ -533,17 +539,17 @@ function GrantsTab() {
         cell: (info) => {
           const url = info.getValue();
           if (!url) return null;
-          return (
+            return (
             <a
               href={url}
               target="_blank"
               rel="noreferrer"
               className="text-xs text-accent hover:underline line-clamp-2 max-w-md"
               title={url}
-            >
+              >
               {url}
             </a>
-          );
+            );
         },
       }),
     ],

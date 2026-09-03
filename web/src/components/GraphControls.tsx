@@ -23,6 +23,17 @@ interface Props<T> {
     threshold: number;
     onThresholdChange: (n: number) => void;
   };
+  /** Suppress the "Connect nodes by" field-checkbox section while keeping
+   * every other control (min shared, max nodes, hub filter, disconnected
+   * visibility) - for a page offering its own edge-field selector instead. */
+  hideFieldSelector?: boolean;
+  /** Optional node-size-by-frequency mode selector - pass undefined to hide
+   * this control (only meaningful when nodes represent aggregated values
+   * with a frequency, not one node per raw row). */
+  nodeScale?: {
+    mode: "none" | "linear" | "log";
+    onModeChange: (mode: "none" | "linear" | "log") => void;
+  };
 }
 
 export function GraphControls<T>({
@@ -36,6 +47,8 @@ export function GraphControls<T>({
   showAll,
   onShowAllChange,
   hubFilter,
+  hideFieldSelector = false,
+  nodeScale,
 }: Props<T>) {
   const toggle = (field: keyof T & string) => {
     if (selected.includes(field)) {
@@ -47,32 +60,34 @@ export function GraphControls<T>({
 
   return (
     <div className="border border-slate-200 rounded bg-white p-3 mb-3 text-sm space-y-3">
-      <div>
-        <label className="block text-xs font-semibold uppercase tracking-wide text-slate-600 mb-1">
-          Connect nodes by
-        </label>
-        <div className="flex flex-wrap gap-2">
-          {options.map((o) => {
-            const active = selected.includes(o.field);
-            return (
-              <button
-                key={String(o.field)}
-                onClick={() => toggle(o.field)}
-                className={
-                  "px-2 py-1 rounded text-xs border " +
-                  (active
-                    ? "bg-accent text-white border-accent"
-                    : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100")
-                }
-              >
-                {o.label ?? String(o.field)}
-              </button>
-            );
-          })}
+      {!hideFieldSelector && (
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wide text-slate-600 mb-1">
+            Connect nodes by
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {options.map((o) => {
+              const active = selected.includes(o.field);
+              return (
+                <button
+                  key={String(o.field)}
+                  onClick={() => toggle(o.field)}
+                  className={
+                    "px-2 py-1 rounded text-xs border " +
+                    (active
+                      ? "bg-accent text-white border-accent"
+                      : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100")
+                  }
+                >
+                  {o.label ?? String(o.field)}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="flex flex-wrap items-end gap-4 pt-1 border-t border-slate-100">
+      <div className={"flex flex-wrap items-end gap-4 " + (hideFieldSelector ? "" : "pt-1 border-t border-slate-100")}>
         <div>
           <label className="block text-xs font-semibold uppercase tracking-wide text-slate-600 mb-1">
             Min shared
@@ -93,11 +108,9 @@ export function GraphControls<T>({
           </label>
           <input
             type="number"
-            min={10}
-            max={500}
-            step={10}
+            min={1}
             value={maxNodes}
-            onChange={(e) => onMaxNodesChange(Math.max(10, parseInt(e.target.value || "60", 10)))}
+            onChange={(e) => onMaxNodesChange(Math.max(1, parseInt(e.target.value || "60", 10)))}
             className="w-20 px-2 py-1 border border-slate-300 rounded text-sm tabular-nums"
           />
         </div>
@@ -111,6 +124,23 @@ export function GraphControls<T>({
           />
           Disconnected Nodes Visibility
         </label>
+
+        {nodeScale && (
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wide text-slate-600 mb-1">
+              Scale node
+            </label>
+            <select
+              value={nodeScale.mode}
+              onChange={(e) => nodeScale.onModeChange(e.target.value as "none" | "linear" | "log")}
+              className="px-2 py-1 border border-slate-300 rounded text-sm"
+            >
+              <option value="none">Do not</option>
+              <option value="linear">By frequency</option>
+              <option value="log">By frequency (log)</option>
+            </select>
+          </div>
+        )}
 
         {hubFilter && (
           <label className="inline-flex items-center gap-2 text-slate-700 pb-1.5">

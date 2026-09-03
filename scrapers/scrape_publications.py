@@ -1244,10 +1244,43 @@ Call return_queries with the query strings."""
     return []
 
 
+def _fetch_full_authors(pmids: List[str], ncbi_api_key_suffix: str) -> Dict[str, str]:
+    """Fetch full author names for a batch of PMIDs via PubMed efetch.
+
+    PMC esummary only exposes abbreviated names (e.g. "Nalls MA"); efetch's
+    AuthorList carries full given names, so _fetch_pmc_summaries uses this to
+    upgrade authors it initially got from esummary.
+
+    Args:
+        pmids: PMIDs to look up, one efetch call for the whole batch.
+        ncbi_api_key_suffix: Pre-formatted "&api_key=..." suffix, or "".
+
+    Returns:
+        Mapping of PMID to full "; "-joined author names, for PMIDs found.
+    """
+    ids_str = ",".join(pmids)
+    url = f'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id={ids_str}&retmode=xml{ncbi_api_key_suffix}'
+    response = search_pubmed_with_retry(url)
+    if not response:
+        return {}
+    try:
+        root = ET.fromstring(response.text)
+        authors_by_pmid = {}
+        for article in root.findall('.//PubmedArticle'):
+            details = extract_article_details(article)
+            if details and details.get("PMID") and details.get("Authors"):
+                authors_by_pmid[details["PMID"]] = details["Authors"]
+        return authors_by_pmid
+    except Exception as e:
+        logger.warning(f"[pmc] efetch author lookup failed for a batch: {e}")
+        return {}
+
+
 def _fetch_pmc_summaries(pmcids: List[str], ncbi_api_key_suffix: str) -> List[Dict]:
     """Fetch article metadata directly from PMC via esummary — no PMID required."""
     results = []
     batch_size = 200
+    n_authors_upgraded = 0
     for i in range(0, len(pmcids), batch_size):
         batch = pmcids[i:i + batch_size]
         ids_str = ",".join(batch)
@@ -1255,6 +1288,7 @@ def _fetch_pmc_summaries(pmcids: List[str], ncbi_api_key_suffix: str) -> List[Di
         response = search_pubmed_with_retry(url)
         if not response:
             continue
+        batch_results = []
         try:
             result = response.json().get("result", {})
             for uid in result.get("uids", []):
@@ -1264,7 +1298,7 @@ def _fetch_pmc_summaries(pmcids: List[str], ncbi_api_key_suffix: str) -> List[Di
                     continue
                 article_ids = {a.get("idtype"): a.get("value") for a in doc.get("articleids", [])}
                 authors = "; ".join(a.get("name", "") for a in doc.get("authors", []) if a.get("authtype") == "Author")
-                results.append({
+                batch_results.append({
                     "PMID": article_ids.get("pmid", ""),
                     "DOI": article_ids.get("doi", ""),
                     "PMCID": uid,
@@ -1278,6 +1312,21 @@ def _fetch_pmc_summaries(pmcids: List[str], ncbi_api_key_suffix: str) -> List[Di
                 })
         except Exception as e:
             logger.warning(f"[pmc] esummary parse failed for a batch: {e}")
+            continue
+
+        # esummary only gives abbreviated names (e.g. "Nalls MA") — upgrade to full
+        # names via efetch, reusing this same batch of PMIDs (no separate pass).
+        pmids_in_batch = [r["PMID"] for r in batch_results if r["PMID"]]
+        if pmids_in_batch:
+            full_authors = _fetch_full_authors(pmids_in_batch, ncbi_api_key_suffix)
+            for r in batch_results:
+                if r["PMID"] in full_authors:
+                    r["Authors"] = full_authors[r["PMID"]]
+                    n_authors_upgraded += 1
+
+        results.extend(batch_results)
+    logger.info(f"[pmc] _fetch_pmc_summaries: {len(pmcids)} PMCID(s) in -> {len(results)} record(s) out, "
+                f"{n_authors_upgraded} with authors upgraded via efetch")
     return results
 
 

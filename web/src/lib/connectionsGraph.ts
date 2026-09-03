@@ -91,6 +91,28 @@ function columnMeta(table: string, field: string): ColumnMeta | undefined {
   return connectionsColumns(table).find((c) => c.field === field);
 }
 
+/** A Publication row's own resolved identity key (PMC ID, falling back to
+ * DOI - see publicationKey()'s docstring for why not PMID: PMID is blank for
+ * DOI-only publications, and Title isn't a safe/unique join key). Exposed
+ * for use as a graph "edge field" meaning "same publication" - e.g.
+ * connecting two Author nodes because they co-authored one paper - which
+ * needs a key that's actually populated for every row, not a specific
+ * identifier column that happens to be blank for some.
+ *
+ * Deliberately NOT domainValue("Publications", row, "publication") - that
+ * helper concatenates every identity field it finds (PMC ID *and* DOI, both
+ * valid alternate keys for cross-table *joining*), but an edge/identity key
+ * needs exactly one value per row: a row with both would otherwise surface
+ * as two distinct "shared" values for what is really the same single paper,
+ * inflating shared-publication counts. */
+export function publicationIdFor(row: Row): string {
+  const pmcRaw = row["PubMed Central Link"];
+  const pmc = typeof pmcRaw === "string" ? pmcidFrom(pmcRaw) : "";
+  if (pmc) return pmc;
+  const doiRaw = row["DOI"];
+  return typeof doiRaw === "string" ? doiFrom(doiRaw) : "";
+}
+
 function domainValue(table: string, row: Row, domain: Domain): string {
   const specs = sourcesFor(domain)[table];
   if (!specs) return "";
@@ -394,6 +416,87 @@ export function generateSql(
   if (pubWhere) lines.push(`WHERE ${pubWhere}`);
   if (edges.length > 0) lines.push("GROUP BY p.PMID");
   return lines.join("\n");
+}
+
+/** One synthetic node row built by buildValueNodes - a distinct value of the
+ * chosen node field, standing in for every real row that contained it. */
+export interface ValueNodeRow {
+  value: string;
+  count: number;
+  [key: string]: unknown;
+}
+
+/**
+ * Aggregate rows into one synthetic row per distinct value of `nodeField`,
+ * for feeding into KnowledgeGraph unchanged - each synthetic row's edge-field
+ * columns are the union of that field's values across every real row
+ * containing this node value, so KnowledgeGraph's existing shared-value-
+ * overlap edge logic connects two node-values whenever they co-occur with a
+ * shared edge value (e.g. two Authors connected because they've each
+ * published under the same Resource Name, or via PMID for "same paper"),
+ * without any change to that component's own algorithm.
+ *
+ * This is the same grouping/counting a plain value-counts report on
+ * `nodeField` would do (split on its real delimiter, count occurrences) -
+ * the per-group edge-field union is the one addition beyond a bare value
+ * count, needed to compute edges afterward.
+ *
+ * Sorted by frequency descending - feeding this into KnowledgeGraph's
+ * existing `maxNodes` (a plain first-N slice) then means "top-N most
+ * frequent node values," not an arbitrary first-N cut.
+ *
+ * `countKeyField` (typically "__publicationKey", the PMC-ID/DOI-fallback
+ * identity from publicationIdFor) dedupes what "frequency" counts: `rows`
+ * here is a wide, already-joined table, so the same publication can appear
+ * as more than one row (e.g. once per dataset it lists) - without dedup, an
+ * author who wrote one paper listing five datasets would count as five,
+ * inflating both node size and the "N publication(s)" hover count. A row
+ * with no value in that field (identity unknown) still counts on its own,
+ * since there's nothing to dedupe it against.
+ */
+export function buildValueNodes(
+  rows: readonly Row[],
+  nodeField: string,
+  nodeDelimiter: string | undefined,
+  edgeFields: readonly { field: string; delimiter?: string }[],
+  countKeyField?: string,
+): ValueNodeRow[] {
+  const byValue = new Map<
+    string,
+    { pubKeys: Set<string>; unkeyedRows: number; edgeSets: Map<string, Set<string>> }
+  >();
+  for (const row of rows) {
+    const raw = row[nodeField];
+    if (typeof raw !== "string" || !raw.trim()) continue;
+    const keyRaw = countKeyField ? row[countKeyField] : undefined;
+    const pubKey = typeof keyRaw === "string" && keyRaw.trim() ? keyRaw : undefined;
+    for (const v of splitMulti(raw, nodeDelimiter)) {
+      if (!byValue.has(v)) {
+        byValue.set(v, {
+          pubKeys: new Set(),
+          unkeyedRows: 0,
+          edgeSets: new Map(edgeFields.map((f) => [f.field, new Set<string>()])),
+        });
+      }
+      const rec = byValue.get(v)!;
+      if (pubKey) rec.pubKeys.add(pubKey);
+      else rec.unkeyedRows++;
+      for (const ef of edgeFields) {
+        const efRaw = row[ef.field];
+        if (typeof efRaw !== "string" || !efRaw.trim()) continue;
+        for (const ev of splitMulti(efRaw, ef.delimiter)) rec.edgeSets.get(ef.field)!.add(ev);
+      }
+    }
+  }
+
+  const out: ValueNodeRow[] = [];
+  for (const [value, rec] of byValue) {
+    const synthetic: ValueNodeRow = { value, count: rec.pubKeys.size + rec.unkeyedRows };
+    for (const ef of edgeFields) synthetic[ef.field] = Array.from(rec.edgeSets.get(ef.field) ?? []).join(";");
+    out.push(synthetic);
+  }
+  out.sort((a, b) => b.count - a.count);
+  return out;
 }
 
 /**

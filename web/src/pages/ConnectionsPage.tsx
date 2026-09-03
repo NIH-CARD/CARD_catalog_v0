@@ -22,6 +22,8 @@ import {
   buildValueCountsReport,
   buildMacroSummary,
   buildBaselineSummary,
+  buildValueNodes,
+  publicationIdFor,
   type DagEdge,
   type Domain,
   type ValueCountsColumn,
@@ -40,6 +42,14 @@ const DOMAIN_LABEL: Record<Domain, string> = {
   publication: "Publication (PMC ID or DOI)",
   resource: "Resource Name",
   concept: "Concept (gene/bioentity)",
+};
+
+// Short form for the DAG edge labels, where DOMAIN_LABEL's full descriptions
+// overflow the small (fontSize 10) space between nodes.
+const DOMAIN_LABEL_SHORT: Record<Domain, string> = {
+  publication: "Pub ID",
+  resource: "Resource",
+  concept: "Concept",
 };
 
 const MERGEABLE_TABLES = TABLE_REGISTRY.map((t) => t.name).filter((n) => n !== "Publications");
@@ -64,17 +74,18 @@ async function loadRawTable(table: string): Promise<Row[]> {
 
 // --- DAG visualization -------------------------------------------------
 
-function DagNode({ data }: NodeProps<{ label: string; root?: boolean; onRemove?: () => void }>) {
+function DagNode({ data }: NodeProps<{ label: string; root?: boolean; onRemove?: () => void; columns?: string[] }>) {
+  const shownColumns = data.columns ?? [];
   return (
     <div
       className={
-        "px-3 py-2 rounded border text-xs text-center " +
+        "flex flex-col justify-center px-4 py-1.5 rounded border text-sm text-center " +
         (data.root ? "bg-accent text-white border-accent font-semibold" : "bg-white border-slate-300")
       }
-      style={{ minWidth: 120 }}
+      style={{ minWidth: 150, minHeight: 44 }}
     >
       <Handle type="target" position={Position.Left} className="!opacity-0" />
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-2 w-full">
         <span>{data.label}</span>
         {data.onRemove && (
           <button
@@ -86,38 +97,213 @@ function DagNode({ data }: NodeProps<{ label: string; root?: boolean; onRemove?:
           </button>
         )}
       </div>
+      {shownColumns.length > 0 && (
+        <div className={"mt-1 border-t " + (data.root ? "border-white/30" : "border-slate-200")}>
+          {shownColumns.map((c, i) => (
+            <div
+              key={c}
+              className={
+                "text-[9px] leading-tight text-left font-normal truncate py-0.5 " +
+                (i < shownColumns.length - 1 ? "border-b " : "") +
+                (data.root ? "text-white/70 border-white/20" : "text-slate-400 border-slate-100")
+              }
+            >
+              {c}
+            </div>
+          ))}
+        </div>
+      )}
       <Handle type="source" position={Position.Right} className="!opacity-0" />
     </div>
   );
 }
-const DAG_NODE_TYPES: NodeTypes = { dag: DagNode };
+interface AddTableNodeData {
+  open: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+  availableTables: string[];
+  newTable: string;
+  onTableChange: (table: string) => void;
+  newDomain: Domain | "";
+  onDomainChange: (domain: Domain) => void;
+  domainsForNewTable: Domain[];
+  domainLabel: Record<Domain, string>;
+  newColumns: Set<string>;
+  onToggleColumn: (field: string) => void;
+  nativeColumns: { field: string }[];
+  onAdd: () => void;
+  loadingTable: string | null;
+}
 
-function DagView({ edges, onRemove }: { edges: DagEdge[]; onRemove: (table: string) => void }) {
+// Trailing "+" action in the DAG chain - hover reveals "JOIN TABLE" as a
+// discovery hint; clicking opens a popover anchored right to this node (not a
+// separate box elsewhere on the page) with the whole table/join-key/columns
+// picker, so the entire "add a table" flow stays inside the DAG canvas.
+function AddTableNode({ data }: NodeProps<AddTableNodeData>) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div className="relative">
+      <button
+        onClick={data.onToggle}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        className={
+          "nodrag flex items-center gap-1.5 rounded-full border text-[10px] font-semibold uppercase tracking-wide " +
+          (data.open
+            ? "bg-accent text-white border-accent px-3"
+            : "bg-white text-slate-500 border-slate-300 border-dashed hover:border-accent hover:text-accent px-2")
+        }
+        style={{ height: 44 }}
+      >
+        <span className="text-sm font-normal leading-none normal-case">+</span>
+        {(hovered || data.open) && <span className="whitespace-nowrap pr-0.5">Join table</span>}
+      </button>
+      {data.open && (
+        <div
+          className="nodrag nowheel absolute left-full top-0 ml-2 z-50 w-max max-w-2xl rounded border border-slate-300 bg-white p-3 text-left shadow-lg"
+          style={{ cursor: "default" }}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-600">Join table</span>
+            <button onClick={data.onClose} className="text-slate-400 hover:text-slate-600 text-xs leading-none" aria-label="Close">
+              ✕
+            </button>
+          </div>
+          {/* Horizontal row, same shape as the DAG canvas above it, instead of
+              a tall vertical stack - fields sit side by side. */}
+          <div className="flex flex-wrap items-end gap-3">
+            <div>
+              <label className="block text-[10px] text-slate-500 mb-1">Table</label>
+              <select
+                className="border border-slate-300 rounded px-2 py-1 text-xs"
+                value={data.newTable}
+                onChange={(e) => data.onTableChange(e.target.value)}
+              >
+                <option value="">Choose…</option>
+                {data.availableTables.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+            {data.newTable && (
+              <div>
+                <label className="block text-[10px] text-slate-500 mb-1">Join key</label>
+                <select
+                  className="border border-slate-300 rounded px-2 py-1 text-xs"
+                  value={data.newDomain}
+                  onChange={(e) => data.onDomainChange(e.target.value as Domain)}
+                >
+                  <option value="">Choose…</option>
+                  {data.domainsForNewTable.map((d) => (
+                    <option key={d} value={d}>{data.domainLabel[d]}</option>
+                  ))}
+                </select>
+                {data.domainsForNewTable.length === 0 && (
+                  <p className="text-[10px] text-amber-700 mt-1 max-w-[10rem]">No verified join key to Publications.</p>
+                )}
+              </div>
+            )}
+            {data.newTable && data.newDomain && (
+              <div className="max-w-xs">
+                <label className="block text-[10px] text-slate-500 mb-1">
+                  Columns ({data.newColumns.size}/{data.nativeColumns.length})
+                </label>
+                <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
+                  {data.nativeColumns.map((c) => {
+                    const active = data.newColumns.has(c.field);
+                    return (
+                      <button
+                        key={c.field}
+                        onClick={() => data.onToggleColumn(c.field)}
+                        className={
+                          "px-1.5 py-0.5 rounded text-[10px] border " +
+                          (active ? "bg-accent text-white border-accent" : "bg-white text-slate-400 border-slate-300 hover:bg-slate-100")
+                        }
+                      >
+                        {c.field}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            {data.newTable && data.newDomain && data.newColumns.size > 0 && (
+              <button onClick={data.onAdd} className="bg-accent text-white text-xs px-2 py-1 rounded">
+                Add to pipeline
+              </button>
+            )}
+            {data.loadingTable && <span className="text-[10px] text-slate-500">Loading {data.loadingTable}…</span>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const DAG_NODE_TYPES: NodeTypes = { dag: DagNode, add: AddTableNode };
+
+function DagView({
+  edges,
+  onRemove,
+  addNodeData,
+}: {
+  edges: DagEdge[];
+  onRemove: (table: string) => void;
+  addNodeData: AddTableNodeData;
+}) {
   // Each edge narrows the *already-merged* result (chained INNER JOINs, not
   // independent joins off Publications) - the layout mirrors that: a single
   // left-to-right chain, not a fan-out of siblings.
   const nodes: Node[] = [
-    { id: "Publications", type: "dag", position: { x: 0, y: 0 }, data: { label: "Publications", root: true } },
+    {
+      id: "Publications",
+      type: "dag",
+      position: { x: 0, y: 0 },
+      data: { label: "Publications", root: true, columns: BASE_DISPLAY_COLUMNS },
+    },
     ...edges.map((e, i) => ({
       id: e.table,
       type: "dag",
-      position: { x: (i + 1) * 220, y: 0 },
-      data: { label: e.table, onRemove: () => onRemove(e.table) },
+      position: { x: (i + 1) * 250, y: 0 },
+      data: { label: e.table, onRemove: () => onRemove(e.table), columns: e.columns },
     })),
+    {
+      id: "__add__",
+      type: "add",
+      // Tighter gap than the 250 used between real nodes - that spacing is
+      // sized for a full DagNode box, but the "+" pill is much narrower, so
+      // the same gap would leave it looking disconnected from the chain.
+      position: { x: edges.length * 250 + 175, y: 0 },
+      data: addNodeData,
+    },
   ];
   const flowEdges: Edge[] = edges.map((e, i) => ({
     id: e.table,
     source: i === 0 ? "Publications" : edges[i - 1].table,
     target: e.table,
-    label: DOMAIN_LABEL[e.domain],
+    label: DOMAIN_LABEL_SHORT[e.domain],
     labelStyle: { fontSize: 10 },
     style: { stroke: "#94a3b8" },
   }));
   return (
-    <div className="h-56 border border-slate-200 rounded bg-white">
-      <ReactFlow nodes={nodes} edges={flowEdges} nodeTypes={DAG_NODE_TYPES} fitView proOptions={{ hideAttribution: true }}>
+    <div className="h-56 border border-slate-200 rounded-t bg-white">
+      <ReactFlow
+        nodes={nodes}
+        edges={flowEdges}
+        nodeTypes={DAG_NODE_TYPES}
+        proOptions={{ hideAttribution: true }}
+        // No fitView: it always centers the bounding box of all nodes in the
+        // container, which pins "Publications" to the middle of the canvas
+        // instead of the top-left corner. A fixed viewport keeps the chain
+        // anchored top-left, growing rightward (pannable if it overflows),
+        // which is the point - it invites adding another table rather than
+        // looking "done", and reads top-to-bottom/left-to-right like the rest
+        // of the page instead of floating mid-canvas.
+        defaultViewport={{ x: 24, y: 16, zoom: 1 }}
+        nodesDraggable={false}
+      >
         <Background gap={20} />
-        <Controls showInteractive={false} />
+        <Controls showInteractive={false} position="top-right" />
       </ReactFlow>
     </div>
   );
@@ -155,8 +341,22 @@ export function ConnectionsPage() {
   const [newTable, setNewTable] = useState<string>("");
   const [newDomain, setNewDomain] = useState<Domain | "">("");
   const [newColumns, setNewColumns] = useState<Set<string>>(new Set());
+  const [addPopoverOpen, setAddPopoverOpen] = useState(false);
 
   const [view, setView] = useState<"table" | "graph">("table");
+  // "" = default mode, one node per Publication (today's behavior unchanged).
+  // Any other value = one node per distinct value of that field instead (see
+  // buildValueNodes) - e.g. "Authors" gives one node per author.
+  const [nodeFieldSelected, setNodeFieldSelected] = useState<string>("");
+  // Single-select, only used in value-node mode ("Connect X by Y" reads as
+  // one edge field, not several) - independent of `edgeSelected` below,
+  // which stays multi-select for the default one-node-per-Publication mode.
+  const [nodeGraphEdgeField, setNodeGraphEdgeField] = useState<string>("Resource Name");
+  // How each node's box is sized in value-node mode - "none" keeps the fixed
+  // default width; "linear"/"log" scale by how many Publications carry that
+  // value. Log is the sensible default: a linear map lets one outlier value
+  // (e.g. a hub author on hundreds of papers) dwarf every other box.
+  const [nodeScaleMode, setNodeScaleMode] = useState<"none" | "linear" | "log">("log");
   const [edgeSelected, setEdgeSelected] = useState<string[]>(["Resource Name"]);
   const [minShared, setMinShared] = useState(1);
   const [maxNodes, setMaxNodes] = useState(60);
@@ -194,6 +394,14 @@ export function ConnectionsPage() {
   function addEdge() {
     if (!newTable || !newDomain || newColumns.size === 0) return;
     setDagEdges((prev) => [...prev, { table: newTable, domain: newDomain, columns: Array.from(newColumns) }]);
+    setNewTable("");
+    setNewDomain("");
+    setNewColumns(new Set());
+    setAddPopoverOpen(false);
+  }
+
+  function closeAddPopover() {
+    setAddPopoverOpen(false);
     setNewTable("");
     setNewDomain("");
     setNewColumns(new Set());
@@ -262,6 +470,14 @@ export function ConnectionsPage() {
   const graphFieldOptions = useMemo(() => {
     const opts: { field: string; label: string; delimiter?: string }[] = [
       { field: "Resource Name", label: "Resource Name", delimiter: ";" },
+      // Meaningless as an edge field in the plain row-graph (two Publications
+      // never share this key) but the natural "same paper" co-occurrence key
+      // once nodes are a different field's values (e.g. connect two Authors
+      // by shared publication = they co-authored a paper) - see
+      // buildValueNodes. Computed (PMC ID falling back to DOI, never a bare
+      // PMID) rather than a specific identifier column, since PMID alone is
+      // blank for ~3.3% of Publications (DOI-only rows).
+      { field: "__publicationKey", label: "Same Publication" },
       ...nativeColumnsFor("Publications").map((c) => ({ field: c.field, label: c.field, delimiter: c.delimiter })),
     ];
     for (const edge of dagEdges) {
@@ -277,10 +493,57 @@ export function ConnectionsPage() {
     return opts;
   }, [dagEdges]);
 
-  const graphRows = useMemo(
-    () => dropHubValues(wideRows, hubEnabled ? hubThresholdPct / 100 : 1, edgeSelected),
-    [wideRows, hubEnabled, hubThresholdPct, edgeSelected],
-  );
+  const graphRows = useMemo(() => {
+    const base = dropHubValues(wideRows, hubEnabled ? hubThresholdPct / 100 : 1, edgeSelected);
+    // Attach once here, not per-consumer - a Publication's own resolved
+    // identity key (PMC ID, falling back to DOI), used as the "Same
+    // Publication" edge-field option in value-node mode.
+    return base.map((row) => ({ ...row, __publicationKey: publicationIdFor(row) }));
+  }, [wideRows, hubEnabled, hubThresholdPct, edgeSelected]);
+
+  // Row mode: the existing multi-select checkboxes (edgeSelected). Value-node
+  // mode: exactly the one field chosen in the "Connect X by Y" sentence -
+  // that phrasing reads as a single edge field, not several combined.
+  const graphEdgeFields = useMemo(() => {
+    const fields = nodeFieldSelected ? (nodeGraphEdgeField ? [nodeGraphEdgeField] : []) : edgeSelected;
+    return buildEdgeFields<Row>(graphFieldOptions, fields);
+  }, [graphFieldOptions, nodeFieldSelected, nodeGraphEdgeField, edgeSelected]);
+
+  // Value-node mode ("Connect <nodes> by <edges>"): one node per distinct
+  // value of nodeFieldSelected instead of one per Publication - e.g. connect
+  // Authors (nodes) by shared publication (edges) for a co-authorship graph.
+  // "" (the default) keeps today's plain one-node-per-Publication behavior.
+  const { graphNodeRows, graphNodeField, graphNodeSize } = useMemo(() => {
+    if (!nodeFieldSelected) {
+      return { graphNodeRows: graphRows, graphNodeField: "Title", graphNodeSize: undefined };
+    }
+    const delimiter = graphFieldOptions.find((o) => o.field === nodeFieldSelected)?.delimiter;
+    const valueNodes = buildValueNodes(graphRows, nodeFieldSelected, delimiter, graphEdgeFields, "__publicationKey");
+
+    if (nodeScaleMode === "none") {
+      return { graphNodeRows: valueNodes, graphNodeField: "value", graphNodeSize: undefined };
+    }
+    const maxCount = Math.max(1, ...valueNodes.map((r) => r.count));
+    const MIN_SIDE = 70;
+    const MAX_SIDE = 200;
+    const MIN_AREA = MIN_SIDE * MIN_SIDE;
+    const MAX_AREA = MAX_SIDE * MAX_SIDE;
+    const sizeFor = (row: Record<string, unknown>) => {
+      const count = (row as { count: number }).count;
+      // Log, not linear, is the default for the reason noted on the state
+      // declaration above - offered as an explicit alternative, not forced,
+      // since a linear map is sometimes exactly what's wanted (e.g. a
+      // deliberately narrow, already-filtered set of values).
+      const t = nodeScaleMode === "log" ? Math.log(count + 1) / Math.log(maxCount + 1) : count / maxCount;
+      // Interpolate AREA (not side length) linearly with t, then take the
+      // square root for the side - so a node twice as "big" by the chosen
+      // metric actually covers twice the area, matching how people read
+      // size-encoded quantities, instead of the side length (and therefore
+      // the area) growing quadratically with t.
+      return Math.sqrt(MIN_AREA + t * (MAX_AREA - MIN_AREA));
+    };
+    return { graphNodeRows: valueNodes, graphNodeField: "value", graphNodeSize: sizeFor };
+  }, [nodeFieldSelected, graphRows, graphFieldOptions, graphEdgeFields, nodeScaleMode]);
 
   // A quantity (e.g. Code Repositories' FAIR Score) vs. a category - drives
   // both valueCountsColumns and macroColumns below, from the same
@@ -367,6 +630,35 @@ export function ConnectionsPage() {
   const availableTables = MERGEABLE_TABLES.filter((t) => !dagEdges.some((e) => e.table === t));
   const domainsForNewTable = newTable ? validDomainsFor("Publications", newTable) : [];
 
+  const addNodeData: AddTableNodeData = {
+    open: addPopoverOpen,
+    onToggle: () => setAddPopoverOpen((o) => !o),
+    onClose: closeAddPopover,
+    availableTables,
+    newTable,
+    onTableChange: (table) => {
+      setNewTable(table);
+      setNewDomain("");
+      // Default to bringing in every column - unselect any that aren't wanted.
+      setNewColumns(table ? new Set(nativeColumnsFor(table).map((c) => c.field)) : new Set());
+    },
+    newDomain,
+    onDomainChange: setNewDomain,
+    domainsForNewTable,
+    domainLabel: DOMAIN_LABEL,
+    newColumns,
+    onToggleColumn: (field) =>
+      setNewColumns((prev) => {
+        const next = new Set(prev);
+        if (next.has(field)) next.delete(field);
+        else next.add(field);
+        return next;
+      }),
+    nativeColumns: newTable ? nativeColumnsFor(newTable) : [],
+    onAdd: addEdge,
+    loadingTable,
+  };
+
   return (
     <PageShell
       title="Connections"
@@ -428,93 +720,20 @@ export function ConnectionsPage() {
           <label className="block text-xs font-semibold uppercase tracking-wide text-slate-600 mb-2">
             Pipeline — Publications is always the base
           </label>
-          <DagView edges={dagEdges} onRemove={removeEdge} />
+          <DagView edges={dagEdges} onRemove={removeEdge} addNodeData={addNodeData} />
+          {/* Same card as the DAG above (border-t-0 / rounded-b vs. DagView's
+              rounded-t) - the SQL is just a verbal restatement of that same
+              pipeline, styled like a read-only terminal to read as output,
+              not an editable field. */}
+          <details className="border border-t-0 border-slate-200 rounded-b overflow-hidden">
+            <summary className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500 bg-slate-100 cursor-pointer select-none">
+              Generated SQL (read-only — for reading/verifying the pipeline above)
+            </summary>
+            <pre className="m-0 px-3 py-3 text-xs font-mono leading-relaxed text-emerald-700 bg-slate-50 whitespace-pre-wrap overflow-x-auto">
+              {sql}
+            </pre>
+          </details>
         </div>
-
-        <div className="border border-slate-200 rounded bg-white p-3">
-          <label className="block text-xs font-semibold uppercase tracking-wide text-slate-600 mb-2">
-            Merge a table in
-          </label>
-          <div className="flex flex-wrap items-end gap-3">
-            <div>
-              <label className="block text-[10px] text-slate-500 mb-1">Table</label>
-              <select
-                className="border border-slate-300 rounded px-2 py-1.5 text-sm"
-                value={newTable}
-                onChange={(e) => {
-                  setNewTable(e.target.value);
-                  setNewDomain("");
-                  setNewColumns(new Set());
-                }}
-              >
-                <option value="">Choose…</option>
-                {availableTables.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-            </div>
-            {newTable && (
-              <div>
-                <label className="block text-[10px] text-slate-500 mb-1">Join key</label>
-                <select
-                  className="border border-slate-300 rounded px-2 py-1.5 text-sm"
-                  value={newDomain}
-                  onChange={(e) => setNewDomain(e.target.value as Domain)}
-                >
-                  <option value="">Choose…</option>
-                  {domainsForNewTable.map((d) => (
-                    <option key={d} value={d}>{DOMAIN_LABEL[d]}</option>
-                  ))}
-                </select>
-                {domainsForNewTable.length === 0 && (
-                  <p className="text-[10px] text-amber-700 mt-1">No verified join key to Publications.</p>
-                )}
-              </div>
-            )}
-            {newTable && newDomain && (
-              <div>
-                <label className="block text-[10px] text-slate-500 mb-1">Columns to bring in</label>
-                <div className="flex flex-wrap gap-1 max-w-md">
-                  {nativeColumnsFor(newTable).map((c) => {
-                    const active = newColumns.has(c.field);
-                    return (
-                      <button
-                        key={c.field}
-                        onClick={() =>
-                          setNewColumns((prev) => {
-                            const next = new Set(prev);
-                            if (next.has(c.field)) next.delete(c.field);
-                            else next.add(c.field);
-                            return next;
-                          })
-                        }
-                        className={
-                          "px-2 py-0.5 rounded text-xs border " +
-                          (active ? "bg-accent text-white border-accent" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100")
-                        }
-                      >
-                        {c.field}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-            {newTable && newDomain && newColumns.size > 0 && (
-              <button onClick={addEdge} className="bg-accent text-white text-sm px-3 py-1.5 rounded">
-                Add to pipeline
-              </button>
-            )}
-            {loadingTable && <span className="text-xs text-slate-500">Loading {loadingTable}…</span>}
-          </div>
-        </div>
-
-        <details className="border border-slate-200 rounded bg-white">
-          <summary className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 cursor-pointer select-none">
-            Generated SQL (read-only — for reading/verifying the pipeline above)
-          </summary>
-          <pre className="px-3 pb-3 text-xs text-slate-700 whitespace-pre-wrap overflow-x-auto">{sql}</pre>
-        </details>
 
         <div className="flex items-center justify-between gap-3">
           <div className="inline-flex rounded border border-slate-200 overflow-hidden text-sm">
@@ -581,6 +800,37 @@ export function ConnectionsPage() {
           <DataTable<Row> rows={wideRows} columns={wideColumns} empty="No Publications match the current filters." />
         ) : (
           <>
+            <div className="border border-slate-200 rounded bg-white p-3 mb-3 text-sm flex items-center gap-2 flex-wrap">
+              <span className="text-slate-700">Connect</span>
+              <select
+                value={nodeFieldSelected}
+                onChange={(e) => setNodeFieldSelected(e.target.value)}
+                className="px-2 py-1 border border-slate-300 rounded text-sm"
+              >
+                <option value="">Publications</option>
+                {graphFieldOptions.map((o) => (
+                  <option key={o.field} value={o.field}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+              {nodeFieldSelected && (
+                <>
+                  <span className="text-slate-700">by</span>
+                  <select
+                    value={nodeGraphEdgeField}
+                    onChange={(e) => setNodeGraphEdgeField(e.target.value)}
+                    className="px-2 py-1 border border-slate-300 rounded text-sm"
+                  >
+                    {graphFieldOptions.map((o) => (
+                      <option key={o.field} value={o.field}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </>
+              )}
+            </div>
             <GraphControls<Row>
               options={graphFieldOptions}
               selected={edgeSelected}
@@ -591,6 +841,10 @@ export function ConnectionsPage() {
               onMaxNodesChange={setMaxNodes}
               showAll={showAll}
               onShowAllChange={setShowAll}
+              hideFieldSelector={!!nodeFieldSelected}
+              nodeScale={
+                nodeFieldSelected ? { mode: nodeScaleMode, onModeChange: setNodeScaleMode } : undefined
+              }
               hubFilter={{
                 enabled: hubEnabled,
                 onEnabledChange: setHubEnabled,
@@ -599,25 +853,32 @@ export function ConnectionsPage() {
               }}
             />
             <KnowledgeGraph<Row>
-              rows={graphRows}
-              nodeField="Title"
-              edgeFields={buildEdgeFields<Row>(graphFieldOptions, edgeSelected)}
+              rows={graphNodeRows}
+              nodeField={graphNodeField}
+              edgeFields={graphEdgeFields}
               minShared={minShared}
               maxNodes={maxNodes}
               hideDisconnected={!showAll}
-              nodeInfo={(row) => (
-                <div className="space-y-0.5">
-                  {[...BASE_DISPLAY_COLUMNS, ...dagEdges.flatMap((e) => e.columns.map((c) => mergedFieldKey(e.table, c)))]
-                    .filter((f) => typeof row[f] === "string" && (row[f] as string).trim())
-                    .slice(0, 6)
-                    .map((f) => (
-                      <div key={f}>
-                        <span className="text-[10px] uppercase text-slate-500">{f}: </span>
-                        <span className="text-xs text-slate-700">{row[f] as string}</span>
-                      </div>
-                    ))}
-                </div>
-              )}
+              nodeSize={graphNodeSize}
+              nodeInfo={(row) =>
+                nodeFieldSelected ? (
+                  <div className="text-xs text-slate-700">
+                    {(row as { count?: number }).count?.toLocaleString()} publication(s)
+                  </div>
+                ) : (
+                  <div className="space-y-0.5">
+                    {[...BASE_DISPLAY_COLUMNS, ...dagEdges.flatMap((e) => e.columns.map((c) => mergedFieldKey(e.table, c)))]
+                      .filter((f) => typeof row[f] === "string" && (row[f] as string).trim())
+                      .slice(0, 6)
+                      .map((f) => (
+                        <div key={f}>
+                          <span className="text-[10px] uppercase text-slate-500">{f}: </span>
+                          <span className="text-xs text-slate-700">{row[f] as string}</span>
+                        </div>
+                      ))}
+                  </div>
+                )
+              }
             />
           </>
         )}

@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import ast
 import logging
+import os
 import re
 import sys
 import unicodedata
@@ -125,21 +126,79 @@ def _normalize_list_field(value: str, delimiter: str = ";") -> str:
     return delimiter.join(sorted(seen.values()))
 
 
+def _canonicalize_term_casing(series: "pd.Series", delimiter: str = ";") -> "pd.Series":
+    """Unify a semicolon-delimited term column's casing table-wide.
+
+    _normalize_list_field only dedupes casing variants *within* one already-merged
+    value (e.g. one publication's own contributing rows); it has no visibility across
+    different rows, so the same term contributed by two different rows (e.g. two
+    different publications) can still reach tables/final/ as distinct casings - "PET"
+    vs "Pet", "Alzheimer's disease" vs "ALZHEIMER'S DISEASE" - which then show up as
+    separate facet values in the app. Canonical form here is simply whichever casing
+    is most common for that term across the whole column (ties broken by whichever
+    sorts first, for determinism); good enough for facet consolidation without a real
+    controlled vocabulary.
+    """
+    from collections import Counter
+
+    variant_counts: dict[str, Counter] = {}
+    for value in series:
+        for term in str(value).split(delimiter):
+            term = term.strip()
+            if term:
+                variant_counts.setdefault(term.lower(), Counter())[term] += 1
+
+    canonical = {
+        key: sorted(variants.items(), key=lambda kv: (-kv[1], kv[0]))[0][0]
+        for key, variants in variant_counts.items()
+    }
+
+    def _remap(value: str) -> str:
+        terms = [t.strip() for t in str(value).split(delimiter) if t.strip()]
+        if not terms:
+            return ""
+        seen: dict[str, str] = {}
+        for t in terms:
+            seen.setdefault(t.lower(), canonical[t.lower()])
+        return delimiter.join(sorted(seen.values()))
+
+    result = series.apply(_remap)
+    n_multi_casing = sum(1 for variants in variant_counts.values() if len(variants) > 1)
+    n_changed = int((result != series.astype(str)).sum())
+    logger.info(
+        f"_canonicalize_term_casing: {len(series)} value(s), {len(variant_counts)} distinct term(s) "
+        f"({n_multi_casing} with >1 casing variant) - {n_changed} value(s) changed"
+    )
+    return result
+
+
 def _fix_pmc_link(link: str) -> str:
     if not link or pd.isna(link):
         return ""
     return re.sub(r"PMCPMC(\d+)", r"PMC\1", str(link))
 
 
+def _is_bare_initial(token: str) -> bool:
+    letter = token.rstrip(".")
+    return len(letter) == 1 and letter.isalpha() and letter.isupper()
+
+
 def _reduce_trailing_initial(tokens: list[str]) -> list[str]:
-    """Coarsen a name's trailing given-name token to merge initial-vs-full-name
+    """Coarsen a name's given-name token(s) to merge initial-vs-full-name
     variants of the same person - "Nalls Mike A" -> "Nalls Mike" (drop a
-    trailing single-letter initial when a real given name precedes it) and
+    trailing single-letter initial when a real given name precedes it),
     "Nalls MA" -> "Nalls M" (a concatenated-initials given name keeps only its
-    first letter). Leaves "Nalls Mike", "Nalls M", and "Nalls Michael"
-    untouched - each is already as reduced as it can safely get without
-    guessing (e.g. dropping a bare "M" would erase the only given-name
-    information the entry has)."""
+    first letter), and "Mike A. Nalls" -> "Mike Nalls" (drop a middle initial
+    regardless of "Surname First" vs "First Last" ordering, since either way
+    the first and last tokens are what identifies the person - dropping an
+    interior initial between them never erases the only given-name info).
+    Leaves "Nalls Mike", "Nalls M", and "Nalls Michael" untouched - each is
+    already as reduced as it can safely get without guessing (e.g. dropping a
+    bare "M" would erase the only given-name information the entry has)."""
+    if len(tokens) < 2:
+        return tokens
+    if len(tokens) >= 3:
+        tokens = [t for i, t in enumerate(tokens) if not (0 < i < len(tokens) - 1 and _is_bare_initial(t))]
     if len(tokens) < 2:
         return tokens
     last = tokens[-1].rstrip(".")
@@ -259,6 +318,8 @@ def _normalize_publications(df: pd.DataFrame) -> pd.DataFrame:
     for col in ["Diseases_Included", "Keywords", "Coarse_Data_Modality", "Granular_Data_Modality"]:
         if col in df.columns:
             df[col] = df[col].apply(_normalize_list_field)
+    if "Keywords" in df.columns:
+        df["Keywords"] = _canonicalize_term_casing(df["Keywords"])
     if "Publication Date" in df.columns:
         df["Publication Date"] = df["Publication Date"].apply(_fmt_month_year)
     completeness_fields = [
@@ -596,13 +657,247 @@ def _normalize_pub_verification(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-_MISC_PUB_MULTIVALUE_COLS = ["Resource Name", "Abbreviation", "Fetched With"]
+_MISC_PUB_MULTIVALUE_COLS = ["Resource Name", "Abbreviation", "Fetched With", "Keywords"]
 _MISC_PUB_SINGLEVALUE_COLS = [
     "PMID", "DOI", "PubMed Central Link", "Authors", "Affiliations",
-    "Title", "Abstract", "Keywords", "Publication Date",
+    "Title", "Abstract", "Publication Date",
     "Verification Status", "Paperclip Repo", "Paperclip Doc ID",
 ]
 _MISC_PUB_RESOURCE_PREFIXED_COLS = [("Rationale", "Inclusion Criteria"), ("Claim Text", "Claim Text")]
+
+_PMC_ID_RE = re.compile(r"(PMC\d+)")
+
+
+def _fetch_full_authors_by_pmid(pmids: list[str], chunk_size: int = 200) -> dict[str, str]:
+    """Fetch full author names from PubMed efetch, keyed by PMID.
+
+    Some query methods (PMC esummary) only ever return abbreviated names
+    (e.g. "Nalls MA"); efetch's AuthorList carries full given names.
+
+    Args:
+        pmids: PMIDs to look up.
+        chunk_size: PMIDs per efetch call (NCBI handles up to ~200 per request).
+
+    Returns:
+        Mapping of PMID to "; "-joined full author names, for PMIDs found.
+    """
+    import requests
+    import xml.etree.ElementTree as ET
+
+    logger.info(f"_fetch_full_authors_by_pmid: fetching {len(pmids)} PMID(s) via efetch (chunk_size={chunk_size})")
+
+    api_key = os.getenv("NCBI_API_KEY")
+    api_key_suffix = f"&api_key={api_key}" if api_key else ""
+
+    authors_by_pmid: dict[str, str] = {}
+    for i in range(0, len(pmids), chunk_size):
+        batch = pmids[i:i + chunk_size]
+        ids_str = ",".join(batch)
+        url = (
+            "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
+            f"?db=pubmed&id={ids_str}&retmode=xml{api_key_suffix}"
+        )
+        try:
+            r = requests.get(url, timeout=30)
+            r.raise_for_status()
+            root = ET.fromstring(r.text)
+            for article in root.findall(".//PubmedArticle"):
+                pmid_elem = article.find(".//PMID")
+                pmid = pmid_elem.text if pmid_elem is not None else ""
+                if not pmid:
+                    continue
+                names = []
+                for author in article.findall(".//AuthorList/Author"):
+                    last_name = author.find("LastName")
+                    fore_name = author.find("ForeName")
+                    if last_name is not None and fore_name is not None:
+                        names.append(f"{last_name.text} {fore_name.text}")
+                    elif last_name is not None:
+                        names.append(last_name.text)
+                if names:
+                    authors_by_pmid[pmid] = "; ".join(names)
+        except Exception as exc:
+            logger.warning(f"misc_publications: efetch author batch {i}-{i + len(batch)} failed: {exc}")
+    logger.info(f"_fetch_full_authors_by_pmid: resolved authors for {len(authors_by_pmid)}/{len(pmids)} PMID(s)")
+    return authors_by_pmid
+
+
+def _resolve_pmids_via_idconverter(ids: list[str], chunk_size: int = 200) -> dict[str, str]:
+    """Resolve DOIs or PMCIDs to PMIDs via NCBI's ID Converter API.
+
+    All ids in one call must be the same type - the API rejects a mixed
+    DOI/PMCID batch outright - so callers pass one id type at a time.
+
+    Args:
+        ids: DOIs, or PMCIDs (e.g. "PMC1234567"), not mixed.
+        chunk_size: ids per request (API accepts up to ~200).
+
+    Returns:
+        Mapping of requested id to resolved PMID, for ids that resolved.
+    """
+    import requests
+
+    logger.info(f"_resolve_pmids_via_idconverter: resolving {len(ids)} id(s) via NCBI ID Converter (chunk_size={chunk_size})")
+
+    resolved: dict[str, str] = {}
+    for i in range(0, len(ids), chunk_size):
+        batch = ids[i:i + chunk_size]
+        ids_str = ",".join(batch)
+        url = f"https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids={ids_str}&format=json&tool=card_catalog"
+        try:
+            r = requests.get(url, timeout=30)
+            r.raise_for_status()
+            for rec in r.json().get("records", []):
+                pmid = rec.get("pmid")
+                req_id = rec.get("requested-id")
+                if pmid and req_id:
+                    resolved[req_id] = str(pmid)
+        except Exception as exc:
+            logger.warning(f"misc_publications: idconverter batch {i}-{i + len(batch)} failed: {exc}")
+    logger.info(f"_resolve_pmids_via_idconverter: resolved {len(resolved)}/{len(ids)} id(s) to a PMID")
+    return resolved
+
+
+def _normalize_doi(doi: str) -> str:
+    doi = doi.strip()
+    if doi.lower().startswith("https://doi.org/"):
+        doi = doi[len("https://doi.org/"):]
+    return doi.lower()
+
+
+def _fetch_authors_via_openalex(dois: list[str], chunk_size: int = 50) -> dict[str, str]:
+    """Fetch author names from OpenAlex for DOIs that don't resolve to a PMID.
+
+    Batched via `filter=doi:d1|d2|...`; one malformed DOI invalidates OpenAlex's
+    whole OR-filter query, so a failed batch is retried one DOI at a time.
+
+    Args:
+        dois: DOIs to look up.
+        chunk_size: DOIs per batched filter query.
+
+    Returns:
+        Mapping of normalized (lowercased, no "https://doi.org/" prefix) DOI
+        to "; "-joined author display names, for DOIs found.
+    """
+    import requests
+
+    logger.info(f"_fetch_authors_via_openalex: fetching authors for {len(dois)} DOI(s) via OpenAlex (chunk_size={chunk_size})")
+
+    authors_by_doi: dict[str, str] = {}
+
+    def _record(work: dict) -> None:
+        doi = work.get("doi")
+        if not doi:
+            return
+        names = [
+            a.get("author", {}).get("display_name")
+            for a in work.get("authorships", [])
+            if a.get("author", {}).get("display_name")
+        ]
+        if names:
+            authors_by_doi[_normalize_doi(doi)] = "; ".join(names)
+
+    for i in range(0, len(dois), chunk_size):
+        batch = dois[i:i + chunk_size]
+        filter_val = "|".join(batch)
+        url = f"https://api.openalex.org/works?filter=doi:{filter_val}&per-page=100"
+        try:
+            r = requests.get(url, timeout=30)
+            r.raise_for_status()
+            for work in r.json().get("results", []):
+                _record(work)
+        except Exception as exc:
+            logger.warning(f"misc_publications: OpenAlex batch {i}-{i + len(batch)} failed ({exc}) - retrying one-by-one")
+            for doi in batch:
+                clean_doi = doi.split("?")[0]  # a few stored DOIs have a stray query string appended
+                try:
+                    r = requests.get(f"https://api.openalex.org/works/https://doi.org/{clean_doi}", timeout=20)
+                    if r.status_code == 200:
+                        _record(r.json())
+                except Exception as exc2:
+                    logger.warning(f"misc_publications: OpenAlex lookup failed for DOI {doi!r}: {exc2}")
+    logger.info(f"_fetch_authors_via_openalex: resolved authors for {len(authors_by_doi)}/{len(dois)} DOI(s)")
+    return authors_by_doi
+
+
+def _enrich_misc_publication_authors(df: pd.DataFrame) -> pd.DataFrame:
+    """Upgrade Authors for rows PMC esummary alone left abbreviated or empty.
+
+    Three-step fallback for every row missing a PMID (its Authors can't yet be
+    trusted, since PMID is what most sources tie full names to):
+    1. Resolve a PMID from DOI, else from the PMCID in PubMed Central Link, via
+       NCBI's ID Converter - this also mutates PMID in place, so a later run's
+       _resolve_doc_id grouping (see staging/validate_fetched_publications.py)
+       can use it too.
+    2. Re-fetch full author names via PubMed efetch for every newly-resolved PMID.
+    3. For rows still short a PMID but with a DOI, fetch authors directly from
+       OpenAlex instead - no PMID needed for that path.
+
+    Network-dependent and runs on every normalize() call, like _fetch_go_aspects
+    does for scilite - there's no cache of prior resolutions across runs.
+    """
+    required = {"PMID", "DOI", "PubMed Central Link", "Authors"}
+    if not required.issubset(df.columns):
+        return df
+
+    has_pmid = df["PMID"].str.strip() != ""
+    missing = ~has_pmid
+    n_missing = int(missing.sum())
+    if not n_missing:
+        return df
+    logger.info(f"misc_publications: {n_missing} row(s) have no PMID - attempting DOI/PMCID -> PMID resolution")
+
+    doi_stripped = df["DOI"].str.strip()
+    pmcids = df["PubMed Central Link"].apply(
+        lambda link: (m.group(1) if (m := _PMC_ID_RE.search(_fix_pmc_link(str(link)))) else "")
+    )
+
+    dois_to_try = sorted(set(doi_stripped[missing & (doi_stripped != "")]))
+    doi_to_pmid = _resolve_pmids_via_idconverter(dois_to_try) if dois_to_try else {}
+
+    resolved_via_doi = missing & doi_stripped.map(lambda d: d in doi_to_pmid)
+    pmcids_to_try = sorted(set(pmcids[missing & ~resolved_via_doi & (pmcids != "")]))
+    pmcid_to_pmid = _resolve_pmids_via_idconverter(pmcids_to_try) if pmcids_to_try else {}
+
+    newly_resolved: dict[int, str] = {}
+    for idx in df.index[missing]:
+        pmid = doi_to_pmid.get(doi_stripped.at[idx]) or pmcid_to_pmid.get(pmcids.at[idx])
+        if pmid:
+            newly_resolved[idx] = pmid
+            df.at[idx, "PMID"] = pmid
+    logger.info(f"misc_publications: resolved {len(newly_resolved)}/{n_missing} missing PMID(s) via DOI/PMCID")
+
+    new_pmids = sorted(set(newly_resolved.values()))
+    full_authors = _fetch_full_authors_by_pmid(new_pmids) if new_pmids else {}
+    n_authors_from_pmid = 0
+    for idx, pmid in newly_resolved.items():
+        full = full_authors.get(pmid)
+        if full:
+            df.at[idx, "Authors"] = full
+            n_authors_from_pmid += 1
+    logger.info(f"misc_publications: upgraded Authors via efetch for {n_authors_from_pmid} newly-resolved PMID row(s)")
+
+    still_no_pmid = df["PMID"].str.strip() == ""
+    fallback_dois = sorted(set(doi_stripped[still_no_pmid & (doi_stripped != "")]))
+    openalex_authors = _fetch_authors_via_openalex(fallback_dois) if fallback_dois else {}
+    n_authors_from_openalex = 0
+    for idx in df.index[still_no_pmid]:
+        doi = doi_stripped.at[idx]
+        if not doi:
+            continue
+        full = openalex_authors.get(_normalize_doi(doi))
+        if full:
+            df.at[idx, "Authors"] = full
+            n_authors_from_openalex += 1
+    logger.info(f"misc_publications: upgraded Authors via OpenAlex (no PMID) for {n_authors_from_openalex} row(s)")
+
+    n_final_missing = int((df["PMID"].str.strip() == "").sum())
+    if n_final_missing:
+        logger.warning(
+            f"misc_publications: {n_final_missing} row(s) still have no PMID after DOI/PMCID resolution "
+            "- Authors left as-is wherever OpenAlex had no match either"
+        )
+    return df
 
 
 def _normalize_misc_publications(df: pd.DataFrame) -> pd.DataFrame:
@@ -623,6 +918,14 @@ def _normalize_misc_publications(df: pd.DataFrame) -> pd.DataFrame:
     it, not merged away. Any literal ';' inside free text is escaped to ',' first (same
     fix staging/combine_hits.py applies to Fetched With) so joining/splitting on ';'
     doesn't fragment one entry into two.
+
+    Keywords also goes through _normalize_list_field (unioned across the group, not
+    "longest wins") even though it's publication- not resource-specific: it's itself a
+    semicolon-delimited list, and different source rows for the same paper can each
+    contribute a different apostrophe Unicode variant for the same term (e.g. "Alzheimer's
+    disease" vs "Alzheimer’s disease") - only _normalize_list_field's per-token
+    apostrophe normalization collapses those back into one facet value; picking "longest
+    string" would just keep whichever variant happened to be longest, uncorrected.
 
     Publication-specific columns (Title, Abstract, Authors, PMID, DOI, ...) take the
     longest non-empty value across the group's rows - same paper, so these should already
@@ -694,9 +997,51 @@ def _normalize_misc_publications(df: pd.DataFrame) -> pd.DataFrame:
         rows.append(merged)
 
     result = pd.DataFrame(rows)
+    if "Keywords" in result.columns:
+        result["Keywords"] = _canonicalize_term_casing(result["Keywords"])
     logger.info(f"misc_publications: {len(confirmed)} confirmed (resource, publication) row(s) "
                 f"-> {len(result)} unique publication(s)")
+    result = _enrich_misc_publication_authors(result)
+    _log_residual_publication_duplicates(result)
     return result
+
+
+def _log_residual_publication_duplicates(df: pd.DataFrame) -> None:
+    """Flag same-paper rows that _resolve_doc_id's single-identifier grouping missed.
+
+    _resolve_doc_id (staging/validate_fetched_publications.py) groups each row by
+    exactly one identifier - PMC link, else PMID, else DOI, else Paperclip Doc ID -
+    unlike combine_hits.py's union-find, which merges on ANY shared identifier. Two
+    rows for the same paper that each only carry a *different* one of those (e.g. one
+    has a PMC link but no DOI, the other a DOI but no PMC link/PMID) get different
+    doc_ids and survive as separate rows here. This can't be fixed after the fact
+    inside this function (the grouping already happened) - it only logs, so a real
+    occurrence isn't silently shipped to tables/final/ unnoticed.
+    """
+    n_dupe_identifiers = 0
+    n_dupe_rows = 0
+    for col in ("PMID", "DOI"):
+        if col not in df.columns:
+            continue
+        values = df[col].str.strip()
+        if col == "DOI":
+            values = values.str.lower()
+        has_value = values != ""
+        counts = values[has_value].value_counts()
+        dupes = counts[counts > 1]
+        n_dupe_identifiers += len(dupes)
+        n_dupe_rows += int(dupes.sum())
+        for value, n in dupes.items():
+            titles = df.loc[has_value & (values == value), "Title"].tolist()
+            logger.error(
+                f"misc_publications: {col} {value!r} appears on {n} separate output rows - "
+                f"_resolve_doc_id likely split one paper into multiple rows because they don't "
+                f"all share the same identifier type. Titles: {titles}"
+            )
+    logger.info(
+        f"_log_residual_publication_duplicates: checked {len(df)} row(s) - "
+        f"{n_dupe_identifiers} identifier(s) split across {n_dupe_rows} row(s)"
+    )
 
 
 def _normalize_new_corpus(df: pd.DataFrame) -> pd.DataFrame:

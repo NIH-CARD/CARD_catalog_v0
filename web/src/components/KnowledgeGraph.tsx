@@ -28,10 +28,51 @@ interface EdgeData {
 interface CardNodeData {
   label: string;
   info?: ReactNode;
+  /** Square side length in px - only set when the caller supplies
+   * `nodeSize`, e.g. scaling by frequency in a value-node graph. Width and
+   * height are set equal and the label centers and wraps inside, so bigger
+   * nodes read as bigger square cards rather than a wider, flatter pill. */
+  size?: number;
+}
+
+/**
+ * Force a multi-word label onto (at least) two lines by breaking at the
+ * space closest to its midpoint - natural CSS wrapping only kicks in once a
+ * line overflows the box, which a short label (e.g. a two-word name) never
+ * does, so it would otherwise always render as a single line no matter how
+ * big the square is.
+ */
+function balancedTwoLineLabel(label: string): string {
+  const spaceIdxs = [...label].flatMap((c, i) => (c === " " ? [i] : []));
+  if (!spaceIdxs.length) return label;
+  const mid = label.length / 2;
+  const breakAt = spaceIdxs.reduce((best, i) =>
+    Math.abs(i - mid) < Math.abs(best - mid) ? i : best,
+  );
+  return label.slice(0, breakAt) + "\n" + label.slice(breakAt + 1);
 }
 
 function CardNode({ data }: NodeProps<CardNodeData>) {
-  const body = (
+  const body = data.size ? (
+    <div
+      className="flex items-center justify-center bg-white border border-slate-300 rounded px-1.5"
+      style={{ width: data.size, minHeight: data.size }}
+    >
+      {/* Explicit w-full: a flex-centered bare text node shrinks to its own
+          content width instead of filling the box, so long labels wrap into
+          a narrow column with dead space on either side. Forcing the wrapper
+          to the box's full width makes every line use the whole square. Font
+          size also scales with the box - otherwise a short label (which
+          never needs to wrap) just sits as a fixed-size word surrounded by a
+          big empty square instead of visibly filling more of it. */}
+      <div
+        className="w-full text-center break-words whitespace-pre-line"
+        style={{ fontSize: Math.max(10, Math.min(22, data.size / 9)) }}
+      >
+        {balancedTwoLineLabel(data.label)}
+      </div>
+    </div>
+  ) : (
     <div
       className="px-2 py-1 text-[11px] bg-white border border-slate-300 rounded text-center break-words"
       style={{ width: 160 }}
@@ -71,6 +112,9 @@ interface Props<T> {
   nodeInfo?: (row: T) => ReactNode;
   /** Optional lookup that turns an edge value (e.g. a URI) into structured metadata. */
   valueMeta?: (field: string, value: string) => ReactNode | null;
+  /** Optional per-row uniform size multiplier (1 = default), e.g. scaling by
+   * frequency in a value-node graph - omit to keep every node the same size. */
+  nodeSize?: (row: T) => number;
 }
 
 /**
@@ -87,6 +131,7 @@ export function KnowledgeGraph<T>({
   hideDisconnected = true,
   nodeInfo,
   valueMeta,
+  nodeSize,
 }: Props<T>) {
   const { nodes, edges, totalCandidates } = useMemo(() => {
     const sliced = rows.slice(0, maxNodes);
@@ -134,7 +179,14 @@ export function KnowledgeGraph<T>({
       .map((_, i) => i)
       .filter(keep);
     const V = visibleIdx.length;
-    const R = Math.max(160, V * 14);
+    const sizes = visibleIdx.map((origIdx) => (nodeSize ? nodeSize(sliced[origIdx]) : 160));
+    // The circle's circumference must fit every node's own diameter side by
+    // side (plus a margin) or neighboring nodes overlap - a single "biggest
+    // node" scale factor on the old radius formula isn't enough once nodes
+    // vary a lot in size, since it under-counts the combined footprint of
+    // several large nodes sitting next to each other on the ring.
+    const totalDiameter = sizes.reduce((sum, s) => sum + s, 0);
+    const R = Math.max(160, (totalDiameter * 1.4) / (2 * Math.PI));
 
     const ns: Node[] = visibleIdx.map((origIdx, layoutIdx) => {
       const r = sliced[origIdx];
@@ -144,6 +196,7 @@ export function KnowledgeGraph<T>({
         data: {
           label: String((r[nodeField] ?? "") || `#${origIdx}`),
           info: nodeInfo ? nodeInfo(r) : undefined,
+          size: nodeSize ? sizes[layoutIdx] : undefined,
         },
         position: {
           x: R * Math.cos((2 * Math.PI * layoutIdx) / Math.max(V, 1)),
@@ -171,7 +224,7 @@ export function KnowledgeGraph<T>({
     }));
 
     return { nodes: ns, edges: es, totalCandidates: N };
-  }, [rows, nodeField, edgeFields, minShared, maxNodes, hideDisconnected, nodeInfo]);
+  }, [rows, nodeField, edgeFields, minShared, maxNodes, hideDisconnected, nodeInfo, nodeSize]);
 
   const [hoverEdge, setHoverEdge] = useState<EdgeData | null>(null);
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
