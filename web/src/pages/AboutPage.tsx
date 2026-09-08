@@ -42,27 +42,28 @@ export function AboutPage() {
             </p>
             <ol className="text-sm space-y-2 list-decimal list-inside text-slate-700">
               <li>
-                <strong>Datasets:</strong> Search for single-cell RNA-seq + neuroimaging datasets.
-                The knowledge graph surfaces connected datasets (ROSMAP, AMP-AD, spatial
-                transcriptomics) she hadn't considered.
+                <strong>Connections:</strong> Joining SciLite gene annotations (TREM2) with Resources
+                turns up 219 papers dominated by postmortem-tissue and genomics infrastructure —
+                BioFINDER-2, the catalog's 2nd-largest resource, doesn't even crack the top 15.
               </li>
               <li>
-                <strong>Code Repositories:</strong> Filter for single-cell analysis tools. FAIR
-                compliance scores help her choose a well-maintained microglial subtype
-                classification pipeline.
+                <strong>Compare:</strong> Repeating the same join for APOE shows BioFINDER-2 IS its
+                #1 resource (9% of papers) — confirming TREM2's absence from biomarker cohorts is
+                real, not just a rare-resource artifact.
               </li>
               <li>
-                <strong>Publications:</strong> The knowledge graph connects 12 publications linking
-                microglial subtypes to Aβ plaque proximity. AI gap analysis confirms early-stage
-                dysfunction is understudied.
+                <strong>Code Repositories:</strong> Joining Software reveals two papers using an
+                open-source spatial-proteomics pipeline (MIBI-TOF) to image TREM2 protein directly
+                in postmortem microglia — a real, borrowable method, not just more sequencing.
               </li>
               <li>
-                <strong>Cellular Models:</strong> Filter iNDI lines for APP/PSEN1 mutations and
-                locate procurement links for validation experiments.
+                <strong>Resources:</strong> That method's tissue source is tagged Alzheimer's Disease
+                vs. Cognitively Normal Controls — never Preclinical AD. The tool exists; nobody's
+                pointed it at the presymptomatic window yet.
               </li>
               <li>
-                <strong>Export:</strong> Download filtered datasets, code, and publication lists for
-                her grant proposal and methods section.
+                <strong>Export:</strong> Her grant proposal isn't "build new infrastructure" anymore —
+                it's "borrow this open-source pipeline, and point it two years earlier than anyone has."
               </li>
             </ol>
           </div>
@@ -76,27 +77,23 @@ export function AboutPage() {
             </p>
             <ol className="text-sm space-y-2 list-decimal list-inside text-slate-700">
               <li>
-                <strong>Portfolio gaps:</strong> Filter datasets by funding agency; the knowledge
-                graph reveals strong genomics/proteomics coverage but limited metabolomics and
-                longitudinal imaging.
+                <strong>Connections:</strong> One query joining Grants (funder = Gates Ventures) with
+                Resources turns up 25 papers, all from 2025, with zero NIH-style grant numbers — a
+                private philanthropic bet, not a federal program.
               </li>
               <li>
-                <strong>FAIR monitoring:</strong> Code page shows 40 % of funded repos lack
-                dependency specifications — evidence for new reproducibility requirements in funding
-                calls.
+                <strong>Contrast:</strong> The Preclinical AD tag appears 6x the catalog baseline
+                (24% vs. 3.8%), while transcriptomics is below baseline (28% vs. 38%) despite
+                elevated genetics and proteomics — a deliberate tilt toward scalable blood/digital
+                biomarkers before symptoms start.
               </li>
               <li>
-                <strong>Emerging themes:</strong> Publication knowledge graph highlights
-                inflammasome activation, microbiome–gut–brain axis, and vascular contributions as
-                fast-growing areas with limited dataset coverage.
+                <strong>Check the mirror:</strong> The agency's own portfolio mix looks like the
+                transcriptomics-heavy catalog baseline Gates is tilting away from.
               </li>
               <li>
-                <strong>Cell model gaps:</strong> iNDI inventory shows TREM2/APOE variants are
-                under-represented despite growing publication interest — informs resource planning.
-              </li>
-              <li>
-                <strong>Export:</strong> Dataset gap analysis, FAIR compliance summary, and emerging
-                themes exported for agency leadership review.
+                <strong>Export:</strong> A portfolio-review line item, not a full pivot — is a
+                smaller, newer funder out-executing us on where the field is going?
               </li>
             </ol>
           </div>

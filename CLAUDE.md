@@ -184,6 +184,16 @@ Use `ClassVar` for `COLUMNS` — Pydantic v2 treats plain `list[str]` class attr
 - Never silently drop rows — invalid rows go to `tables/hits/rejected_{target}_{ts}.tsv` with a `_validation_errors` column.
 - React app loaders (`web/src/lib/loaders.ts`) fetch TSVs from `/data/*.tsv` client-side (via `papaparse`) — no server cache to invalidate; a stale table just means `sync-data` needs a rerun. (Streamlit's `app/` used `@st.cache_data(ttl=3600)` — legacy, not relevant to new work.)
 
+## Schema Reference — Read Before Any Cross-Table Query or Join
+
+Before writing an ad-hoc join, filter, or analysis against `tables/final/*.tsv` (pandas exploration, answering "how many X", reproducing a Connections-page query), read the app's own schema sources rather than guessing from a TSV header or grepping free text:
+
+- `web/src/pages/DocsPage.tsx`'s `TABLE_SCHEMAS` — the human-facing column list per table (same content shown on the live Docs page).
+- `web/src/lib/tableRegistry.ts`'s `TABLE_REGISTRY` — same tables, with multivalue/delimiter info per column (whether a field is a semicolon- or comma-joined list).
+- `web/src/lib/connectionsGraph.ts` — the real cross-table join model. `PUBLICATION_FIELDS` / `RESOURCE_FIELDS` / `CONCEPT_FIELDS` define the three join "domains" (publication via PMC ID/DOI, resource via Resource Name, concept via gene/bioentity) and exactly which column in each table carries that key. `FACET_COLUMNS` / `CONNECTABLE_COLUMNS` mark which columns are curated for filtering/joining — a column not listed there (e.g. free text like `*_context_from_paper`, `caption`, `description`) is not a valid join key even if it happens to contain a matchable string.
+
+Concretely: matching on `SciLite Annotations`' `Exact` text (raw entity-mention string) is a free-text proxy and produces noisy, hard-to-defend results — the real, curated join key for that table is `PMC ID` via the publication domain, combined with the `Type`/`Tag Name`/`Section` facets. Prefer the curated columns; treat a free-text match as a last resort to be flagged as such, not reported as equivalent to a real join.
+
 ## What Not To Do
 
 - **No `print()`** anywhere in pipeline or app code.
