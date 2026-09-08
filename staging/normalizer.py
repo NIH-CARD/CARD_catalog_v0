@@ -31,14 +31,20 @@ from typing import Any
 from urllib.parse import urlparse
 
 import pandas as pd
+from pydantic import ValidationError
 
 from staging.cache_utils import latest_final
+from staging.schemas import VALIDATED_TARGETS
 
 logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).parent.parent
 HITS_DIR = PROJECT_ROOT / "tables" / "hits"
 FINAL_DIR = PROJECT_ROOT / "tables" / "final"
+
+
+def _ts() -> str:
+    return datetime.now().strftime("%Y%m%d_%H%M%S")
 
 # ---------------------------------------------------------------------------
 # Column rename maps  (scraper column → schema field name with underscores)
@@ -1121,6 +1127,74 @@ _NORMALIZERS = {
 }
 
 # ---------------------------------------------------------------------------
+# Schema validation gate — see staging/schemas.py's VALIDATED_TARGETS for why
+# this only fires for a small, explicitly-audited set of targets rather than
+# every SCHEMA_REGISTRY entry.
+# ---------------------------------------------------------------------------
+def _validate_rows(df: pd.DataFrame, target: str) -> pd.DataFrame:
+    """Validate every row of a normalized DataFrame against its Pydantic model,
+    if `target` is in VALIDATED_TARGETS - a no-op (returns df unchanged) for
+    any other target, matching current (unvalidated) behavior.
+
+    A row that fails validation is pulled out entirely - never written to
+    tables/final/ - and the full batch of failures (original columns plus a
+    `_validation_errors` column describing what failed) goes to
+    tables/hits/rejected_{target}_{timestamp}.tsv instead, so nothing is
+    silently dropped.
+
+    Args:
+        df: Already column-renamed and field-normalized rows.
+        target: Normalizer target name.
+
+    Also enforces `model.COLUMNS` on the way out - any column in `df` not
+    listed there (a raw-scraper artifact like pub_supplementary's `a_attr_*`,
+    or pub_grants'/pub_software's mis-flattened-list fragments) is dropped,
+    and any COLUMNS entry missing from `df` is added back as all-blank. This
+    is CLAUDE.md's documented "the normalizer uses COLUMNS to order output"
+    behavior - also never actually wired up before this same audit.
+
+    Returns:
+        Only the rows that passed validation, with columns reduced/reordered
+        to exactly `model.COLUMNS`.
+    """
+    model = VALIDATED_TARGETS.get(target)
+    if model is None:
+        return df
+
+    valid_rows: list[int] = []
+    rejected_rows: list[dict] = []
+    for idx, row in df.iterrows():
+        try:
+            model.model_validate(row.to_dict())
+            valid_rows.append(idx)
+        except ValidationError as exc:
+            errors = "; ".join(f"{e['loc'][0]}: {e['msg']}" for e in exc.errors())
+            rejected_rows.append({**row.to_dict(), "_validation_errors": errors})
+
+    if rejected_rows:
+        rejected_path = HITS_DIR / f"rejected_{target}_{_ts()}.tsv"
+        pd.DataFrame(rejected_rows).to_csv(rejected_path, sep="\t", index=False)
+        logger.warning(f"{target}: {len(rejected_rows)} row(s) failed schema validation → {rejected_path.name}")
+
+    logger.info(f"{target}: {len(valid_rows)} valid, {len(rejected_rows)} rejected (of {len(df)})")
+
+    # Blank Title is common and legitimate (see 2026-09-08 session's page_navigation/
+    # paperclip investigation - non-PMC or non-PubMed sources genuinely have no
+    # fetchable title yet) - warn with a count so it stays visible, but never reject
+    # a row for it alone; the row is still a real, verified publication.
+    if "Title" in df.columns:
+        n_blank_title = int((df.loc[valid_rows, "Title"].str.strip() == "").sum())
+        if n_blank_title:
+            logger.warning(f"{target}: {n_blank_title} valid row(s) have a blank Title")
+
+    kept = df.loc[valid_rows]
+    dropped_cols = [c for c in kept.columns if c not in model.COLUMNS]
+    if dropped_cols:
+        logger.warning(f"{target}: dropping {len(dropped_cols)} column(s) not in the schema: {dropped_cols}")
+    return kept.reindex(columns=model.COLUMNS, fill_value="")
+
+
+# ---------------------------------------------------------------------------
 # Main normalize() function
 # ---------------------------------------------------------------------------
 
@@ -1159,6 +1233,11 @@ def normalize(
     df = normalizer_fn(df)
 
     logger.info(f"[normalizer] {target}: {len(df)} rows")
+
+    # Schema validation — hard-reject to tables/hits/rejected_{target}_*.tsv.
+    # Only fires for targets in staging/schemas.py's VALIDATED_TARGETS; a
+    # no-op for every other target for now (see that registry's docstring).
+    df = _validate_rows(df, target)
 
     if df.empty:
         logger.warning(f"No rows for {target} — output not written")

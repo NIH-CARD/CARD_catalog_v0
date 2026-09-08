@@ -3,149 +3,149 @@ CARD CATALOG - MAIN DESCRIPTIVE STATISTICS TABLE
 ================================================================================
 
 Resource Types Distribution:
-  study: 192 (80.3%)
-  data repository: 39 (16.3%)
-  biorepository: 16 (6.7%)
-  data catalog: 7 (2.9%)
+  study: 190 (80.2%)
+  data repository: 39 (16.5%)
+  biorepository: 16 (6.8%)
+  data catalog: 7 (3.0%)
 
 DATASETS
 --------------------------------------------------------------------------------
-Total Number of Datasets: 239
+Total Number of Datasets: 237
 
 Coarse Data Types:
-  clinical: 186 (31.4%)
-  genetics: 89 (15.0%)
-  transcriptomics: 89 (15.0%)
-  longitudinal: 78 (13.2%)
+  clinical: 184 (31.3%)
+  genetics: 89 (15.1%)
+  transcriptomics: 89 (15.1%)
+  longitudinal: 76 (12.9%)
   proteomics: 53 (9.0%)
-  imaging: 50 (8.4%)
+  imaging: 50 (8.5%)
   epigenomics: 24 (4.1%)
   metabolomics: 23 (3.9%)
 
 Sample Size Statistics:
-  Mean: 65454
+  Mean: 66026
   Median: 770
   Min: 1
   Max: 5897780
-  Std Dev: 487717
+  Std Dev: 489833
 
 FAIR Compliance Levels:
-  Excellent: 126 (52.7%)
-  Strong: 58 (24.3%)
-  Good: 55 (23.0%)
+  Excellent: 126 (53.2%)
+  Strong: 58 (24.5%)
+  Good: 53 (22.4%)
 
 
 PUBLICATIONS
 --------------------------------------------------------------------------------
-Total Publications: 1634
+Total Publications: 4979
 
 Five Most Prolific Studies:
-  National Alzheimer's Coordinating Center: 150
-  Alzheimer's Disease Neuroimaging Initiative: 149
-  Parkinson's Progression Markers Initiative: 149
-  Memory and Aging Project: 129
-  Religious Orders Study: 93
+  The English Longitudinal Study of Ageing: 365
+  Swedish BioFINDER-2 Study: 222
+  Religious Orders Study: 205
+  Memory and Aging Project: 189
+  National Alzheimer's Coordinating Center: 178
 
 Five Most Occurring Authors:
-  Oskar Hansson: 148
-  A Bennett David: 130
-  Erik Stomrud: 121
-  Sebastian Palmqvist: 119
-  Niklas Mattsson-Carlgren: 111
+  Hansson Oskar: 228
+  Bennett David: 224
+  Stomrud Erik: 144
+  Zetterberg Henrik: 137
+  Palmqvist Sebastian: 134
 
 Five Most Occurring Affiliations:
-  Rush Alzheimer's Disease Center, Rush University Medical Center, Chicago, Illinois, USA.: 73
-  Department of Radiology, Mayo Clinic, Rochester, Minnesota, USA.: 48
-  Department of Neurology, Mayo Clinic, Rochester, Minnesota, USA.: 48
-  Clinical Memory Research Unit, Department of Clinical Sciences Malmö, Lund University, Lund, Sweden.: 47
-  Department of Quantitative Health Sciences, Mayo Clinic, Rochester, Minnesota, USA.: 33
+  Rush Alzheimer's Disease Center, Rush University Medical Center, Chicago, Illinois, USA.: 69
+  Department of Neurology, Mayo Clinic, Rochester, Minnesota, USA.: 55
+  Department of Radiology, Mayo Clinic, Rochester, Minnesota, USA.: 50
+  Clinical Memory Research Unit, Department of Clinical Sciences Malmö, Lund University, Lund, Sweden.: 37
+  Department of Quantitative Health Sciences, Mayo Clinic, Rochester, Minnesota, USA.: 30
 
 Top 10 Keywords:
-  disease: 1020 (8.0%)
-  cognitive: 347 (2.7%)
-  dementia: 293 (2.3%)
-  biomarkers: 199 (1.6%)
-  amyloid: 182 (1.4%)
-  learning: 148 (1.2%)
-  impairment: 141 (1.1%)
-  tau: 131 (1.0%)
-  decline: 117 (0.9%)
-  analysis: 109 (0.9%)
+  disease: 949 (6.1%)
+  cognitive: 382 (2.5%)
+  dementia: 318 (2.0%)
+  amyloid: 192 (1.2%)
+  biomarkers: 174 (1.1%)
+  aging: 162 (1.0%)
+  impairment: 160 (1.0%)
+  tau: 148 (1.0%)
+  learning: 147 (0.9%)
+  study: 136 (0.9%)
 
 Data Completeness Distribution from PubMed API:
-  Mean: 91.0%
-  Median: 100.0%
-  Std Dev: 12.6%
+  Mean: 60.0%
+  Median: 40.0%
+  Std Dev: 29.4%
   Distribution:
-    0-25%: 1
-    26-50%: 10
-    51-75%: 84
-    76-100%: 1539
+    0-25%: 309
+    26-50%: 2554
+    51-75%: 107
+    76-100%: 2009
 
 
 CODE REPOSITORIES
 --------------------------------------------------------------------------------
-Total Repositories: 1008
+Total Repositories: 1903
 
 Top Programming Languages:
-  Python: 289 (28.7%)
-  Jupyter Notebook: 244 (24.2%)
-  R: 117 (11.6%)
-  HTML: 48 (4.8%)
-  JavaScript: 38 (3.8%)
-  MATLAB: 32 (3.2%)
-  TypeScript: 29 (2.9%)
-  C++: 20 (2.0%)
-  Java: 13 (1.3%)
-  Shell: 12 (1.2%)
+  Python: 531 (27.9%)
+  Jupyter Notebook: 371 (19.5%)
+  R: 360 (18.9%)
+  HTML: 83 (4.4%)
+  MATLAB: 77 (4.0%)
+  C++: 54 (2.8%)
+  JavaScript: 44 (2.3%)
+  TypeScript: 38 (2.0%)
+  C: 33 (1.7%)
+  Shell: 32 (1.7%)
 
 Top 10 Keywords from Tooling:
-  python: 466 (46.2%)
-  data: 309 (30.7%)
-  learning: 208 (20.6%)
-  programming: 173 (17.2%)
-  language: 165 (16.4%)
-  visualization: 133 (13.2%)
-  machine: 133 (13.2%)
-  packages: 137 (13.6%)
-  model: 125 (12.4%)
-  specific: 136 (13.5%)
+  python: 855 (47.4%)
+  data: 576 (31.9%)
+  package: 328 (18.2%)
+  programming: 419 (23.2%)
+  language: 415 (23.0%)
+  learning: 322 (17.8%)
+  version: 238 (13.2%)
+  visualization: 250 (13.9%)
+  management: 239 (13.2%)
+  file: 234 (13.0%)
 
 Top 10 Keywords from Data Types:
-  data: 822 (81.5%)
-  clinical: 400 (39.7%)
-  brain: 318 (31.5%)
-  mri: 220 (21.8%)
-  imaging: 212 (21.0%)
-  disease: 201 (19.9%)
-  neuroimaging: 146 (14.5%)
-  format: 121 (12.0%)
-  genetic: 120 (11.9%)
-  images: 95 (9.4%)
+  data: 1647 (93.7%)
+  clinical: 660 (37.6%)
+  brain: 499 (28.4%)
+  sequencing: 318 (18.1%)
+  files: 294 (16.7%)
+  format: 320 (18.2%)
+  mri: 327 (18.6%)
+  imaging: 322 (18.3%)
+  gene: 291 (16.6%)
+  disease: 298 (17.0%)
 
 Top 10 Keywords from Code Summary:
-  data: 471 (46.8%)
-  brain: 359 (35.7%)
-  disease: 386 (38.3%)
-  code: 409 (40.6%)
-  learning: 289 (28.7%)
-  project: 257 (25.5%)
-  system: 199 (19.8%)
-  uses: 210 (20.9%)
-  models: 171 (17.0%)
-  provides: 204 (20.3%)
+  data: 981 (51.6%)
+  brain: 542 (28.5%)
+  code: 662 (34.8%)
+  disease: 577 (30.4%)
+  learning: 432 (22.7%)
+  provides: 480 (25.2%)
+  cell: 202 (10.6%)
+  pipeline: 317 (16.7%)
+  gene: 237 (12.5%)
+  models: 299 (15.7%)
 
 FAIR Component Completeness (% with component):
-  README: 98.8%
-  Dependencies: 26.8%
-  Container: 6.9%
-  Environment Spec: 5.0%
-  Version Info: 3.8%
+  README: 99.2%
+  Dependencies: 24.6%
+  Container: 8.1%
+  Environment Spec: 5.6%
+  Version Info: 3.1%
 
 Mean FAIR Score by Language (0-10 scale):
-  Python: 6.51/10 (n=289 repos)
-  Jupyter Notebook: 6.11/10 (n=244 repos)
-  R: 5.83/10 (n=117 repos)
+  Python: 6.63/10 (n=531 repos)
+  Jupyter Notebook: 6.18/10 (n=371 repos)
+  R: 5.91/10 (n=360 repos)
 
 
 HUMAN CELLULAR MODELS
@@ -158,8 +158,8 @@ Cell Models per Condition:
   Frontotemporal dementia: 21 (3.4%)
   Alzheimer's disease, late onset: 12 (1.9%)
   Frontotemporal dementia with parkinsonism: 11 (1.8%)
-  Parkinson's disease, early onset: 9 (1.4%)
   Spastic paraplegia: 9 (1.4%)
+  Parkinson's disease, early onset: 9 (1.4%)
   Leukoencephalopathy with vanishing white matter: 9 (1.4%)
   Inclusion body myopathy with Paget disease and frontotemporal dementia (IBMPFD): 8 (1.3%)
   Alzheimer's disease, early onset: 8 (1.3%)

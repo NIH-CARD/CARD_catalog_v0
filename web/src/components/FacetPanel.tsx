@@ -45,17 +45,31 @@ export function Facet<T>({
       .sort((a, b) => b.count - a.count);
   }, [rows, spec]);
 
+  // Compiled as a case-insensitive regex, same convention as the main search
+  // box (lib/filter.ts) — an ordinary word behaves like substring search, but
+  // "rna.*seq" or "rna[-_ ]?seq" also works. Invalid regex (e.g. an
+  // unbalanced "(" mid-typing) yields no matches rather than throwing.
+  const queryRe = useMemo(() => {
+    const q = query.trim();
+    if (!q) return null;
+    try {
+      return new RegExp(q, "i");
+    } catch {
+      return null;
+    }
+  }, [query]);
+
   const filteredCounts = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    if (!needle) return counts;
+    if (!query.trim()) return counts;
+    if (!queryRe) return [];
     return counts.filter(({ value }) => {
-      if (value.toLowerCase().includes(needle)) return true;
+      if (queryRe.test(value)) return true;
       const label = display(value);
-      return label !== value && label.toLowerCase().includes(needle);
+      return label !== value && queryRe.test(label);
     });
     // display intentionally not in deps — it's derived from spec which is in deps
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [counts, query, spec]);
+  }, [counts, query, queryRe, spec]);
 
   const visible = query.trim() ? filteredCounts : filteredCounts.slice(0, 100);
 

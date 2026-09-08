@@ -200,15 +200,26 @@ def analyze_datasets():
 def analyze_publications():
     """Analyze publications and return statistics."""
     print("Analyzing Publications...")
-    df = load_latest_file("pubmed_central_*.tsv")
+    df = load_latest_file("misc_publications_*.tsv")
 
     stats = {}
 
     stats['n_pubs'] = len(df)
 
-    # Five most prolific studies
+    # Five most prolific studies - Resource Name is semicolon-delimited
+    # multivalue (a publication can be linked to several co-studied
+    # resources), same convention the app's own facet counts use
+    # (web/src/lib/tableRegistry.ts: col("Resource Name", true, ";")).
+    # Counting the raw column as one exact string undercounts every
+    # resource that appears in combined rows.
     if 'Resource Name' in df.columns:
-        stats['top_studies'] = df['Resource Name'].value_counts().head(5).to_dict()
+        study_counts = Counter()
+        for val in df['Resource Name'].dropna():
+            for name in str(val).split(';'):
+                name = name.strip()
+                if name:
+                    study_counts[name] += 1
+        stats['top_studies'] = dict(study_counts.most_common(5))
 
     # Five most occurring authors
     if 'Authors' in df.columns:

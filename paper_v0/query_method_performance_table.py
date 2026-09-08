@@ -20,8 +20,11 @@ sys.path.append(str(Path(__file__).parent.parent))
 from staging.publication_glue import compute_query_method_performance, _REAL_VERDICTS
 
 # Frozen source snapshot the published table/chart were generated from - override to
-# re-run against a newer misc_publications hits file.
-INPUT_PATH = Path(__file__).parent.parent / "tables" / "hits" / "misc_publications_20260819_154636.tsv"
+# re-run against a newer misc_publications hits file. Bumped to the 0824 hits file to
+# add page_navigation as a tracked method (see _TAGGED_METHOD_RE in
+# staging/validate_fetched_publications.py) - the 0819 snapshot predates that fix and
+# would bucket every page_navigation row as "other" (silently excluded below).
+INPUT_PATH = Path(__file__).parent.parent / "tables" / "hits" / "misc_publications_20260824_080447.tsv"
 OUTPUT_DIR = Path(__file__).parent / "v0.4"
 
 # Display column order/labels matching the published table.
@@ -38,10 +41,18 @@ COLUMN_LABELS = {
 }
 # Row order matching the published table - kept explicit so re-runs against new data
 # don't reorder silently.
-METHOD_ORDER = ["paperclip", "v5", "v4", "v2", "original", "v3"]
+METHOD_ORDER = ["paperclip", "v5", "v4", "v2", "original", "v3", "page navigation"]
 
 # Bubble fill/stroke color matching the published chart's accent color.
 ACCENT_COLOR = "#2a78d6"
+
+# paperclip and page navigation aren't PMC-query-string variants like v2-v5/
+# original - paperclip searches across pmc/biorxiv/medrxiv/arxiv/trials/
+# patents/proteins, and page navigation crawls a resource's own public site
+# directly - so both get their own "open web" color rather than being lumped
+# in with the PMC-query series they otherwise share an axis with.
+OPEN_WEB_COLOR = "#3d9a4f"
+OPEN_WEB_METHODS = {"paperclip", "page navigation"}
 
 # PubMed-only (title/abstract search, no PMC full text) results from a separate
 # diagnostic experiment (docs/plans/paperclip/experiments/coverage_comparison_queries.ipynb,
@@ -141,20 +152,30 @@ def write_chart(perf: pd.DataFrame, total_resources: int, pm_perf: pd.DataFrame)
     - no assumed/placeholder values.
     """
     print("Building chart...")
-    # Shared size scale across both series so bubble areas stay comparable.
+    # Shared size scale across all series so bubble areas stay comparable.
     max_confirmed = max(perf["confirmed"].max(), pm_perf["confirmed"].max())
-    sizes = 800 * (perf["confirmed"] / max_confirmed)
-    pm_sizes = 800 * (pm_perf["confirmed"] / max_confirmed)
+
+    is_open_web = perf["method"].isin(OPEN_WEB_METHODS)
+    perf_pmc = perf[~is_open_web]
+    perf_open_web = perf[is_open_web]
 
     fig, ax = plt.subplots(figsize=(9, 6))
     ax.scatter(
-        perf["precision_pct"], perf["resource_coverage_pct"],
-        s=sizes, alpha=0.35, edgecolors=ACCENT_COLOR, facecolors=ACCENT_COLOR, linewidths=2,
+        perf_pmc["precision_pct"], perf_pmc["resource_coverage_pct"],
+        s=800 * (perf_pmc["confirmed"] / max_confirmed), alpha=0.35,
+        edgecolors=ACCENT_COLOR, facecolors=ACCENT_COLOR, linewidths=2,
+        zorder=3,
+    )
+    ax.scatter(
+        perf_open_web["precision_pct"], perf_open_web["resource_coverage_pct"],
+        s=800 * (perf_open_web["confirmed"] / max_confirmed), alpha=0.35,
+        edgecolors=OPEN_WEB_COLOR, facecolors=OPEN_WEB_COLOR, linewidths=2,
         zorder=3,
     )
     ax.scatter(
         pm_perf["precision_pct"], pm_perf["coverage_pct"],
-        s=pm_sizes, alpha=0.35, edgecolors=PUBMED_ONLY_COLOR, facecolors=PUBMED_ONLY_COLOR,
+        s=800 * (pm_perf["confirmed"] / max_confirmed), alpha=0.35,
+        edgecolors=PUBMED_ONLY_COLOR, facecolors=PUBMED_ONLY_COLOR,
         linewidths=2, zorder=3,
     )
 
@@ -169,6 +190,7 @@ def write_chart(perf: pd.DataFrame, total_resources: int, pm_perf: pd.DataFrame)
         "v2": (-38, 22),
         "v3": (0, -32),
         "original": (0, -36),
+        "page navigation": (0, 28),
     }
     for _, row in perf.iterrows():
         dx, dy = label_offsets[row["method"]]
@@ -206,9 +228,11 @@ def write_chart(perf: pd.DataFrame, total_resources: int, pm_perf: pd.DataFrame)
     # conflating the two in one legend would misrepresent color-swatch size as meaningful.
     color_handles = [
         ax.scatter([], [], s=110, alpha=0.35, edgecolors=ACCENT_COLOR, facecolors=ACCENT_COLOR,
-                   linewidths=2, label="PMC"),
+                   linewidths=2, label="PubMed Central"),
         ax.scatter([], [], s=110, alpha=0.35, edgecolors=PUBMED_ONLY_COLOR, facecolors=PUBMED_ONLY_COLOR,
-                   linewidths=2, label="PM"),
+                   linewidths=2, label="PubMed"),
+        ax.scatter([], [], s=110, alpha=0.35, edgecolors=OPEN_WEB_COLOR, facecolors=OPEN_WEB_COLOR,
+                   linewidths=2, label="Misc"),
     ]
     # Both legends sit fully outside the axes (right side, stacked), so neither
     # overlaps plotted data or each other.
@@ -224,18 +248,28 @@ def write_chart(perf: pd.DataFrame, total_resources: int, pm_perf: pd.DataFrame)
                    facecolors="none", linewidths=1.2, label=f"{v:,}")
         for v in size_values
     ]
-    ax.legend(
+    # Invisible trailing entry (no marker, empty label) purely to push the
+    # legend box's bottom edge further down - it occupies a row's worth of
+    # space without being seen or shifting the three real entries above it.
+    size_handles.append(ax.scatter([], [], s=0, facecolors="none", edgecolors="none", label=" "))
+    size_legend = ax.legend(
         handles=size_handles, title="Confirmed hits", loc="upper left",
         bbox_to_anchor=(1.02, 0.62), fontsize=9, title_fontsize=9, framealpha=0.9,
-        labelspacing=1.3,
+        labelspacing=2.2,
     )
 
+    # bbox_inches="tight" doesn't reliably measure a legend re-added via
+    # ax.add_artist() (color_legend here) unless it's listed explicitly -
+    # without this, wider labels like "PubMed Central" get clipped at the
+    # figure edge instead of the canvas expanding to fit them.
+    extra_artists = (color_legend, size_legend)
+
     png_path = OUTPUT_DIR / "query_method_performance_chart.png"
-    plt.savefig(png_path, dpi=500, bbox_inches="tight", facecolor="white")
+    plt.savefig(png_path, dpi=500, bbox_inches="tight", bbox_extra_artists=extra_artists, facecolor="white")
     print(f"Wrote {png_path}")
 
     pdf_path = OUTPUT_DIR / "query_method_performance_chart.pdf"
-    plt.savefig(pdf_path, bbox_inches="tight", facecolor="white")
+    plt.savefig(pdf_path, bbox_inches="tight", bbox_extra_artists=extra_artists, facecolor="white")
     print(f"Wrote {pdf_path}")
 
     plt.close(fig)

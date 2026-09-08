@@ -194,12 +194,12 @@ export function HomePage() {
         <h4 className="text-center text-sm font-semibold text-slate-600 uppercase tracking-wider mb-4">
           Supported By
         </h4>
-        <div className="grid grid-cols-3 gap-6 items-center mb-8 max-w-3xl mx-auto px-4">
+        <div className="grid grid-cols-3 gap-6 items-center mb-8 max-w-5xl mx-auto px-4">
           <div className="flex justify-center min-w-0">
             <img
               src="/logos/ADDI.png"
               alt="ADDI"
-              className="object-contain w-full h-auto max-h-24"
+              className="object-contain w-auto h-auto max-h-10 max-w-[240px]"
             />
           </div>
           <div className="flex justify-center min-w-0">
@@ -231,14 +231,14 @@ export function HomePage() {
         <hr className="border-slate-200 mb-8" />
 
         {/* Introduction */}
-        <p className="text-slate-700 max-w-3xl mx-auto text-center mb-10">
+        <p className="text-slate-700 max-w-5xl mx-auto text-center mb-10">
           A comprehensive catalog of research resources with related publications,
           code repositories, and cellular models for Alzheimer&apos;s Disease and
           Related Dementias (ADRD) research.
         </p>
 
         {/* Navigation menu: one row per section, counts folded in */}
-        <div className="max-w-3xl mx-auto border border-slate-200 rounded-lg divide-y divide-slate-200 bg-white mb-4">
+        <div className="max-w-5xl mx-auto border border-slate-200 rounded-lg divide-y divide-slate-200 bg-white mb-4">
           {features.map((f) => (
             <MenuRow key={f.to} {...f} />
           ))}
@@ -253,7 +253,7 @@ export function HomePage() {
         <hr className="border-slate-200 my-8" />
 
         {/* Footer */}
-        <footer className="text-center text-sm text-slate-500 space-y-3 pb-8 max-w-3xl mx-auto">
+        <footer className="text-center text-sm text-slate-500 space-y-3 pb-8 max-w-5xl mx-auto">
           <p>
             CARD Catalog is part of the Center for Alzheimer&apos;s and Related
             Dementias (CARD) initiative to improve data sharing and collaboration

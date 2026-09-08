@@ -524,6 +524,55 @@ def resolve_missing_pmcids(df: pd.DataFrame, ncbi_api_key: str | None = None) ->
     return df
 
 
+def _resolve_refs_to_pmid(refs: list[dict], ncbi_api_key: str | None = None) -> dict[int, str]:
+    """Resolve each ref's DOI or PMC ID to a PMID via NCBI's ID Converter (the same
+    idconv endpoint resolve_missing_pmcids uses the other direction, DOI -> PMC ID) -
+    lets extract_new_corpus_publications() feed a DOI/PMC-only reference into
+    _fetch_pmid_metadata()'s efetch, which only accepts a PMID.
+
+    Args:
+        refs: {"DOI": ...} or {"PubMed Central Link": ...} dicts - bare-PMID refs
+            never reach this function (see extract_new_corpus_publications).
+        ncbi_api_key: Raises the NCBI rate limit if given.
+
+    Returns:
+        {index into refs: resolved PMID} - only for refs idconv had a PMID for.
+    """
+    import requests
+
+    id_to_indices: dict[str, list[int]] = {}
+    for i, ref in enumerate(refs):
+        ident = ref.get("DOI") or _pmcid_from(ref.get("PubMed Central Link", ""))
+        if ident:
+            id_to_indices.setdefault(ident, []).append(i)
+    if not id_to_indices:
+        return {}
+
+    suffix = f"&api_key={ncbi_api_key}" if ncbi_api_key else ""
+    resolved: dict[int, str] = {}
+    distinct_ids = sorted(id_to_indices)
+    batch_size = 200  # idconv's documented per-request cap
+    for b in range(0, len(distinct_ids), batch_size):
+        batch = distinct_ids[b:b + batch_size]
+        url = f"https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids={','.join(batch)}&format=json{suffix}"
+        try:
+            resp = requests.get(url, timeout=30)
+            resp.raise_for_status()
+            for rec in resp.json().get("records", []):
+                pmid = rec.get("pmid")
+                if not pmid:
+                    continue
+                pmid = str(pmid)  # idconv returns an int; bare-PMID refs store a str
+                for field in ("doi", "pmcid"):
+                    ident = rec.get(field)
+                    if ident in id_to_indices:
+                        for idx in id_to_indices[ident]:
+                            resolved[idx] = pmid
+        except Exception as e:
+            logger.warning(f"[new_corpus] idconv batch {b}-{b + len(batch)} failed: {e}")
+    return resolved
+
+
 def extract_new_corpus_publications(
     new_corpus_path: Path | None = None,
     inventory_path: Path | None = None,
@@ -550,17 +599,30 @@ def extract_new_corpus_publications(
     shared PMID/DOI/PMC ID/Paperclip Doc ID - the dedup already happens there, not here).
     Only a PMID efetch can't resolve at all (not in PubMed) is dropped.
 
+    DOI/PMC-only refs (the other ~71%) get the same full-metadata backfill, just via one
+    extra hop: _resolve_refs_to_pmid() converts the DOI/PMC ID to a PMID first (NCBI's ID
+    Converter), then that PMID joins the same _fetch_pmid_metadata() batch bare PMIDs use.
+    These rows were previously kept with only whatever identifier the page's citation text
+    exposed - no Title/Abstract/Authors - even though they're verified against full text
+    downstream just like any other row (confirmed by spot-checking several resources'
+    DOI/PMC-only refs against the verification cache: all genuinely "confirmed", not noise).
+    A ref idconv has nothing for (e.g. a preprint with no PubMed record) simply keeps its
+    DOI/PMC identifier and stays without Title/Abstract, same as before - it is not dropped,
+    unlike a bare PMID efetch can't resolve at all, since it already carries a real identifier.
+
     Args:
         new_corpus_path: new_corpus_*.tsv to read (default: latest in tables/final/).
         inventory_path: resources-inventory-* file for the legacy URL->resource fallback
             join (default: latest in tables/, via validate_fetched_publications' own finder).
-        ncbi_api_key: Passed through to _fetch_pmid_metadata (raises the NCBI rate limit).
+        ncbi_api_key: Passed through to _fetch_pmid_metadata/_resolve_refs_to_pmid (raises
+            the NCBI rate limit).
 
     Returns:
         DataFrame with Resource Name, Abbreviation, Diseases Included, Coarse/Granular Data
         Modality, Fetched With, PMID/DOI/PubMed Central Link (whichever were resolved), and
-        - for efetch-resolved rows only - Title/Abstract/Authors/Affiliations/Keywords/
-        Publication Date. One row per discovered reference. Empty if nothing extractable.
+        - for every reference resolved to a PMID, bare or via DOI/PMC - Title/Abstract/
+        Authors/Affiliations/Keywords/Publication Date. One row per discovered reference.
+        Empty if nothing extractable.
     """
     new_corpus_path = new_corpus_path or _latest("new_corpus_*.tsv")
     if not new_corpus_path:
@@ -592,7 +654,8 @@ def extract_new_corpus_publications(
     )
 
     rows = []
-    pending_pmid_rows = []  # rows still needing efetch resolution before being kept/dropped
+    pending_pmid_rows = []  # bare-PMID refs - need PMID -> full metadata resolution
+    pending_lookup_rows = []  # DOI/PMC-only refs - need DOI/PMC -> PMID resolution first
     n_no_ref = 0
     n_no_resource = 0
     for _, row in df.iterrows():
@@ -628,11 +691,26 @@ def extract_new_corpus_publications(
                 if "PMID" in ref and len(ref) == 1:
                     pending_pmid_rows.append(out)
                 else:
-                    rows.append(out)
+                    pending_lookup_rows.append(out)
+
+    # DOI/PMC-only refs never had a PMID to efetch with, so historically they kept
+    # only whatever identifier the page's citation text exposed - no Title/Abstract/
+    # Authors, even though they go on to be verified against full text just like any
+    # other row (confirmed by spot-checking several against the verification cache).
+    # Resolve them to a PMID via the same ID Converter service resolve_missing_pmcids
+    # uses (the other direction), then fold them into the one efetch batch below - a
+    # ref idconv has nothing for (e.g. a preprint with no PubMed record) simply keeps
+    # its DOI/PMC identifier and stays without Title/Abstract, same as before; only a
+    # bare PMID efetch can't resolve at all is dropped.
+    lookup_to_pmid = _resolve_refs_to_pmid(pending_lookup_rows, ncbi_api_key=ncbi_api_key) if pending_lookup_rows else {}
+    if pending_lookup_rows:
+        logger.info(f"[new_corpus] resolved {len(lookup_to_pmid)}/{len(pending_lookup_rows)} "
+                    f"DOI/PMC-only reference(s) to a PMID via idconv")
+
+    all_pmids = sorted({r["PMID"] for r in pending_pmid_rows} | set(lookup_to_pmid.values()))
+    metadata = _fetch_pmid_metadata(all_pmids, ncbi_api_key=ncbi_api_key) if all_pmids else {}
 
     if pending_pmid_rows:
-        distinct_pmids = sorted({r["PMID"] for r in pending_pmid_rows})
-        metadata = _fetch_pmid_metadata(distinct_pmids, ncbi_api_key=ncbi_api_key)
         n_unresolved = 0
         for pending in pending_pmid_rows:
             fetched = metadata.get(pending["PMID"])
@@ -647,6 +725,20 @@ def extract_new_corpus_publications(
             rows.append(resolved)
         logger.info(f"[new_corpus] resolved {len(pending_pmid_rows) - n_unresolved}/{len(pending_pmid_rows)} "
                     f"bare-PMID reference(s) via efetch ({n_unresolved} not found in PubMed - dropped)")
+
+    if pending_lookup_rows:
+        n_backfilled = 0
+        for i, out in enumerate(pending_lookup_rows):
+            fetched = metadata.get(lookup_to_pmid.get(i, ""))
+            if fetched:
+                for key in ("PubMed Central Link", "DOI", "Title", "Abstract",
+                            "Authors", "Affiliations", "Keywords", "Publication Date"):
+                    if fetched.get(key):
+                        out[key] = fetched[key]
+                n_backfilled += 1
+            rows.append(out)  # kept regardless - already has a real DOI/PMC identifier
+        logger.info(f"[new_corpus] backfilled full metadata for {n_backfilled}/{len(pending_lookup_rows)} "
+                    f"DOI/PMC-identified reference(s)")
 
     result = pd.DataFrame(rows)
     msg = f"[new_corpus] extracted {len(result)} publication reference(s); dropped {n_no_ref} unparseable cell(s)"

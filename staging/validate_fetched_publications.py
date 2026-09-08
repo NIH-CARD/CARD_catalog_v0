@@ -1246,7 +1246,7 @@ _SMART_QUOTES = str.maketrans({"“": '"', "”": '"'})
 # search_pubmed() tags original/v2/v3/v4 too (see search_pubmed and _search_pubmed_fanout) -
 # older combine_hits files predating that fix still have untagged original/v2/v3/v4 rows,
 # which fall into "other" since they're indistinguishable from each other without a tag.
-_TAGGED_METHOD_RE = re.compile(r"^(paperclip|v5|v4|v3|v2|original):")
+_TAGGED_METHOD_RE = re.compile(r"^(paperclip|v5|v4|v3|v2|original|page navigation):")
 
 # The 8 pre-merge files that fed into the first combine_hits.tsv's "other" bucket - q1-q4
 # map to query_method original/v2/v3/v4 (confirmed via the method labels in

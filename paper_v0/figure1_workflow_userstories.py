@@ -202,13 +202,15 @@ def generate_new_hire_story():
     Unlike Panels B/C, every number here comes from an actual run against
     tables/final/ - see the HOW lines to reproduce each phase. Phase 1 comes
     from a Connections freeze (Publications filtered to Resource Name =
-    Religious Orders Study, 211 rows) and its AI Read. Phase 2 mirrors the
-    original GP2 story's own structure - +Join SciLite Annotations (facet
-    Type=Gene_Proteins) on those same 211 papers, count per gene (Exact) -
-    162/211 tag >=1 gene; top raw Exact values are tau 110, APOE 98, Aβ 72,
-    APP 50, antibody 46, amyloid-β 40, antibodies 36, TDP-43 33, GFAP 30,
-    apolipoprotein E 28, Tau 28, TREM2 27 (generic non-gene terms like
-    "antibody"/"antibodies"/"transcription factor" and case/synonym
+    Religious Orders Study, 205 rows - was 211 before scripts/dedup_
+    publications_preprints.py collapsed 6 preprint/published-version
+    duplicate pairs out of the ROS subset) and its AI Read. Phase 2 mirrors
+    the original GP2 story's own structure - +Join SciLite Annotations
+    (facet Type=Gene_Proteins) on those same 205 papers, count per gene
+    (Exact) - 157/205 tag >=1 gene; top raw Exact values are tau 105, APOE
+    95, Aβ 70, APP 48, antibody 45, amyloid-β 37, antibodies 34, TDP-43 30,
+    GFAP 28, apolipoprotein E 28, Tau 27, TREM2 26 (generic non-gene terms
+    like "antibody"/"antibodies"/"transcription factor" and case/synonym
     fragments of the same entity - tau/Tau, Aβ/amyloid-β/amyloid beta -
     excluded from the panel's six-item summary; kept as the field's own
     canonical AD axis: tau, APOE, APP, TDP-43, GFAP, TREM2). Was previously
@@ -232,8 +234,8 @@ major post-mortem brain-bank studies.
     │       Study -> Freeze -> AI Read                                    │
     │                                                                     │
     │  ┌────────────────┐                   ┌─────────────────────────┐   │
-    │  │  Publications  │──────  > Freeze   │  211 papers - 57% also  │   │
-    │  │      Page      │        (211 rows) │  tag Memory and Aging.  │   │
+    │  │  Publications  │──────  > Freeze   │  205 papers - 58% also  │   │
+    │  │      Page      │        (205 rows) │  tag Memory and Aging.  │   │
     │  │  5,086 papers  │                   │  Top co-resource: MAP.  │   │
     │  └────────────────┘                   └─────────────────────────┘   │
     │         │                                                           │
@@ -248,14 +250,14 @@ major post-mortem brain-bank studies.
                                    ▼
     ┌─────────────────────────────────────────────────────────────────────┐
     │  PHASE 2: STRATIFY BY GENE (Scientific Read's next step B)          │
-    │  HOW: Connections -> +Join SciLite Annotations on the 211 ROS       │
+    │  HOW: Connections -> +Join SciLite Annotations on the 205 ROS       │
     │       papers (facet: Type=Gene_Proteins) -> count per gene (Exact)  │
     │                                                                     │
     │  ┌──────────────┐                   ┌───────────────────────────┐   │
-    │  │  ROS papers  │──── > Join        │  162/211 papers tag a     │   │
-    │  │  (211, from  │      by PMC ID    │  gene: tau 110 · APOE     │   │
-    │  │   Phase 1)   │      (Gene facet) │  98 · APP 50 · TDP-43     │   │
-    │  │              │                   │  33 · GFAP 30 · TREM2 27  │   │
+    │  │  ROS papers  │──── > Join        │  157/205 papers tag a     │   │
+    │  │  (205, from  │      by PMC ID    │  gene: tau 105 · APOE     │   │
+    │  │   Phase 1)   │      (Gene facet) │  95 · APP 48 · TDP-43     │   │
+    │  │              │                   │  30 · GFAP 28 · TREM2 26  │   │
     │  └──────────────┘                   └───────────────────────────┘   │
     └─────────────────────────────────────────────────────────────────────┘
                                    │
