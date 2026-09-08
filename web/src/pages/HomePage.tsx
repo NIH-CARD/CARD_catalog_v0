@@ -50,12 +50,20 @@ function MenuRow({ to, icon, label, caption, count }: Feature) {
   );
 }
 
+// Keyed by annotation_summary.json's own "stages" keys (set by the pipeline,
+// not tableRegistry.ts) - STAGE_LABELS below maps those to the table's
+// current display name without needing the JSON regenerated.
 const STAGE_ROUTES: Record<string, string> = {
   Datasets: "/annotations",
   "Supplementary Files": "/annotations/supplementary",
   Grants: "/annotations/grants",
   Software: "/annotations/software",
   Models: "/annotations/models",
+};
+
+const STAGE_LABELS: Record<string, string> = {
+  Datasets: "Cited Datasets",
+  Software: "Software Mentions",
 };
 
 function AnnotationsRow({ summary }: { summary: AnnotationSummary | null }) {
@@ -85,7 +93,7 @@ function AnnotationsRow({ summary }: { summary: AnnotationSummary | null }) {
             {Object.entries(summary?.stages ?? {}).map(([stage, count]) => (
               <li key={stage} className="flex items-baseline justify-between text-base">
                 <Link to={STAGE_ROUTES[stage] ?? "/annotations"} className="text-slate-700 hover:text-accent">
-                  {stage}
+                  {STAGE_LABELS[stage] ?? stage}
                 </Link>
                 <span className="tabular-nums text-slate-500">{count.toLocaleString()}</span>
               </li>

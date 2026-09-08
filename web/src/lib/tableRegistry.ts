@@ -115,7 +115,7 @@ export const TABLE_REGISTRY: readonly TableMeta[] = [
     ],
   },
   {
-    name: "Datasets",
+    name: "Cited Datasets",
     route: "/annotations",
     loadRows: () => loadPubDatasets() as unknown as Promise<Row[]>,
     columns: [
@@ -163,7 +163,7 @@ export const TABLE_REGISTRY: readonly TableMeta[] = [
     ],
   },
   {
-    name: "Software",
+    name: "Software Mentions",
     route: "/annotations/software",
     loadRows: () => loadPubSoftware() as unknown as Promise<Row[]>,
     columns: [
@@ -259,10 +259,10 @@ export interface JoinSuggestion {
 }
 
 const JOIN_SUGGESTIONS: readonly JoinSuggestion[] = [
-  { tableA: "Datasets", fieldA: "source_url", tableB: "Publications", fieldB: "PubMed Central Link" },
+  { tableA: "Cited Datasets", fieldA: "source_url", tableB: "Publications", fieldB: "PubMed Central Link" },
   { tableA: "Supplementary Files", fieldA: "source_url", tableB: "Publications", fieldB: "PubMed Central Link" },
   { tableA: "Grants", fieldA: "source_url", tableB: "Publications", fieldB: "PubMed Central Link" },
-  { tableA: "Software", fieldA: "source_url", tableB: "Publications", fieldB: "PubMed Central Link" },
+  { tableA: "Software Mentions", fieldA: "source_url", tableB: "Publications", fieldB: "PubMed Central Link" },
   { tableA: "Models", fieldA: "source_url", tableB: "Publications", fieldB: "PubMed Central Link" },
   { tableA: "SciLite Annotations", fieldA: "PMC ID", tableB: "Publications", fieldB: "PubMed Central Link", extract: "pmcid" },
   { tableA: "Code Repositories", fieldA: "Resource Name", tableB: "Resources", fieldB: "Resource Name" },

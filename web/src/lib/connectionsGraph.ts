@@ -34,10 +34,10 @@ const PUBLICATION_FIELDS: Record<string, FieldSource[]> = {
     { field: "PubMed Central Link", extract: publicationKey },
     { field: "DOI", extract: publicationKey },
   ],
-  Datasets: [{ field: "source_url", extract: publicationKey }],
+  "Cited Datasets": [{ field: "source_url", extract: publicationKey }],
   "Supplementary Files": [{ field: "source_url", extract: publicationKey }],
   Grants: [{ field: "source_url", extract: publicationKey }],
-  Software: [{ field: "source_url", extract: publicationKey }],
+  "Software Mentions": [{ field: "source_url", extract: publicationKey }],
   Models: [{ field: "source_url", extract: publicationKey }],
   // Europe PMC's SciLite API is PMC-ID-keyed only - no DOI path exists here.
   "SciLite Annotations": [{ field: "PMC ID", extract: publicationKey }],
@@ -166,10 +166,10 @@ const FACET_COLUMNS: Record<string, string[]> = {
   Resources: ["Resource Type", "Diseases Included", "Coarse Data Modality", "Granular Data Modality", "Is Part Of"],
   Publications: ["Resource Name", "Keywords", "Authors", "Publication Year"],
   "Code Repositories": ["Resource Name", "Languages", "Data Types", "Tooling", "Biomedical Relevance"],
-  Datasets: ["data_repository", "citation_type", "dataset_keywords"],
+  "Cited Datasets": ["data_repository", "citation_type", "dataset_keywords"],
   "Supplementary Files": ["file_extension", "content_type", "source_section"],
   Grants: ["funder_name", "grant_number", "recipient"],
-  Software: ["software_name", "version", "mention_type"],
+  "Software Mentions": ["software_name", "version", "mention_type"],
   Models: ["model_name", "version", "mention_type"],
   "SciLite Annotations": ["Type", "Section", "Tag Name"],
   "Human Cellular Models": ["Gene", "Condition", "Parental Line", "Genotype"],
@@ -217,10 +217,10 @@ const CONNECTABLE_COLUMNS: Record<string, string[]> = {
   Resources: ["Coarse Data Modality", "Granular Data Modality", "Diseases Included", "Resource Type", "Is Part Of"],
   Publications: ["Authors", "Affiliations", "Keywords", "Publication Year"],
   "Code Repositories": ["Repository Link", "Owner", "Contributors", "Languages", "Data Types", "Tooling", "FAIR Issues", "FAIR Score"],
-  Datasets: ["dataset_identifier", "data_repository", "dataset_keywords", "citation_type", "access_mode"],
+  "Cited Datasets": ["dataset_identifier", "data_repository", "dataset_keywords", "citation_type", "access_mode"],
   "Supplementary Files": ["content_type", "source_section", "file_extension"],
   Grants: ["funder_name", "grant_number", "recipient"],
-  Software: ["software_name", "url"],
+  "Software Mentions": ["software_name", "url"],
   Models: ["model_name", "url"],
   "SciLite Annotations": ["Type", "Tag Name", "Exact", "Section", "Provider", "Tag URI"],
   "Human Cellular Models": ["Parental Line", "Gene Variant", "Genotype", "dbSNP", "Condition"],
@@ -238,7 +238,7 @@ export function nativeColumnsFor(table: string): ColumnMeta[] {
 }
 
 /** Namespaced wide-table column key for a merged-in table's column, e.g.
- * "Datasets: dataset_identifier" - namespaced so two merged tables can't
+ * "Cited Datasets: dataset_identifier" - namespaced so two merged tables can't
  * collide on a same-named column, and so it's obvious in the Table/Graph
  * view where a column came from. */
 export function mergedFieldKey(table: string, field: string): string {

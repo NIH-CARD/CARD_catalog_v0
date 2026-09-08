@@ -1,10 +1,24 @@
 import { Link } from "react-router-dom";
 import { PageShell } from "../components/PageShell";
 
+const SECTIONS = [
+  {
+    id: "user-stories",
+    label: "User Stories",
+    children: [
+      { id: "story-1", label: "Story 1 — New Hire Onboarding" },
+      { id: "story-2", label: "Story 2 — Biomedical Researcher" },
+      { id: "story-3", label: "Story 3 — Program Officer" },
+    ],
+  },
+  { id: "project-history", label: "Project History" },
+  { id: "contact", label: "Contact and Updates" },
+];
+
 export function AboutPage() {
   return (
     <PageShell>
-    <div className="max-w-3xl mx-auto space-y-12 text-slate-800">
+    <div className="space-y-12 text-slate-800">
 
       {/* Overview */}
       <section>
@@ -23,18 +37,73 @@ export function AboutPage() {
           Looking for table schemas, FAIR scoring rules, or pipeline methodology instead? See{" "}
           <Link to="/docs" className="text-accent hover:underline">Docs</Link>.
         </p>
+        <nav className="mt-4 text-sm">
+          <ul className="list-disc list-inside space-y-1">
+            {SECTIONS.map(({ id, label, children }) => (
+              <li key={id}>
+                <a href={`#${id}`} className="text-accent hover:underline">
+                  {label}
+                </a>
+                {children && (
+                  <ul className="list-disc list-inside space-y-1 ml-5 mt-1">
+                    {children.map((child) => (
+                      <li key={child.id}>
+                        <a href={`#${child.id}`} className="text-accent hover:underline">
+                          {child.label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            ))}
+          </ul>
+        </nav>
       </section>
 
       <hr className="border-slate-200" />
 
       {/* User Stories */}
-      <section>
+      <section id="user-stories">
         <h2 className="text-xl font-semibold mb-5">User Stories</h2>
         <div className="space-y-8">
 
-          <div>
+          <div id="story-1">
             <h3 className="font-semibold mb-2 text-slate-700">
-              Story 1 — Biomedical Researcher: From Hypothesis to Publication
+              Story 1 — New Hire Onboarding: Getting Oriented on ROS
+            </h3>
+            <p className="text-xs text-slate-500 mb-3 italic">
+              Jordan Reyes, first week at a new lab, keeps hearing "ROS" and wants to know
+              what it actually is.
+            </p>
+            <ol className="text-sm space-y-2 list-decimal list-inside text-slate-700">
+              <li>
+                <strong>Publications:</strong> Filtering Resource Name = Religious Orders Study
+                and freezing the results turns up 211 papers — 57% of which also tag Memory and
+                Aging Project (MAP), with MAP as the top co-resource.
+              </li>
+              <li>
+                <strong>Scientific Read:</strong> ROS and MAP turn out to be near-identical
+                sister cohorts, routinely analyzed together as one unit — "ROSMAP" — not two
+                separate resources.
+              </li>
+              <li>
+                <strong>Connections:</strong> Joining SciLite gene annotations onto the 211 ROS
+                papers shows 162/211 tag a gene or protein — led by tau (110) and APOE (98),
+                then APP (50), TDP-43 (33), GFAP (30), and TREM2 (27).
+              </li>
+              <li>
+                <strong>Outcome:</strong> ROS's gene/protein signal is the canonical AD
+                molecular axis — tau and APOE lead, with APP, TDP-43, GFAP, and TREM2 close
+                behind. It reads as post-mortem neuropathology evidence, not a living-cohort
+                biomarker signal.
+              </li>
+            </ol>
+          </div>
+
+          <div id="story-2">
+            <h3 className="font-semibold mb-2 text-slate-700">
+              Story 2 — Biomedical Researcher: From Hypothesis to Publication
             </h3>
             <p className="text-xs text-slate-500 mb-3 italic">
               Dr. Sarah Chen is investigating the role of microglial dysfunction in early-stage
@@ -42,58 +111,58 @@ export function AboutPage() {
             </p>
             <ol className="text-sm space-y-2 list-decimal list-inside text-slate-700">
               <li>
-                <strong>Connections:</strong> Joining SciLite gene annotations (TREM2) with Resources
-                turns up 219 papers dominated by postmortem-tissue and genomics infrastructure —
+                <strong>Connections:</strong> Joining SciLite gene annotations (TREM2) with
+                Resources turns up 219 AD/Preclinical-linked papers dominated by
+                postmortem-tissue and genomics infrastructure (AMP-AD, ROS/MAP, ADGC, ADSP) —
                 BioFINDER-2, the catalog's 2nd-largest resource, doesn't even crack the top 15.
               </li>
               <li>
-                <strong>Compare:</strong> Repeating the same join for APOE shows BioFINDER-2 IS its
-                #1 resource (9% of papers) — confirming TREM2's absence from biomarker cohorts is
-                real, not just a rare-resource artifact.
+                <strong>Compare:</strong> Repeating the same join for APOE (1,254 papers) shows
+                BioFINDER-2 IS the #1 resource there, at 9% of the subset — confirming TREM2's
+                absence from biomarker cohorts is real, not just a rare-resource artifact.
               </li>
               <li>
-                <strong>Code Repositories:</strong> Joining Software reveals two papers using an
-                open-source spatial-proteomics pipeline (MIBI-TOF) to image TREM2 protein directly
-                in postmortem microglia — a real, borrowable method, not just more sequencing.
+                <strong>Code Repositories:</strong> Joining Software onto the same TREM2/AD
+                papers reveals two papers (same tissue bank, overlapping author team) using an
+                open-source spatial-proteomics pipeline (MIBI-TOF) to image TREM2 protein
+                directly in postmortem microglia — a real, borrowable method, not just more
+                sequencing.
               </li>
               <li>
-                <strong>Resources:</strong> That method's tissue source is tagged Alzheimer's Disease
-                vs. Cognitively Normal Controls — never Preclinical AD. The tool exists; nobody's
-                pointed it at the presymptomatic window yet.
-              </li>
-              <li>
-                <strong>Export:</strong> Her grant proposal isn't "build new infrastructure" anymore —
-                it's "borrow this open-source pipeline, and point it two years earlier than anyone has."
+                <strong>Outcome:</strong> TREM2 showed the gap; these two papers showed a way to
+                close it. Her proposal isn't "build new infrastructure" — it's "borrow this
+                pipeline, and point it two years earlier than anyone has."
               </li>
             </ol>
           </div>
 
-          <div>
+          <div id="story-3">
             <h3 className="font-semibold mb-2 text-slate-700">
-              Story 2 — Program Officer: Portfolio Analysis and Strategic Planning
+              Story 3 — Program Officer: Portfolio Analysis and Strategic Planning
             </h3>
             <p className="text-xs text-slate-500 mb-3 italic">
-              Dr. Michael Torres manages ADRD research portfolio strategy at a funding agency.
+              Dr. Michael Torres manages ADRD research portfolio strategy at a funding agency,
+              and a peer philanthropic funder just entered the space.
             </p>
             <ol className="text-sm space-y-2 list-decimal list-inside text-slate-700">
               <li>
-                <strong>Connections:</strong> One query joining Grants (funder = Gates Ventures) with
-                Resources turns up 25 papers, all from 2025, with zero NIH-style grant numbers — a
-                private philanthropic bet, not a federal program.
+                <strong>Connections:</strong> One query joining Grants (funder = Gates Ventures)
+                with Resources — filtered to Alzheimer's Disease or Preclinical AD — turns up 25
+                papers, all from 2025, with zero NIH-style grant numbers: a private philanthropic
+                initiative, not a federal program.
               </li>
               <li>
                 <strong>Contrast:</strong> The Preclinical AD tag appears 6x the catalog baseline
                 (24% vs. 3.8%), while transcriptomics is below baseline (28% vs. 38%) despite
-                elevated genetics and proteomics — a deliberate tilt toward scalable blood/digital
-                biomarkers before symptoms start.
+                elevated genetics and proteomics — a deliberate tilt toward fluid and digital
+                biomarkers in presymptomatic populations, not the postmortem-tissue
+                transcriptomics that dominates the field.
               </li>
               <li>
-                <strong>Check the mirror:</strong> The agency's own portfolio mix looks like the
-                transcriptomics-heavy catalog baseline Gates is tilting away from.
-              </li>
-              <li>
-                <strong>Export:</strong> A portfolio-review line item, not a full pivot — is a
-                smaller, newer funder out-executing us on where the field is going?
+                <strong>Outcome:</strong> Gates is interested in presymptomatic screening while the
+                field's own baseline still leans postmortem-tissue transcriptomics — the same
+                blind spot Dr. Chen (Story 2) found independently from the science side. Peer to
+                track, or sign we're behind? Our own portfolio — unchecked.
               </li>
             </ol>
           </div>
@@ -103,7 +172,7 @@ export function AboutPage() {
       <hr className="border-slate-200" />
 
       {/* Project History */}
-      <section>
+      <section id="project-history">
         <h2 className="text-xl font-semibold mb-3">Project History</h2>
         <p className="text-sm text-slate-700">
           CARD Catalog began as a <strong>Streamlit</strong> app (v0), which validated the
@@ -125,7 +194,7 @@ export function AboutPage() {
       <hr className="border-slate-200" />
 
       {/* Contact */}
-      <section>
+      <section id="contact">
         <h2 className="text-xl font-semibold mb-3">Contact and Updates</h2>
         <p className="text-sm text-slate-700 mb-4">
           <strong>Mike A. Nalls PhD</strong> —{" "}

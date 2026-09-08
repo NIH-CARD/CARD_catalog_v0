@@ -66,7 +66,7 @@ function SubNav() {
   return (
     <nav className="flex gap-2 border-b border-slate-200 mb-4">
       <NavLink to="/annotations" end className={itemCls}>
-        📦 Datasets
+        📦 Cited Datasets
       </NavLink>
       <NavLink to="/annotations/supplementary" className={itemCls}>
         📎 Supplementary
@@ -75,7 +75,7 @@ function SubNav() {
         💰 Grants
       </NavLink>
       <NavLink to="/annotations/software" className={itemCls}>
-        🧩 Software
+        🧩 Software Mentions
       </NavLink>
       <NavLink to="/annotations/models" className={itemCls}>
         🤗 Models

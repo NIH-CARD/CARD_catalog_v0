@@ -1,0 +1,26 @@
+### Cited Datasets only (original)
+
+| FAIR Level | With DOI | Without DOI | Total | % With DOI |
+| --- | --- | --- | --- | --- |
+| Excellent | 57 | 65 | 122 | 46.7% |
+| Strong | 29 | 31 | 60 | 48.3% |
+| Good | 16 | 39 | 55 | 29.1% |
+| Total | 102 | 135 | 237 | 43.0% |
+
+### Software Mentions only
+
+| FAIR Level | With DOI | Without DOI | Total | % With DOI |
+| --- | --- | --- | --- | --- |
+| Excellent | 43 | 79 | 122 | 35.2% |
+| Strong | 19 | 41 | 60 | 31.7% |
+| Good | 11 | 44 | 55 | 20.0% |
+| Total | 73 | 164 | 237 | 30.8% |
+
+### Combined (Cited Datasets OR Software Mentions)
+
+| FAIR Level | With DOI | Without DOI | Total | % With DOI |
+| --- | --- | --- | --- | --- |
+| Excellent | 61 | 61 | 122 | 50.0% |
+| Strong | 30 | 30 | 60 | 50.0% |
+| Good | 21 | 34 | 55 | 38.2% |
+| Total | 112 | 125 | 237 | 47.3% |

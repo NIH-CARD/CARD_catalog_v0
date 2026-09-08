@@ -8,10 +8,10 @@ describe("TABLE_REGISTRY", () => {
       "Resources",
       "Publications",
       "Code Repositories",
-      "Datasets",
+      "Cited Datasets",
       "Supplementary Files",
       "Grants",
-      "Software",
+      "Software Mentions",
       "Models",
       "SciLite Annotations",
       "Human Cellular Models",
@@ -50,11 +50,11 @@ describe("TABLE_REGISTRY", () => {
 
 describe("suggestJoin", () => {
   it("finds the known-good pairing regardless of argument order", () => {
-    const forward = suggestJoin("Datasets", "Publications");
-    const backward = suggestJoin("Publications", "Datasets");
+    const forward = suggestJoin("Cited Datasets", "Publications");
+    const backward = suggestJoin("Publications", "Cited Datasets");
 
     expect(forward).toEqual({
-      tableA: "Datasets",
+      tableA: "Cited Datasets",
       fieldA: "source_url",
       tableB: "Publications",
       fieldB: "PubMed Central Link",

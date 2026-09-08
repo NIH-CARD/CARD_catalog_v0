@@ -166,27 +166,27 @@ def generate_program_officer_story():
 ║         Dr. Michael Torres: Portfolio Analysis & Strategic Planning           ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 
-GOAL: A peer philanthropic funder just entered this space - a strategic bet
-worth tracking, or a sign we're behind?
+GOAL: A peer philanthropic funder just entered this space - a research
+direction worth tracking, or a sign we're behind?
 
     ┌─────────────────────────────────────────────────────────────────────┐
-    │  PHASE 1: WHAT IS GATES VENTURES ACTUALLY BETTING ON?               │
+    │  PHASE 1: WHAT IS GATES VENTURES ACTUALLY INTERESTED IN?            │
     │  HOW: Connections -> +Join Grants (facet: funder_name = Gates       │
     │       Ventures) -> +Join Resources (facet: Diseases Included =      │
     │       Alzheimer's Disease or Preclinical AD) -> Freeze -> AI Read   │
     │                                                                     │
-    │  25 papers, all from 2025, zero NIH-style grant numbers (100%) -    │
-    │  a private philanthropic bet, not a federal program. The Preclinical│
-    │  AD tag appears 6x the catalog baseline (24% vs. 3.8%); transcript- │
-    │  omics is LOWER than baseline (28% vs. 38%) despite genetics and    │
-    │  proteomics both being elevated - a specific tilt toward fluid and  │
-    │  digital biomarkers in presymptomatic populations, not the          │
-    │  postmortem-tissue transcriptomics that dominates the field.        │
+    │  25 papers, all from 2025, zero NIH-style grant numbers (100%) - a  │
+    │  private philanthropic initiative, not a federal program. The       │
+    │  Preclinical AD tag appears 6x the catalog baseline (24% vs. 3.8%); │
+    │  transcriptomics is LOWER than baseline (28% vs. 38%) despite       │
+    │  genetics and proteomics both being elevated - a specific tilt      │
+    │  toward fluid and digital biomarkers in presymptomatic populations, │
+    │  not the postmortem-tissue transcriptomics that dominates the field.│
     └─────────────────────────────────────────────────────────────────────┘
                                    │
                                    ▼
     ┌─────────────────────────────────────────────────────────────────────┐
-    │  OUTCOME (Torres): Gates is betting on presymptomatic screening     │
+    │  OUTCOME (Torres): Gates is interested in presymptomatic screening  │
     │    while the field's own baseline still leans postmortem-tissue     │
     │    transcriptomics - the same blind spot a researcher independently │
     │    found from the science side (Panel B).                           │
@@ -197,60 +197,74 @@ worth tracking, or a sign we're behind?
 
 
 def generate_new_hire_story():
-    """Panel A: User Story 1 - New DataTecnica Hire (introductory story).
+    """Panel A: User Story 1 - New Lab Hire (introductory story).
 
     Unlike Panels B/C, every number here comes from an actual run against
-    tables/final/ (misc_publications + scilite_annotations), not an
-    illustrative placeholder - see the HOW lines to reproduce each phase.
+    tables/final/ - see the HOW lines to reproduce each phase. Phase 1 comes
+    from a Connections freeze (Publications filtered to Resource Name =
+    Religious Orders Study, 211 rows) and its AI Read. Phase 2 mirrors the
+    original GP2 story's own structure - +Join SciLite Annotations (facet
+    Type=Gene_Proteins) on those same 211 papers, count per gene (Exact) -
+    162/211 tag >=1 gene; top raw Exact values are tau 110, APOE 98, Aβ 72,
+    APP 50, antibody 46, amyloid-β 40, antibodies 36, TDP-43 33, GFAP 30,
+    apolipoprotein E 28, Tau 28, TREM2 27 (generic non-gene terms like
+    "antibody"/"antibodies"/"transcription factor" and case/synonym
+    fragments of the same entity - tau/Tau, Aβ/amyloid-β/amyloid beta -
+    excluded from the panel's six-item summary; kept as the field's own
+    canonical AD axis: tau, APOE, APP, TDP-43, GFAP, TREM2). Was previously
+    the GP2/Jordan-Reyes-onboarding story; swapped to Religious Orders Study
+    (ROS) - see the session's pasted Connections output for the source
+    numbers.
     """
     story = """
 ╔═══════════════════════════════════════════════════════════════════════════════╗
-║         PANEL A: USER STORY 1 - NEW HIRE ONBOARDING WORKFLOW                  ║
-║              Jordan Reyes: Getting Oriented on GP2                            ║
+║              PANEL A: USER STORY 1 - NEW HIRE ONBOARDING WORKFLOW             ║
+║                     Jordan Reyes: Getting Oriented on ROS                     ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 
-GOAL: First week at DataTecnica - GP2 comes up constantly. Figure out,
-in plain terms, what it is, who runs it, and what it actually studies.
+GOAL: First week at a new lab - ROS comes up constantly. Figure out,
+in plain terms, what it actually is, and how it fits the field's other
+major post-mortem brain-bank studies.
 
     ┌─────────────────────────────────────────────────────────────────────┐
-    │  PHASE 1: CRYSTALLIZE - WHAT IS GP2?                                │
-    │  HOW: Publications -> filter Resource Name = GP2 -> Freeze ->       │
-    │       AI Read                                                       │
+    │  PHASE 1: CRYSTALLIZE - WHAT IS ROS?                                │
+    │  HOW: Publications -> filter Resource Name = Religious Orders       │
+    │       Study -> Freeze -> AI Read                                    │
     │                                                                     │
-    │  ┌──────────────┐                  ┌─────────────────────────┐      │
-    │  │ Publications │────── > Freeze   │  85 papers - 100% PD,   │      │
-    │  │     Page     │        (85 rows) │  0% AD overlap. Top     │      │
-    │  │ 5,086 papers │                  │  co-resource: AMP-PD    │      │
-    │  └──────────────┘                  └─────────────────────────┘      │
-    │         │                                       |                   │
+    │  ┌────────────────┐                   ┌─────────────────────────┐   │
+    │  │  Publications  │──────  > Freeze   │  211 papers - 57% also  │   │
+    │  │      Page      │        (211 rows) │  tag Memory and Aging.  │   │
+    │  │  5,086 papers  │                   │  Top co-resource: MAP.  │   │
+    │  └────────────────┘                   └─────────────────────────┘   │
+    │         │                                                           │
     │         └────── > Scientific Read ──────────────┘                   │
-    │         ┌────────────────────────────────────────┐                  │
-    │         │  Nalls Mike and Vitale Dan - Jordan's  │                  │
-    │         │  own team leads - are right there in   │                  │
-    │         │  the author list.                      │                  │
-    │         └────────────────────────────────────────┘                  │
+    │         ┌──────────────────────────────────┐                        │
+    │         │  ROS and MAP are near-identical  │                        │
+    │         │  sister cohorts - routinely      │                        │
+    │         │  analyzed together as ROSMAP.    │                        │
+    │         └──────────────────────────────────┘                        │
     └─────────────────────────────────────────────────────────────────────┘
                                    │
                                    ▼
     ┌─────────────────────────────────────────────────────────────────────┐
     │  PHASE 2: STRATIFY BY GENE (Scientific Read's next step B)          │
-    │  HOW: Connections -> +Join SciLite Annotations on the 85 GP2        │
+    │  HOW: Connections -> +Join SciLite Annotations on the 211 ROS       │
     │       papers (facet: Type=Gene_Proteins) -> count per gene (Exact)  │
     │                                                                     │
-    │  ┌──────────────┐                  ┌─────────────────────────┐      │
-    │  │  GP2 papers  │────── > Join     │  66/85 papers tag a PD  │      │
-    │  │  (85, from   │        SciLite   │  gene: LRRK2 45 · GBA1  │      │
-    │  │   Phase 1)   │        by Gene   │  37 · SNCA 36 · PRKN 31 │      │
-    │  │              │                  │  · PINK1 25 · VPS35 22  │      │
-    │  └──────────────┘                  └─────────────────────────┘      │
+    │  ┌──────────────┐                   ┌───────────────────────────┐   │
+    │  │  ROS papers  │──── > Join        │  162/211 papers tag a     │   │
+    │  │  (211, from  │      by PMC ID    │  gene: tau 110 · APOE     │   │
+    │  │   Phase 1)   │      (Gene facet) │  98 · APP 50 · TDP-43     │   │
+    │  │              │                   │  33 · GFAP 30 · TREM2 27  │   │
+    │  └──────────────┘                   └───────────────────────────┘   │
     └─────────────────────────────────────────────────────────────────────┘
                                    │
                                    ▼
     ┌─────────────────────────────────────────────────────────────────────┐
-    │  OUTCOME: GP2 centers on PD's two biggest risk genes, LRRK2 and     │
-    │    GBA1, plus PRKN/PINK1 - a shared mitochondrial quality-control   │
-    │    pathway that causes early-onset PD when both copies fail. The    │
-    │    new hire now knows which genes matter here, and roughly why.     │
+    │  OUTCOME: ROS's gene/protein signal is the canonical AD molecular   │
+    │    axis - tau and APOE lead, with APP, TDP-43, GFAP and TREM2       │
+    │    close behind. The new hire now knows ROS reads as post-mortem    │
+    │    neuropathology evidence, not a living-cohort biomarker signal.   │
     └─────────────────────────────────────────────────────────────────────┘
 """
     return story

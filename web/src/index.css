@@ -8,6 +8,10 @@ body,
   height: 100%;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 /* Scoped styles for AI analysis markdown output */
 .md-prose h1 { @apply text-base font-bold text-slate-900 mt-4 mb-1; }
 .md-prose h2 { @apply text-sm font-semibold text-slate-900 mt-4 mb-1 border-b border-slate-200 pb-0.5; }

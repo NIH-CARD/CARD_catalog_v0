@@ -20,10 +20,10 @@ describe("tablesInDomain / validDomainsFor", () => {
   it("lists exactly the tables that carry a Publication lineage", () => {
     expect(tablesInDomain("publication")).toEqual([
       "Publications",
-      "Datasets",
+      "Cited Datasets",
       "Supplementary Files",
       "Grants",
-      "Software",
+      "Software Mentions",
       "Models",
       "SciLite Annotations",
       "Human Cellular Models",
@@ -43,8 +43,8 @@ describe("tablesInDomain / validDomainsFor", () => {
     expect(tablesInDomain("concept")).toEqual(["Human Cellular Models", "SciLite Annotations"]);
   });
 
-  it("Datasets can only join Publications via the publication domain", () => {
-    expect(validDomainsFor("Publications", "Datasets")).toEqual(["publication"]);
+  it("Cited Datasets can only join Publications via the publication domain", () => {
+    expect(validDomainsFor("Publications", "Cited Datasets")).toEqual(["publication"]);
   });
 
   it("Human Cellular Models can join Publications via publication or resource, not concept", () => {
@@ -73,8 +73,8 @@ describe("facetColumnsFor", () => {
 
 describe("nativeColumnsFor", () => {
   it("keeps an external resource's own identifier even though it's unique per row", () => {
-    expect(nativeColumnsFor("Datasets").map((c) => c.field)).toContain("dataset_identifier");
-    expect(nativeColumnsFor("Software").map((c) => c.field)).toContain("url");
+    expect(nativeColumnsFor("Cited Datasets").map((c) => c.field)).toContain("dataset_identifier");
+    expect(nativeColumnsFor("Software Mentions").map((c) => c.field)).toContain("url");
   });
 
   it("excludes domain fields and catalog-internal identifiers", () => {
@@ -139,15 +139,15 @@ describe("buildWideRows", () => {
     ];
     const edges: DagEdge[] = [
       { table: "Grants", domain: "publication", columns: ["funder_name"] },
-      { table: "Software", domain: "publication", columns: ["software_name"] },
+      { table: "Software Mentions", domain: "publication", columns: ["software_name"] },
     ];
     const rawByTable = {
       Grants: [{ funder_name: "NIH", source_url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1/" }],
-      Software: [{ software_name: "PLINK", source_url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1/" }],
+      "Software Mentions": [{ software_name: "PLINK", source_url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1/" }],
     };
     const wide = buildWideRows(pubRows, edges, rawByTable);
     expect(wide[0]["Grants: funder_name"]).toBe("NIH");
-    expect(wide[0]["Software: software_name"]).toBe("PLINK");
+    expect(wide[0]["Software Mentions: software_name"]).toBe("PLINK");
   });
 
   it("returns rows unchanged (just Publications' own fields) with no edges", () => {
@@ -173,11 +173,11 @@ describe("buildWideRows", () => {
     const pubRows = [{ PMID: "1", "PubMed Central Link": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1/", DOI: "" }];
     const edges: DagEdge[] = [
       { table: "Grants", domain: "publication", columns: ["funder_name"] },
-      { table: "Software", domain: "publication", columns: ["software_name"] },
+      { table: "Software Mentions", domain: "publication", columns: ["software_name"] },
     ];
     const rawByTable = {
       Grants: [{ funder_name: "NIH", source_url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1/" }],
-      Software: [], // no software data - this edge alone contributes nothing
+      "Software Mentions": [], // no software data - this edge alone contributes nothing
     };
     expect(buildWideRows(pubRows, edges, rawByTable)).toHaveLength(0);
   });
@@ -186,16 +186,16 @@ describe("buildWideRows", () => {
     const pubRows = [{ PMID: "1", "PubMed Central Link": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1/", DOI: "" }];
     const edges: DagEdge[] = [
       { table: "Grants", domain: "publication", columns: ["funder_name"] },
-      { table: "Software", domain: "publication", columns: ["software_name"] },
+      { table: "Software Mentions", domain: "publication", columns: ["software_name"] },
     ];
     const rawByTable = {
       Grants: [{ funder_name: "NIH", source_url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1/" }],
-      Software: [{ software_name: "PLINK", source_url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1/" }],
+      "Software Mentions": [{ software_name: "PLINK", source_url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1/" }],
     };
     const wide = buildWideRows(pubRows, edges, rawByTable);
     expect(wide).toHaveLength(1);
     expect(wide[0]["Grants: funder_name"]).toBe("NIH");
-    expect(wide[0]["Software: software_name"]).toBe("PLINK");
+    expect(wide[0]["Software Mentions: software_name"]).toBe("PLINK");
   });
 
   it("a hit in any ONE column of an edge is enough to count as a hit", () => {
