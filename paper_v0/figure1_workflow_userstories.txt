@@ -1,206 +1,144 @@
 
 ================================================================================
-FIGURE 1: CARD CATALOG WORKFLOW AND USER STORIES
+FIGURE 1: CARD CATALOG USER STORIES
 ================================================================================
 
-
 ╔═══════════════════════════════════════════════════════════════════════════════╗
-║                    PANEL A: CARD CATALOG DEVELOPMENT WORKFLOW                 ║
+║              PANEL A: USER STORY 1 - NEW HIRE ONBOARDING WORKFLOW             ║
+║                     Jordan Reyes: Getting Oriented on ROS                     ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 
-┌─────────────────┐         ┌─────────────────────┐         ┌──────────────────┐
-│  DATA SOURCES   │         │  DATA COLLECTION    │         │   DATA CURATION  │
-│                 │         │                     │         │                  │
-│  • Datasets     │─────────│  • PubMed API       │─────────│  • Normalize     │
-│  • Publications │         │  • GitHub API       │         │  • Validate      │
-│  • Code Repos   │         │  • Manual curation  │         │  • Enrich        │
-│  • Cell Lines   │         │  • AI Summarization │         │  • FAIR Assess   │
-└─────────────────┘         └─────────────────────┘         └──────────────────┘
-        │                            │                            │
-        │                            │                            │
-        ▼                            ▼                            ▼
-┌────────────────────────────────────────────────────────────────────────────┐
-│                          STRUCTURED DATA TABLES                            │
-│  • 99 Datasets  • 860 Publications  • 568 Code Repos  • 626 Cell Lines     │
-└────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                                      │
-                                      ▼
-        ┌──────────────────────────────────────────────────┐
-        │            STREAMLIT WEB APPLICATION             │
-        │                                                  │
-        │  ┌────────────┐  ┌────────────┐  ┌────────────┐  │
-        │  │  BROWSE &  │  │ KNOWLEDGE  │  │  AI-POWERED│  │
-        │  │   FILTER   │  │   GRAPHS   │  │  ANALYSIS  │  │
-        │  │            │  │            │  │            │  │
-        │  │ Interactive│  │ Visualize  │  │Claude 4.5  │  │
-        │  │   Tables   │  │Connections │  │ Insights   │  │
-        │  └────────────┘  └────────────┘  └────────────┘  │
-        └──────────────────────────────────────────────────┘
-                                      │
-                                      │
-                                      ▼
-        ┌─────────────────────────────────────────────────────────┐
-        │                    END USERS                            │
-        │                                                         │
-        │  Researchers  •  Program Officers  •  Funders  •  PIs   │
-        └─────────────────────────────────────────────────────────┘
+GOAL: First week at a new lab - ROS comes up constantly. Figure out,
+in plain terms, what it actually is, and how it fits the field's other
+major post-mortem brain-bank studies.
+
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │  PHASE 1: CRYSTALLIZE - WHAT IS ROS?                                │
+    │  HOW: Publications -> filter Resource Name = Religious Orders       │
+    │       Study -> Freeze -> AI Read                                    │
+    │                                                                     │
+    │  ┌────────────────┐                   ┌─────────────────────────┐   │
+    │  │  Publications  │──────  > Freeze   │  211 papers - 57% also  │   │
+    │  │      Page      │        (211 rows) │  tag Memory and Aging.  │   │
+    │  │  5,086 papers  │                   │  Top co-resource: MAP.  │   │
+    │  └────────────────┘                   └─────────────────────────┘   │
+    │         │                                                           │
+    │         └────── > Scientific Read ──────────────┘                   │
+    │         ┌──────────────────────────────────┐                        │
+    │         │  ROS and MAP are near-identical  │                        │
+    │         │  sister cohorts - routinely      │                        │
+    │         │  analyzed together as ROSMAP.    │                        │
+    │         └──────────────────────────────────┘                        │
+    └─────────────────────────────────────────────────────────────────────┘
+                                   │
+                                   ▼
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │  PHASE 2: STRATIFY BY GENE (Scientific Read's next step B)          │
+    │  HOW: Connections -> +Join SciLite Annotations on the 211 ROS       │
+    │       papers (facet: Type=Gene_Proteins) -> count per gene (Exact)  │
+    │                                                                     │
+    │  ┌──────────────┐                   ┌───────────────────────────┐   │
+    │  │  ROS papers  │──── > Join        │  162/211 papers tag a     │   │
+    │  │  (211, from  │      by PMC ID    │  gene: tau 110 · APOE     │   │
+    │  │   Phase 1)   │      (Gene facet) │  98 · APP 50 · TDP-43     │   │
+    │  │              │                   │  33 · GFAP 30 · TREM2 27  │   │
+    │  └──────────────┘                   └───────────────────────────┘   │
+    └─────────────────────────────────────────────────────────────────────┘
+                                   │
+                                   ▼
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │  OUTCOME: ROS's gene/protein signal is the canonical AD molecular   │
+    │    axis - tau and APOE lead, with APP, TDP-43, GFAP and TREM2       │
+    │    close behind. The new hire now knows ROS reads as post-mortem    │
+    │    neuropathology evidence, not a living-cohort biomarker signal.   │
+    └─────────────────────────────────────────────────────────────────────┘
 
 
 
 ╔═══════════════════════════════════════════════════════════════════════════════╗
-║            PANEL B: USER STORY 1 - BIOMEDICAL RESEARCHER WORKFLOW             ║
+║            PANEL B: USER STORY 2 - BIOMEDICAL RESEARCHER WORKFLOW             ║
 ║              Dr. Sarah Chen: From Hypothesis to Publication                   ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 
 RESEARCH QUESTION: Role of microglial dysfunction in early-stage Alzheimer's?
 
-    ┌─────────────────────────────────────────────────────────────────┐
-    │  PHASE 1: DISCOVERY                                             │
-    │                                                                 │
-    │  ┌──────────────┐                  ┌─────────────────────────┐  │
-    │  │   Datasets   │────── > Filter   │  • ROSMAP               │  │
-    │  │     Page     │         by       │  • AMP-AD               │  │
-    │  │              │     scRNA-seq +  │  • Spatial Trans Study  │  │
-    │  │ 99 datasets  │     Neuroimaging │                         │  │
-    │  └──────────────┘                  └─────────────────────────┘  │
-    │         │                                       │               │
-    │         └────── > Knowledge Graph ──────────────┘               │
-    │                  Shows connections                              │
-    │         ┌────────────────────────────────────────┐              │
-    │         │  AI Analysis: ROSMAP has best          │              │
-    │         │  microglial profiling vs spatial study │              │
-    │         └────────────────────────────────────────┘              │
-    └─────────────────────────────────────────────────────────────────┘
-                                   │
-                                   ▼
     ┌─────────────────────────────────────────────────────────────────────┐
-    │  PHASE 2: METHODS DEVELOPMENT                                       │
+    │  PHASE 1: DISCOVERY - IS THERE ACTUALLY A GAP?                      │
+    │  HOW: Connections -> +Join SciLite Annotations (facet:              │
+    │       Type=Gene_Proteins, Exact=TREM2) onto Publications -> +Join   │
+    │       Resources (join key: Resource Name, facet: Diseases           │
+    │       Included = Alzheimer's Disease or Preclinical AD) -> Freeze   │
+    │       -> read the Scientific Read's own Contrastive section         │
     │                                                                     │
-    │  ┌──────────────┐                    ┌─────────────────────────┐    │
-    │  │     Code     │────── > Filter     │  • High FAIR Score      │    │
-    │  │     Page     │        scRNA-seq   │  • Good Documentation   │    │
-    │  │              │        + microglial│  • Microglial subtype   │    │
-    │  │ 568 repos    │        markers     │    classification       │    │
-    │  └──────────────┘                    └─────────────────────────┘    │
-    │         │                                      │                    │
-    │         └────── > Deep Dive Quality ───────────┘                    │
-    │                  Assessment Scores                                  │
+    │  219 AD/Preclinical-linked TREM2 papers - dominated by postmortem-  │
+    │  tissue and genomics infrastructure (AMP-AD, ROS/MAP family, ADGC,  │
+    │  ADSP). Swedish BioFINDER-2 - the catalog's 2nd-largest resource    │
+    │  overall - doesn't even crack the top 15 here.                      │
     └─────────────────────────────────────────────────────────────────────┘
                                    │
                                    ▼
-    ┌──────────────────────────────────────────────────────────────────┐
-    │  PHASE 3: LITERATURE REVIEW                                      │
-    │                                                                  │
-    │  ┌──────────────┐                   ┌─────────────────────────┐  │
-    │  │Publications  │────── > Knowledge │  12 papers linking      │  │
-    │  │     Page     │        Graph by   │  microglial subtypes to │  │
-    │  │              │        Authors    │  Aβ plaque proximity    │  │
-    │  │ 860 papers   │      + Datasets   │                         │  │
-    │  └──────────────┘                   └─────────────────────────┘  │
-    │         │                                       │                │
-    │         └────── > AI Gap Analysis ──────────────┘                │
-    │                  "Early-stage understudied"                      │
-    └──────────────────────────────────────────────────────────────────┘
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │  PHASE 2: IS THIS TREM2-SPECIFIC, OR IS BIOFINDER RARE FOR EVERY    │
+    │  GENE?                                                              │
+    │  HOW: repeat the Phase 1 join for APOE -> compare                   │
+    │                                                                     │
+    │  Same query, same disease restriction, 1,254 APOE papers: BioFINDER-│
+    │  2 IS the #1 resource here, at 9% of the subset. Same catalog, same │
+    │  cohort - APOE uses it constantly, TREM2 doesn't use it at all.     │
+    └─────────────────────────────────────────────────────────────────────┘
                                    │
                                    ▼
-    ┌───────────────────────────────────────────────────────────────────┐
-    │  PHASE 4: VALIDATION PLANNING                                     │
-    │                                                                   │
-    │  ┌──────────────┐                  ┌─────────────────────────┐    │
-    │  │ Cell Models  │────── > Filter   │  • APP mutation lines   │    │
-    │  │     Page     │        APP/PSEN1 │  • PSEN1 mutation lines │    │
-    │  │              │        mutations │  • PubMed links for     │    │
-    │  │ 626 lines    │                  │    differentiation      │    │
-    │  └──────────────┘                  └─────────────────────────┘    │
-    └───────────────────────────────────────────────────────────────────┘
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │  PHASE 3: LOOKING FOR A METHOD, NOT JUST A GAP                      │
+    │  HOW: same TREM2/AD papers -> +Join Software (join key:             │
+    │       Publication) -> read the AI Read's "Notable Outliers"         │
+    │                                                                     │
+    │  2 papers (same tissue bank, overlapping author team) use MIBI-TOF  │
+    │  spatial proteomics (Angelo lab's open-source toffy + ark-analysis) │
+    │  to image TREM2 protein directly in postmortem microglia - seeing   │
+    │  the receptor a GWAS/transcriptomics literature can only infer.     │
+    └─────────────────────────────────────────────────────────────────────┘
                                    │
                                    ▼
-    ┌────────────────────────────────────────────────────────────────────┐
-    │  OUTCOME: Complete grant proposal with datasets, methods,          │
-    │    literature review, identified research gap, and validation plan │
-    └────────────────────────────────────────────────────────────────────┘
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │  OUTCOME (Dr. Chen): TREM2 showed the gap; these two papers showed  │
+    │    a way to close it. My proposal isn't "build new infrastructure"  │
+    │    - it's "borrow this pipeline, point it two years earlier."       │
+    └─────────────────────────────────────────────────────────────────────┘
 
 
 
 ╔═══════════════════════════════════════════════════════════════════════════════╗
-║          PANEL C: USER STORY 2 - PROGRAM OFFICER WORKFLOW                     ║
+║          PANEL C: USER STORY 3 - PROGRAM OFFICER WORKFLOW                     ║
 ║         Dr. Michael Torres: Portfolio Analysis & Strategic Planning           ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 
-GOAL: Assess portfolio gaps and identify strategic investment opportunities
+GOAL: A peer philanthropic funder just entered this space - a research
+direction worth tracking, or a sign we're behind?
 
-    ┌─────────────────────────────────────────────────────────────────┐
-    │  PHASE 1: PORTFOLIO ASSESSMENT                                  │
-    │                                                                 │
-    │  ┌──────────────┐                  ┌─────────────────────────┐  │
-    │  │   Datasets   │────── > Filter   │  Agency's 30 datasets   │  │
-    │  │     Page     │        by Funding│  vs 99 total            │  │
-    │  │              │        Agency    │                         │  │
-    │  │ 99 datasets  │                  └─────────────────────────┘  │
-    │  └──────────────┘                              │                │
-    │         │                                      │                │
-    │         └────── > Knowledge Graph Analysis ────┘                │
-    │                  Strong in genomics/proteomics                  │
-    │                  Limited metabolomics/electrophysiology         │
-    │         ┌────────────────────────────────────────┐              │
-    │         │  AI Gap Analysis:                      │              │
-    │         │  • Only 15% have longitudinal imaging  │              │
-    │         │  • Field average: 35%                  │              │
-    │         └────────────────────────────────────────┘              │
-    └─────────────────────────────────────────────────────────────────┘
-                                   │
-                                   ▼
     ┌─────────────────────────────────────────────────────────────────────┐
-    │  PHASE 2: FAIR COMPLIANCE MONITORING                                │
+    │  PHASE 1: WHAT IS GATES VENTURES ACTUALLY INTERESTED IN?            │
+    │  HOW: Connections -> +Join Grants (facet: funder_name = Gates       │
+    │       Ventures) -> +Join Resources (facet: Diseases Included =      │
+    │       Alzheimer's Disease or Preclinical AD) -> Freeze -> AI Read   │
     │                                                                     │
-    │  ┌──────────────┐                    ┌─────────────────────────┐    │
-    │  │     Code     │────── > Filter     │  Portfolio Issues:      │    │
-    │  │     Page     │        by Funded   │  • 40% missing deps     │    │
-    │  │              │        Projects    │  • 25% no README        │    │
-    │  │ 568 repos    │                    │  • Avg quality: 6.2/10  │    │
-    │  └──────────────┘                    │  • Field avg: 7.1/10    │    │
-    │         │                            └─────────────────────────┘    │
-    │         └────── > Deep Dive on All Portfolio Repos                  │
-    │                  Identify 5 exemplar repositories                   │
+    │  25 papers, all from 2025, zero NIH-style grant numbers (100%) - a  │
+    │  private philanthropic initiative, not a federal program. The       │
+    │  Preclinical AD tag appears 6x the catalog baseline (24% vs. 3.8%); │
+    │  transcriptomics is LOWER than baseline (28% vs. 38%) despite       │
+    │  genetics and proteomics both being elevated - a specific tilt      │
+    │  toward fluid and digital biomarkers in presymptomatic populations, │
+    │  not the postmortem-tissue transcriptomics that dominates the field.│
     └─────────────────────────────────────────────────────────────────────┘
                                    │
                                    ▼
-    ┌──────────────────────────────────────────────────────────────────┐
-    │  PHASE 3: STRATEGIC INVESTMENT OPPORTUNITIES                     │
-    │                                                                  │
-    │  ┌──────────────┐                   ┌─────────────────────────┐  │
-    │  │Publications  │────── > AI Trend  │  Emerging themes:       │  │
-    │  │     Page     │        Analysis   │  • Inflammasome         │  │
-    │  │              │                   │  • Gut-brain axis       │  │
-    │  │ 860 papers   │                   │  • Vascular dementia    │  │
-    │  └──────────────┘                   └─────────────────────────┘  │
-    │         │                                       │                │
-    │         └────── > Author Network Analysis ──────┘                │
-    │                  Identify collaborative hubs vs isolated groups  │
-    └──────────────────────────────────────────────────────────────────┘
-                                   │
-                                   ▼
-    ┌──────────────────────────────────────────────────────────────────┐
-    │  PHASE 4: RESOURCE PLANNING                                      │
-    │                                                                  │
-    │  ┌──────────────┐                  ┌─────────────────────────┐   │
-    │  │ Cell Models  │────── > AI       │  Gaps identified:       │   │
-    │  │     Page     │        Analysis  │  • TREM2 variants needed│   │
-    │  │              │        + PubMed  │  • APOE variants limited│   │
-    │  │ 626 lines    │        Links     │  • Growing pub interest │   │
-    │  └──────────────┘                  └─────────────────────────┘   │
-    └──────────────────────────────────────────────────────────────────┘
-                                   │
-                                   ▼
-    ┌──────────────────────────────────────────────────────────────────┐
-    │  OUTCOME: Comprehensive reports exported                         │
-    │    • Dataset coverage gaps (metabolomics, longitudinal imaging)  │
-    │    • FAIR compliance needs (updated funding requirements)        │
-    │    • Code quality benchmarks for policy updates                  │
-    │    • Emerging research themes for strategic funding              │
-    │    • Cell line resource gaps for infrastructure planning         │
-    └──────────────────────────────────────────────────────────────────┘
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │  OUTCOME (Torres): Gates is interested in presymptomatic screening  │
+    │    while the field's own baseline still leans postmortem-tissue     │
+    │    transcriptomics - the same blind spot a researcher independently │
+    │    found from the science side (Panel B).                           │
+    │    Peer to track, sign we're behind? Our portfolio - unchecked      │
+    └─────────────────────────────────────────────────────────────────────┘
 
 
 ================================================================================

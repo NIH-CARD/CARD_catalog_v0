@@ -13,6 +13,7 @@ Features:
 import streamlit as st
 import pandas as pd
 from pathlib import Path
+import re
 import sys, logging
 
 # Add parent directory to path
@@ -21,10 +22,84 @@ sys.path.append(str(Path(__file__).parent.parent))
 from config import COLORS, SESSION_KEYS, HELP_TEXT
 from utils.data_loader import (
     load_publications,
+    load_pub_datasets,
+    load_pub_supplementary,
+    load_scilite_annotations,
     get_unique_values,
     filter_dataframe,
     search_across_columns
 )
+
+_PMC_RE = re.compile(r"PMC\d+")
+
+
+def _pmcid_from(url: str) -> str:
+    m = _PMC_RE.search(str(url or ""))
+    return m.group(0) if m else ""
+
+
+def _filter_by_source_url(df: pd.DataFrame, pmcid: str) -> pd.DataFrame:
+    if df.empty or not pmcid or "source_url" not in df.columns:
+        return df.iloc[0:0]
+    return df[df["source_url"].astype(str).str.contains(pmcid, na=False)]
+
+
+def _filter_scilite(df: pd.DataFrame, pmcid: str) -> pd.DataFrame:
+    if df.empty or not pmcid or "PMC ID" not in df.columns:
+        return df.iloc[0:0]
+    return df[df["PMC ID"] == pmcid]
+
+
+def _top_n(series: pd.Series, n: int = 3) -> str:
+    counts = series.replace("", pd.NA).dropna().value_counts().head(n)
+    return ", ".join(f"{k}: {v}" for k, v in counts.items())
+
+
+_RESOURCES_PAGE = "pages/4_Datasets_and_Supplementary_files.py"
+
+
+def _resource_button(label: str, key: str, pmcid: str, focus_tab: str) -> None:
+    if st.button(label, key=key, width="stretch"):
+        st.session_state["resource_pmc_filter"] = pmcid
+        st.session_state["resource_focus_tab"] = focus_tab
+        st.switch_page(_RESOURCES_PAGE)
+
+
+def _render_pub_resources(pmc_link: str,
+                          datasets_df: pd.DataFrame,
+                          supp_df: pd.DataFrame,
+                          scilite_df: pd.DataFrame) -> None:
+    pmcid = _pmcid_from(pmc_link)
+    if not pmcid:
+        return
+    ds = _filter_by_source_url(datasets_df, pmcid)
+    sp = _filter_by_source_url(supp_df, pmcid)
+    sc = _filter_scilite(scilite_df, pmcid)
+    if ds.empty and sp.empty and sc.empty:
+        return
+
+    st.markdown("**📊 Resources & Annotations**")
+    if not ds.empty:
+        breakdown = _top_n(ds["data_repository"]) if "data_repository" in ds.columns else ""
+        label = f"📦 Linked Datasets: {len(ds)}"
+        if breakdown:
+            label += f" — {breakdown}"
+        _resource_button(label, key=f"ds_btn_{pmcid}", pmcid=pmcid, focus_tab="datasets")
+    if not sp.empty:
+        ext_col = "file_extension" if "file_extension" in sp.columns else (
+            "content_type" if "content_type" in sp.columns else None
+        )
+        breakdown = _top_n(sp[ext_col]) if ext_col else ""
+        label = f"📎 Supplementary Files: {len(sp)}"
+        if breakdown:
+            label += f" — {breakdown}"
+        _resource_button(label, key=f"sp_btn_{pmcid}", pmcid=pmcid, focus_tab="supplementary")
+    if not sc.empty:
+        breakdown = _top_n(sc["Type"]) if "Type" in sc.columns else ""
+        label = f"🏷️ SciLite Annotations: {len(sc)}"
+        if breakdown:
+            label += f" — {breakdown}"
+        _resource_button(label, key=f"sc_btn_{pmcid}", pmcid=pmcid, focus_tab="scilite")
 from utils.graph_builder import (
     build_knowledge_graph,
     create_interactive_graph,
@@ -68,6 +143,9 @@ def main():
 
     # Load data
     df = load_publications()
+    datasets_df = load_pub_datasets()
+    supp_df = load_pub_supplementary()
+    scilite_df = load_scilite_annotations()
     logger.info(f"Loaded {len(df)} publications from data source, with columns: {df.columns}")
 
     if df.empty:
@@ -290,6 +368,9 @@ def main():
                     if abstract:
                         with st.expander("Read Abstract"):
                             st.markdown(abstract)
+
+                    # Per-publication resources & annotations summary
+                    _render_pub_resources(pmc_link, datasets_df, supp_df, scilite_df)
 
     # Tab 3: Knowledge Graph
     with tab3:

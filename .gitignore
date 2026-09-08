@@ -16,8 +16,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
+# lib/ intentionally not ignored — web/src/lib/ must be tracked
 parts/
 sdist/
 var/
@@ -53,3 +53,34 @@ htmlcov/
 scrapers/pubmed_scrape.log
 scrapers/**.log
 scripts/CARD_report.ipynb
+
+# log files
+logs/
+
+# Sphinx build output
+docs/_build/
+
+# TypeScript incremental build cache — contains local absolute paths, breaks CI
+*.tsbuildinfo
+
+# stage files
+tables/hits/
+tables/cache/
+# regenerated every pipeline run and grows unbounded (43MB -> 254MB across one session) -
+# exceeds GitHub's 100MB per-file limit; treat like tables/hits/ and tables/cache/ above
+tables/final/scilite_annotations_*.tsv
+scrapers/batch_**jsonl
+docs/plans/EUPMC_annotations_anz.ipynb
+tables/table_check.ipynb
+docs/plans/paperclip/experiments/*.log
+docs/plans/paperclip/experiments/*.tsv
+docs/plans/paperclip/validation/*.log
+docs/plans/paperclip/validation/*.tsv
+scrapers/.paperclip_validation_cache.json
+staging/.fetched_publication_validation_cache.json
+docs/plans/paperclip/validation/smoke_test_cache.json
+docs/plans/paperclip/validation/smoke_test_cache_evidence.json
+docs/plans/paperclip/validation/paperclip_full_**
+docs/plans/paperclip/validation/make_atomic_sample.py
+
+prompts/validate_fetched_publications/fulltext_batch_**

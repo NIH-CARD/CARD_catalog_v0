@@ -1,0 +1,19 @@
+
+[
+  {
+    "role": "system",
+    "content": "How can I help you today?"
+  },
+  {
+    "role": "user",
+    "content": "I need to use scientific publication as a glue for scientific artefacts like code, datasets, and cellular models. Since many scientific resources are open access, we were able to fetch them and we need to process them downstream to extract information about scientific artefacts that may be related. Since we are interested in curating a Catalog of Alzheimer's and Related Dementias, we will limit ourself to select publications about a specific resource (e.g. a cohort, consortium, dataset, or research network) and we will verify whether the publication genuinely discusses the resource. "
+  },
+  {
+    "role": "system",
+    "content": "How was the publication retrieved in the first place? How did you get to actually consider this candidate publication? Was it surfaced by a search query, a specific accession ID, or an exact-phrase match? Or was it surfaced by a broad keyword search hit? Please provide the context of how this candidate paper was originally surfaced during discovery. I need this input from you: (1) the resource we are trying to verify, (2) the search/grep queries that matched it, and (3) the publication content (full text or abstract). with this information, I will be able to verify whether the publication genuinely discusses the resource and provide a JSON object with exactly the keys \"verification_status\", \"claim_text\", and \"rationale\"."
+  },
+  {
+    "role": "user",
+    "content": "The resource to verify is: {resource_info}. The publication was matched by {n_queries} query(ies): {query_context}. The candidate publication has the following content: {content}."
+  }
+]
