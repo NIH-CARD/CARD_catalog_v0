@@ -115,17 +115,17 @@ def extract_keywords(text_series, top_n=10, min_length=3, custom_stopwords=None,
     return results
 
 
-def analyze_datasets():
-    """Analyze datasets and return statistics."""
-    print("Analyzing Datasets...")
+def analyze_resources():
+    """Analyze resources and return statistics."""
+    print("Analyzing Resources...")
     df = load_latest_file("resources-inventory-*.tab")
 
-    print(f"Loaded {len(df)} datasets for analysis, columns: {df.columns.tolist()}")
+    print(f"Loaded {len(df)} resources for analysis, columns: {df.columns.tolist()}")
 
     stats = {}
 
     # N studies total
-    stats['n_datasets'] = len(df)
+    stats['n_resources'] = len(df)
 
     # Resource types (multi-study and biosample)
     if 'Resource Type' in df.columns:
@@ -200,15 +200,26 @@ def analyze_datasets():
 def analyze_publications():
     """Analyze publications and return statistics."""
     print("Analyzing Publications...")
-    df = load_latest_file("pubmed_central_*.tsv")
+    df = load_latest_file("misc_publications_*.tsv")
 
     stats = {}
 
     stats['n_pubs'] = len(df)
 
-    # Five most prolific studies
+    # Five most prolific studies - Resource Name is semicolon-delimited
+    # multivalue (a publication can be linked to several co-studied
+    # resources), same convention the app's own facet counts use
+    # (web/src/lib/tableRegistry.ts: col("Resource Name", true, ";")).
+    # Counting the raw column as one exact string undercounts every
+    # resource that appears in combined rows.
     if 'Resource Name' in df.columns:
-        stats['top_studies'] = df['Resource Name'].value_counts().head(5).to_dict()
+        study_counts = Counter()
+        for val in df['Resource Name'].dropna():
+            for name in str(val).split(';'):
+                name = name.strip()
+                if name:
+                    study_counts[name] += 1
+        stats['top_studies'] = dict(study_counts.most_common(5))
 
     # Five most occurring authors
     if 'Authors' in df.columns:
@@ -459,7 +470,7 @@ def analyze_cell_models():
     return stats
 
 
-def format_output(datasets_stats, pubs_stats, code_stats, cell_stats):
+def format_output(resources_stats, pubs_stats, code_stats, cell_stats):
     """Format all statistics into a readable report."""
     output = []
 
@@ -468,45 +479,45 @@ def format_output(datasets_stats, pubs_stats, code_stats, cell_stats):
     output.append("=" * 80)
     output.append("")
 
-    if 'resource_types' in datasets_stats:
+    if 'resource_types' in resources_stats:
         output.append("Resource Types Distribution:")
-        for rtype, count in datasets_stats['resource_types']:
-            pct = (count / datasets_stats['n_datasets'] * 100) if datasets_stats['n_datasets'] > 0 else 0
+        for rtype, count in resources_stats['resource_types']:
+            pct = (count / resources_stats['n_resources'] * 100) if resources_stats['n_resources'] > 0 else 0
             output.append(f"  {rtype}: {count} ({pct:.1f}%)")
         output.append("")
 
-    # DATASETS
-    output.append("DATASETS")
+    # RESOURCES
+    output.append("RESOURCES")
     output.append("-" * 80)
-    output.append(f"Total Number of Datasets: {datasets_stats.get('n_datasets', 'N/A')}")
+    output.append(f"Total Number of Resources: {resources_stats.get('n_resources', 'N/A')}")
     output.append("")
 
-    if 'coarse_data_types' in datasets_stats:
+    if 'coarse_data_types' in resources_stats:
         output.append("Coarse Data Types:")
-        print(f"dataset_stats: {datasets_stats.columns if isinstance(datasets_stats, pd.DataFrame) else datasets_stats.keys()}")
-        print(f"dataset_stats['coarse_data_types']: {datasets_stats['coarse_data_types']}")
-        total_types = sum(count for _, count in datasets_stats['coarse_data_types'])
+        print(f"resources_stats: {resources_stats.columns if isinstance(resources_stats, pd.DataFrame) else resources_stats.keys()}")
+        print(f"resources_stats['coarse_data_types']: {resources_stats['coarse_data_types']}")
+        total_types = sum(count for _, count in resources_stats['coarse_data_types'])
         print(f"Total coarse data type entries: {total_types}")
-        for dtype, count in datasets_stats['coarse_data_types']:
+        for dtype, count in resources_stats['coarse_data_types']:
             pct = (count / total_types * 100) if total_types > 0 else 0
             output.append(f"  {dtype}: {count} ({pct:.1f}%)")
         output.append("")
     else:
-        raise Exception("Coarse Data Types statistics missing from datasets_stats")
+        raise Exception("Coarse Data Types statistics missing from resources_stats")
 
-    if 'sample_size_mean' in datasets_stats:
+    if 'sample_size_mean' in resources_stats:
         output.append("Sample Size Statistics:")
-        output.append(f"  Mean: {datasets_stats['sample_size_mean']:.0f}")
-        output.append(f"  Median: {datasets_stats['sample_size_median']:.0f}")
-        output.append(f"  Min: {datasets_stats['sample_size_min']:.0f}")
-        output.append(f"  Max: {datasets_stats['sample_size_max']:.0f}")
-        output.append(f"  Std Dev: {datasets_stats['sample_size_std']:.0f}")
+        output.append(f"  Mean: {resources_stats['sample_size_mean']:.0f}")
+        output.append(f"  Median: {resources_stats['sample_size_median']:.0f}")
+        output.append(f"  Min: {resources_stats['sample_size_min']:.0f}")
+        output.append(f"  Max: {resources_stats['sample_size_max']:.0f}")
+        output.append(f"  Std Dev: {resources_stats['sample_size_std']:.0f}")
         output.append("")
 
-    if 'fair_levels' in datasets_stats:
+    if 'fair_levels' in resources_stats:
         output.append("FAIR Compliance Levels:")
-        for level, count in datasets_stats['fair_levels'].items():
-            pct = datasets_stats['fair_levels_pct'][level]
+        for level, count in resources_stats['fair_levels'].items():
+            pct = resources_stats['fair_levels_pct'][level]
             output.append(f"  {level}: {count} ({pct:.1f}%)")
         output.append("")
 
@@ -651,13 +662,13 @@ def main():
     print()
 
     # Run all analyses
-    datasets_stats = analyze_datasets()
+    resources_stats = analyze_resources()
     pubs_stats = analyze_publications()
     code_stats = analyze_code_repos()
     cell_stats = analyze_cell_models()
 
     # Format output
-    report = format_output(datasets_stats, pubs_stats, code_stats, cell_stats)
+    report = format_output(resources_stats, pubs_stats, code_stats, cell_stats)
 
     # Save to file
     output_file = OUTPUT_DIR / "main_statistics_table.txt"

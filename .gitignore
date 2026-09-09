@@ -84,3 +84,6 @@ docs/plans/paperclip/validation/paperclip_full_**
 docs/plans/paperclip/validation/make_atomic_sample.py
 
 prompts/validate_fetched_publications/fulltext_batch_**
+
+# Local Netlify folder
+.netlify
