@@ -650,12 +650,17 @@ def _normalize_pub_models(df: pd.DataFrame) -> pd.DataFrame:
     these carry no information and data_gatherer's own process_model_response
     already drops them for freshly-extracted rows; older cached rows from before
     that filter existed can still slip through pipelines/pub_models.py's
-    source_url-based cache union, so they're caught here too."""
+    source_url-based cache union, so they're caught here too.
+
+    'url' is semicolon-delimited multi-value - a single model mention can carry more
+    than one hosting link (e.g. a GitHub repo and a Hugging Face page for the same
+    model) - deduped/sorted like the other multi-value fields."""
     before = len(df)
     out = df[df["model_name"].str.strip() != ""].reset_index(drop=True)
     dropped = before - len(out)
     if dropped:
         logger.warning(f"{dropped} pub_models rows dropped — no model mention extracted (only source_url populated)")
+    out["url"] = out["url"].map(_normalize_list_field)
     return out
 
 

@@ -1,8 +1,12 @@
-Method,Candidates,Adjudicated,Confirmed,Precision,Resources covered,Coverage rate,Pooled recall,Exclusive confirmed
-paperclip,939,932,486,52.1%,197,83.1%,6.5%,486
-v5,17140,17140,1498,8.7%,143,60.3%,20.0%,1498
-v4,12393,12383,4314,34.8%,157,66.2%,57.6%,74
-v2,13054,13021,4265,32.8%,157,66.2%,57.0%,135
-original,10292,10282,3479,33.8%,143,60.3%,46.5%,174
-v3,8517,8514,3426,40.2%,142,59.9%,45.8%,67
-page navigation,1071,1067,456,42.7%,12,5.1%,6.1%,456
+Method,DB,Candidates (non-null),Confirmed,Precision,Resources covered,Coverage rate,Pooled recall,Exclusive confirmed
+paperclip,Miscellaneous,932,486,52.1%,197,83.1%,6.5%,486
+v5,PubMed Central,17140,1498,8.7%,143,60.3%,20.0%,1498
+v4,PubMed Central,12383,4314,34.8%,157,66.2%,57.6%,74
+v4,PubMed,2431,1628,67.0%,88,37.1%,—,—
+v2,PubMed Central,13021,4265,32.8%,157,66.2%,57.0%,135
+v2,PubMed,3172,1662,52.4%,89,37.6%,—,—
+original,PubMed Central,10282,3479,33.8%,143,60.3%,46.5%,174
+original,PubMed,2832,1347,47.6%,90,38.0%,—,—
+v3,PubMed Central,8514,3426,40.2%,142,59.9%,45.8%,67
+v3,PubMed,1472,1197,81.3%,73,30.8%,—,—
+page navigation,Miscellaneous,1067,456,42.7%,12,5.1%,6.1%,456

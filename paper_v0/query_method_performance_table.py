@@ -9,6 +9,7 @@ That function only returns a DataFrame; the chart is built here.
 """
 
 import sys
+import textwrap
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -27,11 +28,14 @@ from staging.publication_glue import compute_query_method_performance, _REAL_VER
 INPUT_PATH = Path(__file__).parent.parent / "tables" / "hits" / "misc_publications_20260824_080447.tsv"
 OUTPUT_DIR = Path(__file__).parent / "v0.4"
 
-# Display column order/labels matching the published table.
+# Display column order/labels matching the published table. Raw "candidates" (every
+# surfaced pair, including ones that never got a real verdict at all) is dropped in
+# favor of "adjudicated" alone, relabeled "Candidates (non-null)" - the count that
+# actually matters for Precision's denominator, without a separate raw-candidates
+# column implying a comparison that isn't the one being made here.
 COLUMN_LABELS = {
     "method": "Method",
-    "candidates": "Candidates",
-    "adjudicated": "Adjudicated",
+    "adjudicated": "Candidates (non-null)",
     "confirmed": "Confirmed",
     "precision_pct": "Precision",
     "resources_covered": "Resources covered",
@@ -122,25 +126,177 @@ def compute_performance(input_path: Path) -> tuple[pd.DataFrame, int]:
     return perf, total_resources
 
 
-def build_display_table(perf: pd.DataFrame) -> pd.DataFrame:
-    """Format compute_performance()'s raw output into the published table's display form."""
-    display = perf.copy()
+# DB abbreviations matching the chart's own legend (PubMed Central / PubMed / Misc),
+# just shortened to PMC/PM for the table's second index level.
+DB_PMC = "PubMed Central"
+DB_PM = "PubMed"
+DB_MISC = "Miscellaneous"
+
+
+def build_combined_performance(perf: pd.DataFrame, pm_perf: pd.DataFrame) -> pd.DataFrame:
+    """Interleave each main method's row with its PubMed-only counterpart (if any),
+    grouped by method - this is every point the bubble chart actually plots (PMC/Misc
+    from `perf`, PM from `pm_perf`), which build_display_table's old perf-only input
+    silently omitted (the PubMed-only q1-q4 points never made it into the table,
+    only the chart).
+
+    Returns:
+        Raw (unformatted) rows with a "method" and "db" column, PM rows carrying NaN
+        for pooled_recall_pct/exclusive_confirmed (not computed for that series - see
+        compute_pubmed_only_performance's docstring).
+    """
+    pm_by_method = {row["label"]: row for _, row in pm_perf.iterrows()}
+    rows = []
+    for _, row in perf.iterrows():
+        method = row["method"]
+        db = DB_MISC if method in OPEN_WEB_METHODS else DB_PMC
+        rows.append({**row.to_dict(), "db": db})
+        pm_row = pm_by_method.get(method)
+        if pm_row is not None:
+            rows.append({
+                "method": method, "db": DB_PM,
+                "candidates": pm_row["candidates"], "adjudicated": pm_row["adjudicated"],
+                "confirmed": pm_row["confirmed"], "precision_pct": pm_row["precision_pct"],
+                "resources_covered": pm_row["resources_covered"],
+                "resource_coverage_pct": pm_row["coverage_pct"],
+                "pooled_recall_pct": float("nan"), "exclusive_confirmed": float("nan"),
+            })
+    return pd.DataFrame(rows)
+
+
+def build_display_table(combined: pd.DataFrame) -> pd.DataFrame:
+    """Format build_combined_performance()'s raw output into the published table's
+    display form, indexed by (Method, DB) - a true two-level index, not just an extra
+    flat column, so a method's PMC/PM rows visually group under one Method label."""
+    display = combined.copy()
     for col in ("precision_pct", "resource_coverage_pct", "pooled_recall_pct"):
-        display[col] = display[col].map(lambda v: f"{v:.1f}%")
-    return display.rename(columns=COLUMN_LABELS)[list(COLUMN_LABELS.values())]
+        display[col] = display[col].map(lambda v: f"{v:.1f}%" if pd.notna(v) else "—")
+    display["exclusive_confirmed"] = display["exclusive_confirmed"].map(
+        lambda v: "—" if pd.isna(v) else str(int(v))
+    )
+    display = display.rename(columns=COLUMN_LABELS).rename(columns={"db": "DB"})
+    ordered_cols = ["Method", "DB"] + [v for k, v in COLUMN_LABELS.items() if k != "method"]
+    return display[ordered_cols].set_index(["Method", "DB"])
 
 
-def write_table(perf: pd.DataFrame) -> None:
+def write_table(combined: pd.DataFrame) -> None:
     """Write the display table to CSV/TSV/TXT in OUTPUT_DIR."""
-    table = build_display_table(perf)
+    table = build_display_table(combined)
     for suffix, sep in ((".csv", ","), (".tsv", "\t")):
         out_path = OUTPUT_DIR / f"query_method_performance{suffix}"
-        table.to_csv(out_path, sep=sep, index=False)
+        table.to_csv(out_path, sep=sep)
         print(f"Wrote {out_path}")
 
     txt_path = OUTPUT_DIR / "query_method_performance.txt"
-    txt_path.write_text(table.to_string(index=False))
+    txt_path.write_text(table.to_string())
     print(f"Wrote {txt_path}")
+
+    write_table_latex(table)
+
+
+def write_table_latex(table: pd.DataFrame) -> None:
+    """Write a booktabs/multirow LaTeX table (the (Method, DB) two-level index
+    rendered as \\multirow-spanned Method cells, not a flat repeated-label CSV) to
+    OUTPUT_DIR/query_method_performance.tex - a \\input{}-able snippet, not a full
+    document. Requires \\usepackage{booktabs,multirow} in the including document's
+    preamble."""
+    latex = table.to_latex(
+        multirow=True, escape=True,
+        caption="Query method performance by source database (PMC = PubMed Central "
+                "full text, PM = PubMed title/abstract only, Miscellaneous = paperclip/"
+                "page navigation). See figure legend for column definitions.",
+        label="tab:query_method_performance",
+        position="htbp",
+    )
+    tex_path = OUTPUT_DIR / "query_method_performance.tex"
+    tex_path.write_text(
+        "% Requires \\usepackage{booktabs,multirow} in the including document.\n" + latex
+    )
+    print(f"Wrote {tex_path}")
+
+
+# Method, DB, then the 7 metric columns - DB needs enough room for "PubMed Central",
+# the longest value in that column; sums to 1.0.
+TABLE_IMAGE_COL_WIDTHS = [0.12, 0.14] + [0.74 / 7] * 7
+
+
+def write_table_image(combined: pd.DataFrame) -> None:
+    """Render the display table as a styled PNG/PDF, matching this paper's other
+    figure_*_table.py house style (dark header row, alternating row shading). The
+    (Method, DB) two-level index is flattened into two plain columns for matplotlib's
+    table artist, with Method left blank on a group's second row (its PM row directly
+    below its PMC/Misc row) - the same "don't repeat the group label" convention
+    pandas' own MultiIndex to_string() uses, applied here since matplotlib's table
+    doesn't understand a MultiIndex directly."""
+    print("Building table image...")
+    table_df = build_display_table(combined).reset_index()
+    # Method/DB headers are short enough as-is; the metric headers ("Candidates
+    # (non-null)", "Resources covered", "Exclusive confirmed", ...) are wider than
+    # their column at this font size, so wrap those onto two lines rather than
+    # letting them overflow into the neighboring cell.
+    headers = [
+        h if h in ("Method", "DB") else "\n".join(textwrap.wrap(h, width=13))
+        for h in table_df.columns
+    ]
+
+    cell_text = []
+    last_method = None
+    for _, row in table_df.iterrows():
+        method = row["Method"]
+        display_method = "" if method == last_method else method
+        last_method = method
+        cell_text.append([display_method] + list(row.drop("Method")))
+
+    fig, ax = plt.subplots(figsize=(15, 0.55 * (len(cell_text) + 1) + 0.8))
+    ax.axis("off")
+
+    table = ax.table(
+        cellText=cell_text,
+        colLabels=headers,
+        colWidths=TABLE_IMAGE_COL_WIDTHS,
+        cellLoc="center",
+        loc="upper center",
+    )
+    table.auto_set_font_size(False)
+    table.set_fontsize(10.5)
+
+    n_rows = len(cell_text) + 1
+    # Every header cell shares one row height (driven by the tallest wrapped label),
+    # not its own line count - mixing heights within one header row left the
+    # single-line headers ("Method", "Confirmed", ...) looking sunken below the
+    # two-line ones.
+    header_height = 0.14 * (max(h.count("\n") for h in headers) + 1)
+    for (r, c), cell in table.get_celld().items():
+        cell.set_edgecolor("#888888")
+        cell.PAD = 0.02
+        text_obj = cell.get_text()
+        if r == 0:
+            cell.set_facecolor("#2c3e50")
+            text_obj.set_color("white")
+            text_obj.set_fontweight("bold")
+            text_obj.set_fontsize(9.5)
+            cell.set_height(header_height)
+        else:
+            # Group rows (a method's PMC + PM pair) share one shade so the grouping
+            # reads visually even with the blanked repeat label.
+            group_idx = sum(1 for cr in cell_text[:r] if cr[0] != "")
+            cell.set_facecolor("#f7f7f7" if group_idx % 2 == 0 else "white")
+            if c == 0:
+                text_obj.set_fontweight("bold")
+                cell.set_text_props(ha="left")
+            cell.set_height(0.14)
+
+    fig.suptitle("Query Method Performance", fontsize=14, fontweight="bold", y=0.98)
+
+    png_path = OUTPUT_DIR / "query_method_performance_table.png"
+    plt.savefig(png_path, dpi=300, bbox_inches="tight", facecolor="white")
+    print(f"Wrote {png_path}")
+
+    pdf_path = OUTPUT_DIR / "query_method_performance_table.pdf"
+    plt.savefig(pdf_path, bbox_inches="tight", facecolor="white")
+    print(f"Wrote {pdf_path}")
+
+    plt.close(fig)
 
 
 def write_chart(perf: pd.DataFrame, total_resources: int, pm_perf: pd.DataFrame) -> None:
@@ -232,7 +388,7 @@ def write_chart(perf: pd.DataFrame, total_resources: int, pm_perf: pd.DataFrame)
         ax.scatter([], [], s=110, alpha=0.35, edgecolors=PUBMED_ONLY_COLOR, facecolors=PUBMED_ONLY_COLOR,
                    linewidths=2, label="PubMed"),
         ax.scatter([], [], s=110, alpha=0.35, edgecolors=OPEN_WEB_COLOR, facecolors=OPEN_WEB_COLOR,
-                   linewidths=2, label="Misc"),
+                   linewidths=2, label="Miscellaneous"),
     ]
     # Both legends sit fully outside the axes (right side, stacked), so neither
     # overlaps plotted data or each other.
@@ -278,8 +434,10 @@ def write_chart(perf: pd.DataFrame, total_resources: int, pm_perf: pd.DataFrame)
 def main() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     perf, total_resources = compute_performance(INPUT_PATH)
-    write_table(perf)
     pm_perf = compute_pubmed_only_performance(total_resources)
+    combined = build_combined_performance(perf, pm_perf)
+    write_table(combined)
+    write_table_image(combined)
     write_chart(perf, total_resources, pm_perf)
 
 

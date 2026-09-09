@@ -1,12 +1,12 @@
 {
   "stages": {
-    "Datasets": 12211,
+    "Datasets": 11228,
     "Supplementary Files": 32762,
     "Grants": 45290,
     "Software": 4243,
-    "Models": 206
+    "Models": 331
   },
-  "scilite_total": 956172,
+  "scilite_total": 956169,
   "scilite_top_types": [
     {
       "type": "Diseases",

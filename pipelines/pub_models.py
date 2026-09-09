@@ -54,6 +54,12 @@ def _model_batch_results_to_df(dg, batch_results_file: str) -> pd.DataFrame:
         metadata = batch_item.get("metadata", {})
         records = dg.parser.process_model_response(batch_item.get("processed_response", []))
         for record in records:
+            # data_gatherer's model_mention schema returns 'url' as a list (a single model
+            # mention can carry more than one hosting link, e.g. both a GitHub repo and a
+            # Hugging Face page) - join to the project's semicolon-delimited multi-value
+            # convention for the final TSV column.
+            if isinstance(record.get("url"), list):
+                record["url"] = ";".join(record["url"])
             record["custom_id"] = custom_id
             for key, value in metadata.items():
                 record["article_url" if key == "url" else key] = value

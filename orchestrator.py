@@ -541,60 +541,72 @@ def run_full_rebuild(
     # (resource, paper) pairs already confirmed genuine, not the full noisy candidate pool.
     pub_metadata_input = pubmed_hits
     if misc_mode:
-        if pubmed_hits and pubmed_hits.exists():
-            logger.info("Verifying combined hits (cache-aware) and building misc_publications…")
-            import pandas as pd
-            from staging.validate_fetched_publications import validate_publications_df, DEFAULT_CACHE_PATH
-            from staging.combine_hits import combine_query_method_hits
-            from staging.publication_glue import extract_new_corpus_publications, resolve_missing_pmcids
-
-            hits_paths = [pubmed_hits]
-            if new_corpus_final_path and new_corpus_final_path.exists():
-                nav_pubs = extract_new_corpus_publications(new_corpus_final_path, ncbi_api_key=ncbi_api_key)
-                if not nav_pubs.empty:
-                    nav_pubs_path = HITS_DIR / f"new_corpus_publications_{_ts()}.tsv"
-                    nav_pubs.to_csv(nav_pubs_path, sep="\t", index=False)
-                    logger.info(f"[page_navigation] {len(nav_pubs)} publication reference(s) -> {nav_pubs_path.name}")
-                    hits_paths.append(nav_pubs_path)
-
-            combined_df = (
-                combine_query_method_hits(hits_paths) if len(hits_paths) > 1
-                else pd.read_csv(hits_paths[0], sep="\t", dtype=str).fillna("")
-            )
-
-            # DOI-only rows get a PMC ID resolved here (pub_jobs/scilite both need one) -
-            # then re-combined so a row that turns out to be the same paper as one already
-            # carrying that PMC ID collapses into it, instead of surviving as an untethered
-            # duplicate (combine_query_method_hits' union-find already ran once above, on
-            # the pre-resolution identifiers, so it needs a second pass on the enriched data).
-            combined_df = resolve_missing_pmcids(combined_df, ncbi_api_key=ncbi_api_key)
-            resolved_path = HITS_DIR / f"combine_hits_pmcid_resolved_{_ts()}.tsv"
-            combined_df.to_csv(resolved_path, sep="\t", index=False)
-            logger.info("Re-collapsing duplicates after PMC ID resolution…")
-            combined_df = combine_query_method_hits([resolved_path])
-
-            # fulltext_dg_prompt (not the plain "fulltext" method) - matches the offline
-            # batch backfill's method, so its seeded cache entries (see
-            # seed_cache_from_batch_results) actually get hit instead of re-verified live.
-            verified = validate_publications_df(
-                combined_df, resource_col="Resource Name", methods=["fulltext_dg_prompt"],
-                cache_path=DEFAULT_CACHE_PATH, no_cache=not cache_verification,
-                fetch_cache_path=fetch_cache_path,
-            )
-            verified_hits_path = HITS_DIR / f"misc_publications_{_ts()}.tsv"
-            verified.to_csv(verified_hits_path, sep="\t", index=False)
-            logger.info(f"[pub_verification] wrote {len(verified)} verified row(s) -> {verified_hits_path.name}")
-            run_normalizer(verified_hits_path, "misc_publications", "misc_publications_*.tsv", force=force)
-
-            confirmed_df = verified[verified["Verification Status"] == "confirmed"].copy()
-            confirmed_hits_path = HITS_DIR / f"misc_publications_confirmed_{_ts()}.tsv"
-            confirmed_df.to_csv(confirmed_hits_path, sep="\t", index=False)
-            logger.info(f"[pub_verification] {len(confirmed_df)}/{len(verified)} row(s) confirmed -> "
-                        f"{confirmed_hits_path.name} (feeds pub_datasets/supplementary/grants/software/models/scilite)")
-            pub_metadata_input = confirmed_hits_path
+        no_new_literature_pulled = "pubmed_search" in skip_stages and "page_navigation" in skip_stages
+        latest_confirmed = _latest(HITS_DIR, "misc_publications_confirmed_*.tsv") if no_new_literature_pulled else None
+        if latest_confirmed:
+            logger.info(f"[pub_verification] pubmed_search and page_navigation both skipped — no new "
+                        f"literature pulled this run, reusing latest confirmed corpus as-is instead of "
+                        f"re-combining/re-verifying: {latest_confirmed.name}")
+            pub_metadata_input = latest_confirmed
         else:
-            logger.warning("Skipping verification/misc_publications: no combined pubmed hits available")
-            pub_metadata_input = None
+            if no_new_literature_pulled:
+                logger.warning("[pub_verification] pubmed_search and page_navigation both skipped, but no "
+                                "existing misc_publications_confirmed_*.tsv found to reuse — running full "
+                                "verification/recombination anyway.")
+            if pubmed_hits and pubmed_hits.exists():
+                logger.info("Verifying combined hits (cache-aware) and building misc_publications…")
+                import pandas as pd
+                from staging.validate_fetched_publications import validate_publications_df, DEFAULT_CACHE_PATH
+                from staging.combine_hits import combine_query_method_hits
+                from staging.publication_glue import extract_new_corpus_publications, resolve_missing_pmcids
+
+                hits_paths = [pubmed_hits]
+                if new_corpus_final_path and new_corpus_final_path.exists():
+                    nav_pubs = extract_new_corpus_publications(new_corpus_final_path, ncbi_api_key=ncbi_api_key)
+                    if not nav_pubs.empty:
+                        nav_pubs_path = HITS_DIR / f"new_corpus_publications_{_ts()}.tsv"
+                        nav_pubs.to_csv(nav_pubs_path, sep="\t", index=False)
+                        logger.info(f"[page_navigation] {len(nav_pubs)} publication reference(s) -> {nav_pubs_path.name}")
+                        hits_paths.append(nav_pubs_path)
+
+                combined_df = (
+                    combine_query_method_hits(hits_paths) if len(hits_paths) > 1
+                    else pd.read_csv(hits_paths[0], sep="\t", dtype=str).fillna("")
+                )
+
+                # DOI-only rows get a PMC ID resolved here (pub_jobs/scilite both need one) -
+                # then re-combined so a row that turns out to be the same paper as one already
+                # carrying that PMC ID collapses into it, instead of surviving as an untethered
+                # duplicate (combine_query_method_hits' union-find already ran once above, on
+                # the pre-resolution identifiers, so it needs a second pass on the enriched data).
+                combined_df = resolve_missing_pmcids(combined_df, ncbi_api_key=ncbi_api_key)
+                resolved_path = HITS_DIR / f"combine_hits_pmcid_resolved_{_ts()}.tsv"
+                combined_df.to_csv(resolved_path, sep="\t", index=False)
+                logger.info("Re-collapsing duplicates after PMC ID resolution…")
+                combined_df = combine_query_method_hits([resolved_path])
+
+                # fulltext_dg_prompt (not the plain "fulltext" method) - matches the offline
+                # batch backfill's method, so its seeded cache entries (see
+                # seed_cache_from_batch_results) actually get hit instead of re-verified live.
+                verified = validate_publications_df(
+                    combined_df, resource_col="Resource Name", methods=["fulltext_dg_prompt"],
+                    cache_path=DEFAULT_CACHE_PATH, no_cache=not cache_verification,
+                    fetch_cache_path=fetch_cache_path,
+                )
+                verified_hits_path = HITS_DIR / f"misc_publications_{_ts()}.tsv"
+                verified.to_csv(verified_hits_path, sep="\t", index=False)
+                logger.info(f"[pub_verification] wrote {len(verified)} verified row(s) -> {verified_hits_path.name}")
+                run_normalizer(verified_hits_path, "misc_publications", "misc_publications_*.tsv", force=force)
+
+                confirmed_df = verified[verified["Verification Status"] == "confirmed"].copy()
+                confirmed_hits_path = HITS_DIR / f"misc_publications_confirmed_{_ts()}.tsv"
+                confirmed_df.to_csv(confirmed_hits_path, sep="\t", index=False)
+                logger.info(f"[pub_verification] {len(confirmed_df)}/{len(verified)} row(s) confirmed -> "
+                            f"{confirmed_hits_path.name} (feeds pub_datasets/supplementary/grants/software/models/scilite)")
+                pub_metadata_input = confirmed_hits_path
+            else:
+                logger.warning("Skipping verification/misc_publications: no combined pubmed hits available")
+                pub_metadata_input = None
 
     # --- Stage 4: Publication metadata — datasets/supplementary/grants/software (needs pub_metadata_input) ---
     # These five are fully independent (separate DataGatherer calls, separate

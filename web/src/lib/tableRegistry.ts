@@ -184,7 +184,7 @@ export const TABLE_REGISTRY: readonly TableMeta[] = [
       col("model_name"),
       col("version"),
       col("mention_type"),
-      col("url"),
+      col("url", true),
       col("context_from_paper"),
     ],
   },

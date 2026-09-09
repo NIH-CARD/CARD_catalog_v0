@@ -1080,18 +1080,26 @@ function ModelsTab() {
         header: "Model URL",
         size: 200,
         cell: (info) => {
-          const url = info.getValue();
-          if (!url) return null;
+          const raw = info.getValue();
+          if (!raw) return null;
+          // A single model mention can carry more than one hosting link (e.g. a
+          // GitHub repo and a Hugging Face page for the same model) - semicolon-delimited.
+          const urls = raw.split(";").map((u) => u.trim()).filter(Boolean);
           return (
-            <a
-              href={url}
-              target="_blank"
-              rel="noreferrer"
-              className="text-xs text-accent hover:underline line-clamp-2 max-w-md"
-              title={url}
-            >
-              {url}
-            </a>
+            <div className="flex flex-col gap-0.5 max-w-md">
+              {urls.map((url) => (
+                <a
+                  key={url}
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-accent hover:underline line-clamp-2"
+                  title={url}
+                >
+                  {url}
+                </a>
+              ))}
+            </div>
           );
         },
       }),
