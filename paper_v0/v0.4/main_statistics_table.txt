@@ -8,9 +8,9 @@ Resource Types Distribution:
   biorepository: 16 (6.8%)
   data catalog: 7 (3.0%)
 
-DATASETS
+RESOURCES
 --------------------------------------------------------------------------------
-Total Number of Datasets: 237
+Total Number of Resources: 237
 
 Coarse Data Types:
   clinical: 184 (31.3%)

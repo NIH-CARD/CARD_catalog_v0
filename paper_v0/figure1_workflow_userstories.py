@@ -204,7 +204,7 @@ def generate_new_hire_story():
     from a Connections freeze (Publications filtered to Resource Name =
     Religious Orders Study, 205 rows - was 211 before scripts/dedup_
     publications_preprints.py collapsed 6 preprint/published-version
-    duplicate pairs out of the ROS subset) and its AI Read. Phase 2 mirrors
+    duplicate pairs out of the ROS subset) and its AI Analysis. Phase 2 mirrors
     the original GP2 story's own structure - +Join SciLite Annotations
     (facet Type=Gene_Proteins) on those same 205 papers, count per gene
     (Exact) - 157/205 tag >=1 gene; top raw Exact values are tau 105, APOE
@@ -231,15 +231,15 @@ major post-mortem brain-bank studies.
     ┌─────────────────────────────────────────────────────────────────────┐
     │  PHASE 1: CRYSTALLIZE - WHAT IS ROS?                                │
     │  HOW: Publications -> filter Resource Name = Religious Orders       │
-    │       Study -> Freeze -> AI Read                                    │
+    │       Study -> Freeze -> AI Analysis                                │
     │                                                                     │
     │  ┌────────────────┐                   ┌─────────────────────────┐   │
     │  │  Publications  │──────  > Freeze   │  205 papers - 58% also  │   │
     │  │      Page      │        (205 rows) │  tag Memory and Aging.  │   │
-    │  │  5,086 papers  │                   │  Top co-resource: MAP.  │   │
+    │  │  4,979 papers  │                   │  Top co-resource: MAP.  │   │
     │  └────────────────┘                   └─────────────────────────┘   │
     │         │                                                           │
-    │         └────── > Scientific Read ──────────────┘                   │
+    │         └────── > AI Analysis ──────────────────┘                   │
     │         ┌──────────────────────────────────┐                        │
     │         │  ROS and MAP are near-identical  │                        │
     │         │  sister cohorts - routinely      │                        │
@@ -249,7 +249,7 @@ major post-mortem brain-bank studies.
                                    │
                                    ▼
     ┌─────────────────────────────────────────────────────────────────────┐
-    │  PHASE 2: STRATIFY BY GENE (Scientific Read's next step B)          │
+    │  PHASE 2: STRATIFY BY GENE (AI Analysis's next step B)              │
     │  HOW: Connections -> +Join SciLite Annotations on the 205 ROS       │
     │       papers (facet: Type=Gene_Proteins) -> count per gene (Exact)  │
     │                                                                     │

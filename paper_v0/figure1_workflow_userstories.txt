@@ -15,15 +15,15 @@ major post-mortem brain-bank studies.
     ┌─────────────────────────────────────────────────────────────────────┐
     │  PHASE 1: CRYSTALLIZE - WHAT IS ROS?                                │
     │  HOW: Publications -> filter Resource Name = Religious Orders       │
-    │       Study -> Freeze -> AI Read                                    │
+    │       Study -> Freeze -> AI Analysis                                │
     │                                                                     │
     │  ┌────────────────┐                   ┌─────────────────────────┐   │
-    │  │  Publications  │──────  > Freeze   │  211 papers - 57% also  │   │
-    │  │      Page      │        (211 rows) │  tag Memory and Aging.  │   │
-    │  │  5,086 papers  │                   │  Top co-resource: MAP.  │   │
+    │  │  Publications  │──────  > Freeze   │  205 papers - 58% also  │   │
+    │  │      Page      │        (205 rows) │  tag Memory and Aging.  │   │
+    │  │  4,979 papers  │                   │  Top co-resource: MAP.  │   │
     │  └────────────────┘                   └─────────────────────────┘   │
     │         │                                                           │
-    │         └────── > Scientific Read ──────────────┘                   │
+    │         └────── > AI Analysis ──────────────────┘                   │
     │         ┌──────────────────────────────────┐                        │
     │         │  ROS and MAP are near-identical  │                        │
     │         │  sister cohorts - routinely      │                        │
@@ -33,15 +33,15 @@ major post-mortem brain-bank studies.
                                    │
                                    ▼
     ┌─────────────────────────────────────────────────────────────────────┐
-    │  PHASE 2: STRATIFY BY GENE (Scientific Read's next step B)          │
-    │  HOW: Connections -> +Join SciLite Annotations on the 211 ROS       │
+    │  PHASE 2: STRATIFY BY GENE (AI Analysis's next step B)              │
+    │  HOW: Connections -> +Join SciLite Annotations on the 205 ROS       │
     │       papers (facet: Type=Gene_Proteins) -> count per gene (Exact)  │
     │                                                                     │
     │  ┌──────────────┐                   ┌───────────────────────────┐   │
-    │  │  ROS papers  │──── > Join        │  162/211 papers tag a     │   │
-    │  │  (211, from  │      by PMC ID    │  gene: tau 110 · APOE     │   │
-    │  │   Phase 1)   │      (Gene facet) │  98 · APP 50 · TDP-43     │   │
-    │  │              │                   │  33 · GFAP 30 · TREM2 27  │   │
+    │  │  ROS papers  │──── > Join        │  157/205 papers tag a     │   │
+    │  │  (205, from  │      by PMC ID    │  gene: tau 105 · APOE     │   │
+    │  │   Phase 1)   │      (Gene facet) │  95 · APP 48 · TDP-43     │   │
+    │  │              │                   │  30 · GFAP 28 · TREM2 26  │   │
     │  └──────────────┘                   └───────────────────────────┘   │
     └─────────────────────────────────────────────────────────────────────┘
                                    │

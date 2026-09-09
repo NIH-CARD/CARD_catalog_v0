@@ -14,7 +14,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 # Import from generate_main_table
 from generate_main_table import (
-    analyze_datasets, analyze_publications,
+    analyze_resources, analyze_publications,
     analyze_code_repos, analyze_cell_models
 )
 
@@ -25,7 +25,7 @@ def create_wide_csv():
     """Create wide-format CSV with statistics."""
 
     print("Generating statistics...")
-    datasets_stats = analyze_datasets()
+    resources_stats = analyze_resources()
     pubs_stats = analyze_publications()
     code_stats = analyze_code_repos()
     cell_stats = analyze_cell_models()
@@ -33,35 +33,35 @@ def create_wide_csv():
     # Create list to hold all rows
     rows = []
 
-    # DATASETS SECTION
-    rows.append(['DATASETS', '', '', ''])
-    rows.append(['Total Datasets', datasets_stats.get('n_datasets', ''), '', ''])
+    # RESOURCES SECTION
+    rows.append(['RESOURCES', '', '', ''])
+    rows.append(['Total Resources', resources_stats.get('n_resources', ''), '', ''])
     rows.append(['', '', '', ''])
 
     # Coarse data types
     rows.append(['Coarse Data Types', '', '', ''])
-    if 'coarse_data_types' in datasets_stats:
-        total_types = sum(count for _, count in datasets_stats['coarse_data_types'])
-        for dtype, count in datasets_stats['coarse_data_types']:
+    if 'coarse_data_types' in resources_stats:
+        total_types = sum(count for _, count in resources_stats['coarse_data_types'])
+        for dtype, count in resources_stats['coarse_data_types']:
             pct = (count / total_types * 100) if total_types > 0 else 0
             rows.append([dtype, '', count, f"{pct:.1f}%"])
     rows.append(['', '', '', ''])
 
     # Sample size statistics
     rows.append(['Sample Size Statistics', '', '', ''])
-    if 'sample_size_mean' in datasets_stats:
-        rows.append(['Mean', f"{datasets_stats['sample_size_mean']:.0f}", '', ''])
-        rows.append(['Median', f"{datasets_stats['sample_size_median']:.0f}", '', ''])
-        rows.append(['Min', f"{datasets_stats['sample_size_min']:.0f}", '', ''])
-        rows.append(['Max', f"{datasets_stats['sample_size_max']:.0f}", '', ''])
-        rows.append(['Std Dev', f"{datasets_stats['sample_size_std']:.0f}", '', ''])
+    if 'sample_size_mean' in resources_stats:
+        rows.append(['Mean', f"{resources_stats['sample_size_mean']:.0f}", '', ''])
+        rows.append(['Median', f"{resources_stats['sample_size_median']:.0f}", '', ''])
+        rows.append(['Min', f"{resources_stats['sample_size_min']:.0f}", '', ''])
+        rows.append(['Max', f"{resources_stats['sample_size_max']:.0f}", '', ''])
+        rows.append(['Std Dev', f"{resources_stats['sample_size_std']:.0f}", '', ''])
     rows.append(['', '', '', ''])
 
     # FAIR compliance
     rows.append(['FAIR Compliance Levels', '', '', ''])
-    if 'fair_levels' in datasets_stats:
-        for level, count in datasets_stats['fair_levels'].items():
-            pct = datasets_stats['fair_levels_pct'][level]
+    if 'fair_levels' in resources_stats:
+        for level, count in resources_stats['fair_levels'].items():
+            pct = resources_stats['fair_levels_pct'][level]
             rows.append([level, '', count, f"{pct:.1f}%"])
     rows.append(['', '', '', ''])
 

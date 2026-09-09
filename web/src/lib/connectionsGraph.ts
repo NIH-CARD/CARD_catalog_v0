@@ -210,8 +210,14 @@ export function facetColumnsFor(table: string): ColumnMeta[] {
  * - Excludes each table's own Resource Name/Abbreviation - already covered
  *   by the universal Resource domain.
  *
- * Domain fields (PubMed Central Link, DOI, source_url, PMC ID, Linked
- * Publications, Linked Studies, Gene, Exact) are never listed here.
+ * Domain fields used purely as join keys (PubMed Central Link, DOI,
+ * source_url, PMC ID, Linked Publications, Linked Studies, Gene) are never
+ * listed here. SciLite Annotations' Exact is the one deliberate exception -
+ * it doubles as the Concept domain's join key (CONCEPT_FIELDS above) AND as
+ * a connectable column in its own right, since the raw mention text itself
+ * (not just its normalized Tag Name) is a meaningful thing to merge in or
+ * build a value-node graph on - e.g. a gene co-mention graph connecting two
+ * Exact values that appear in the same publication.
  */
 const CONNECTABLE_COLUMNS: Record<string, string[]> = {
   Resources: ["Coarse Data Modality", "Granular Data Modality", "Diseases Included", "Resource Type", "Is Part Of"],
