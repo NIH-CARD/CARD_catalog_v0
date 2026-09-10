@@ -1,5 +1,5 @@
 """
-Generate Figure 1: CARD Catalog User Stories (ASCII Art)
+Generate Figure 3: CARD Catalog User Stories (ASCII Art)
 
 Three panels:
 A. User Story 1 - New Hire Onboarding (introductory; every number comes
@@ -273,8 +273,8 @@ major post-mortem brain-bank studies.
 
 
 def main():
-    """Generate Figure 1 with all three panels."""
-    print("Generating Figure 1: CARD Catalog Workflow and User Stories\n")
+    """Generate Figure 3 with all three panels."""
+    print("Generating Figure 3: CARD Catalog Workflow and User Stories\n")
 
     # Generate all panels
     panel_a = generate_new_hire_story()
@@ -282,9 +282,9 @@ def main():
     panel_c = generate_program_officer_story()
 
     # Combine into single figure
-    figure1 = f"""
+    figure3 = f"""
 {'='*80}
-FIGURE 1: CARD CATALOG USER STORIES
+FIGURE 3: CARD CATALOG USER STORIES
 {'='*80}
 {panel_a}
 
@@ -296,12 +296,12 @@ FIGURE 1: CARD CATALOG USER STORIES
 """
 
     # Save to file
-    output_file = "paper_v0/figure1_workflow_userstories.txt"
+    output_file = "paper_v0/figure3_workflow_userstories.txt"
     with open(output_file, 'w', encoding='utf-8') as f:
-        f.write(figure1)
+        f.write(figure3)
 
-    print(f"Figure 1 saved to: {output_file}\n")
-    print(figure1)
+    print(f"Figure 3 saved to: {output_file}\n")
+    print(figure3)
 
 
 if __name__ == "__main__":

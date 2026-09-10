@@ -1,5 +1,5 @@
 """
-Generate Figure 2 (v2): CARD Catalog Landscape - Simplified 3-Panel Version
+Generate Figure 4 (v2): CARD Catalog Landscape - Simplified 3-Panel Version
 
 Panel A: Coarse data types per study count, colored by FAIR compliance
 Panel B: Code languages heatmap showing what's missing (README, LICENSE, etc.) with N repositories
@@ -342,26 +342,26 @@ def create_figure():
     fig.suptitle('CARD Catalog Landscape: Coarse Data Modality, Code Quality, and Sample Distributions',
                 fontsize=15, fontweight='bold', y=0.93)
 
-    output_file = OUTPUT_DIR / "figure2_landscape_v2.png"
+    output_file = OUTPUT_DIR / "figure4_landscape_v2.png"
     plt.savefig(output_file, dpi=500, bbox_inches='tight', facecolor='white')
-    print(f"\nFigure 2 (v2) saved to: {output_file} (500 DPI)")
+    print(f"\nFigure 4 (v2) saved to: {output_file} (500 DPI)")
 
-    output_pdf = OUTPUT_DIR / "figure2_landscape_v2.pdf"
+    output_pdf = OUTPUT_DIR / "figure4_landscape_v2.pdf"
     plt.savefig(output_pdf, bbox_inches='tight', facecolor='white')
-    print(f"Figure 2 (v2) PDF saved to: {output_pdf}")
+    print(f"Figure 4 (v2) PDF saved to: {output_pdf}")
 
     plt.close()
 
 
 def main():
-    """Generate Figure 2 v2."""
+    """Generate Figure 4 v2."""
     print("="*70)
-    print("Generating Figure 2 (v2): CARD Catalog Landscape - 3 Panel Version")
+    print("Generating Figure 4 (v2): CARD Catalog Landscape - 3 Panel Version")
     print("="*70)
 
     create_figure()
 
-    print("\nFigure 2 (v2) generation complete!")
+    print("\nFigure 4 (v2) generation complete!")
     print("="*70)
 
 
