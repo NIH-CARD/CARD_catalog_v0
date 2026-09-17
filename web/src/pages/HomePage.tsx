@@ -194,28 +194,25 @@ export function HomePage() {
         <h4 className="text-center text-sm font-semibold text-slate-600 uppercase tracking-wider mb-4">
           Supported By
         </h4>
-        <div className="grid grid-cols-3 gap-6 items-center mb-8 max-w-5xl mx-auto px-4">
-          <div className="flex justify-center min-w-0">
-            <img
-              src="/logos/ADDI.png"
-              alt="ADDI"
-              className="object-contain w-auto h-auto max-h-10 max-w-[240px]"
-            />
-          </div>
-          <div className="flex justify-center min-w-0">
-            <img
-              src="/logos/card_logo.png"
-              alt="CARD"
-              className="object-contain w-full h-auto max-h-40"
-            />
-          </div>
-          <div className="flex justify-center min-w-0">
-            <img
-              src="/logos/stacked_DT.png"
-              alt="DataTecnica"
-              className="object-contain w-full h-auto max-h-16"
-            />
-          </div>
+        {/* Stacked on phones, one row from sm up. Each logo is sized by its own
+            max-height - tuned per aspect ratio so all three read at a similar
+            optical weight - with max-w-full keeping it inside its column. */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-center justify-items-center mb-8 max-w-5xl mx-auto px-4">
+          <img
+            src="/logos/ADDI.png"
+            alt="ADDI"
+            className="object-contain w-auto h-auto max-w-full max-h-12 sm:max-h-10"
+          />
+          <img
+            src="/logos/card_logo.png"
+            alt="CARD"
+            className="object-contain w-auto h-auto max-w-full max-h-10 sm:max-h-8"
+          />
+          <img
+            src="/logos/stacked_DT.png"
+            alt="DataTecnica"
+            className="object-contain w-auto h-auto max-w-full max-h-20 sm:max-h-16"
+          />
         </div>
 
         <hr className="border-slate-200 mb-8" />
