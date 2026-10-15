@@ -376,12 +376,16 @@ def _dedup_repos(df: pd.DataFrame) -> pd.DataFrame:
     resource whose search terms it hits) into one row per Repository Link.
     Resource Name/Abbreviation merge into semicolon-joined lists - a repo can
     genuinely relate to several resources; everything else describes the repo
-    itself and takes the first non-empty value across the group."""
+    itself and takes the first non-empty value across the group.
+
+    Links are grouped by _normalize_repo_url (GitHub owner/repo is case-insensitive,
+    so 'org/inferCNV' and 'org/infercnv' are one repo); the first link seen is kept."""
     if "Repository Link" not in df.columns:
         return df
 
+    columns = list(df.columns)
     multi_value_cols = [c for c in ("Resource Name", "Abbreviation") if c in df.columns]
-    other_cols = [c for c in df.columns if c not in multi_value_cols and c != "Repository Link"]
+    other_cols = [c for c in df.columns if c not in multi_value_cols]
 
     def merge_group(group: pd.DataFrame) -> "pd.Series[str]":
         out = {}
@@ -391,8 +395,10 @@ def _dedup_repos(df: pd.DataFrame) -> pd.DataFrame:
             out[col] = next((v for v in group[col] if v.strip()), "")
         return pd.Series(out)
 
+    links = df["Repository Link"].astype(str)
+    repo_key = links.apply(_normalize_repo_url).where(lambda k: k != "", links.str.strip().str.lower())
     before = len(df)
-    deduped = df.groupby("Repository Link", sort=False).apply(merge_group).reset_index()
+    deduped = df.groupby(repo_key, sort=False).apply(merge_group).reset_index(drop=True)[columns]
     after = len(deduped)
     if before != after:
         logger.info(f"code: collapsed {before} rows → {after} unique repos ({before - after} duplicate resource-links merged)")
