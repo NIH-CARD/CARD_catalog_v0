@@ -11,7 +11,9 @@ import { GraphControls, buildEdgeFields } from "../components/GraphControls";
 import { KnowledgeGraph } from "../components/KnowledgeGraph";
 import { PageShell } from "../components/PageShell";
 import {
-  validDomainsFor,
+  joinOptionsFor,
+  mergeableColumnsFor,
+  connectionsColumns,
   facetColumnsFor,
   nativeColumnsFor,
   mergedFieldKey,
@@ -26,6 +28,7 @@ import {
   publicationIdFor,
   type DagEdge,
   type Domain,
+  type JoinOption,
   type ValueCountsColumn,
   type MacroSummaryColumn,
   type BaselineColumn,
@@ -52,7 +55,63 @@ const DOMAIN_LABEL_SHORT: Record<Domain, string> = {
   concept: "Concept",
 };
 
-const MERGEABLE_TABLES = TABLE_REGISTRY.map((t) => t.name).filter((n) => n !== "Publications");
+const ALL_TABLES = TABLE_REGISTRY.map((t) => t.name);
+
+/** A table the chain can start from, and how its rows are shown, labeled and summarized. */
+interface BaseConfig {
+  /** Singular noun for one row, e.g. "cell line". */
+  entity: string;
+  /** Columns shown for the base table in the DAG node, wide table and node popover. */
+  display: string[];
+  /** Graph node label in row mode. */
+  labelField: string;
+  /** One-value-per-row identity, used for "Same <entity>" edges and the SQL GROUP BY. */
+  idField: string;
+  /** Graph fields beyond the table's curated connectable columns. */
+  extraGraphFields: string[];
+  defaultEdgeField: string;
+  /** Base columns in the freeze report's summary and baseline. */
+  summary: { field: string; delimiter?: string }[];
+}
+
+const BASES: Record<string, BaseConfig> = {
+  Publications: {
+    entity: "publication",
+    display: ["Title", "Resource Name", "Authors", "Publication Year"],
+    labelField: "Title",
+    idField: "PMID",
+    extraGraphFields: ["Resource Name"],
+    defaultEdgeField: "Resource Name",
+    summary: [{ field: "Resource Name", delimiter: ";" }, { field: "Publication Year" }],
+  },
+  "Human Cellular Models": {
+    entity: "cell line",
+    display: ["Product Code", "Gene", "Gene Variant", "Condition"],
+    labelField: "Product Code",
+    idField: "Product Code",
+    extraGraphFields: ["Gene"],
+    defaultEdgeField: "Gene",
+    summary: [{ field: "Gene" }, { field: "Condition" }],
+  },
+  Resources: {
+    entity: "resource",
+    display: ["Resource Name", "Resource Type", "Diseases Included", "Coarse Data Modality"],
+    labelField: "Resource Name",
+    idField: "Resource Name",
+    extraGraphFields: [],
+    defaultEdgeField: "Diseases Included",
+    summary: [{ field: "Resource Type" }, { field: "Diseases Included", delimiter: ";" }],
+  },
+};
+
+function plural(entity: string, n: number): string {
+  return n === 1 ? entity : `${entity}s`;
+}
+
+/** Encodes a JoinOption as a <select> value. */
+function joinOptionKey(o: JoinOption): string {
+  return o.via ? `${o.domain}|${o.via}` : o.domain;
+}
 
 function downloadMarkdown(filename: string, content: string) {
   const blob = new Blob([content], { type: "text/markdown" });
@@ -65,6 +124,10 @@ function downloadMarkdown(filename: string, content: string) {
 }
 
 async function loadRawTable(table: string): Promise<Row[]> {
+  if (table === "Publications") {
+    const rows = (await loadPublications()) as unknown as Row[];
+    return rows.map((r) => ({ ...r, "Publication Year": publicationYearFrom(r["Publication Date"] as string) }));
+  }
   if (table === "SciLite Annotations") {
     return loadSciLitePmcTypeCounts() as unknown as Promise<Row[]>;
   }
@@ -74,19 +137,27 @@ async function loadRawTable(table: string): Promise<Row[]> {
 
 // --- DAG visualization -------------------------------------------------
 
+const DAG_NODE_WIDTH = 190;
+// Node pitch: leaves room for an edge label like "Pub ID (chained)" between boxes.
+const DAG_NODE_GAP = 300;
+
 function DagNode({ data }: NodeProps<{ label: string; root?: boolean; onRemove?: () => void; columns?: string[] }>) {
-  const shownColumns = data.columns ?? [];
+  // Cap the list so a table with many columns doesn't grow its box past the canvas.
+  const MAX_SHOWN = 4;
+  const allColumns = data.columns ?? [];
+  const shownColumns = allColumns.length > MAX_SHOWN ? [...allColumns.slice(0, MAX_SHOWN - 1), `+${allColumns.length - MAX_SHOWN + 1} more`] : allColumns;
   return (
     <div
       className={
         "flex flex-col justify-center px-4 py-1.5 rounded border text-sm text-center " +
         (data.root ? "bg-accent text-white border-accent font-semibold" : "bg-white border-slate-300")
       }
-      style={{ minWidth: 150, minHeight: 44 }}
+      // Fixed width (titles wrap) so the "+" and the next box can be placed without overlapping it.
+      style={{ width: DAG_NODE_WIDTH, minHeight: 44 }}
     >
       <Handle type="target" position={Position.Left} className="!opacity-0" />
       <div className="flex items-center justify-between gap-2 w-full">
-        <span>{data.label}</span>
+        <span className="leading-tight break-words min-w-0">{data.label}</span>
         {data.onRemove && (
           <button
             onClick={data.onRemove}
@@ -102,6 +173,7 @@ function DagNode({ data }: NodeProps<{ label: string; root?: boolean; onRemove?:
           {shownColumns.map((c, i) => (
             <div
               key={c}
+              title={c.startsWith("+") ? allColumns.slice(MAX_SHOWN - 1).join(", ") : c}
               className={
                 "text-[9px] leading-tight text-left font-normal truncate py-0.5 " +
                 (i < shownColumns.length - 1 ? "border-b " : "") +
@@ -124,10 +196,11 @@ interface AddTableNodeData {
   availableTables: string[];
   newTable: string;
   onTableChange: (table: string) => void;
-  newDomain: Domain | "";
-  onDomainChange: (domain: Domain) => void;
-  domainsForNewTable: Domain[];
+  newJoin: string;
+  onJoinChange: (key: string) => void;
+  joinOptions: JoinOption[];
   domainLabel: Record<Domain, string>;
+  baseTable: string;
   newColumns: Set<string>;
   onToggleColumn: (field: string) => void;
   nativeColumns: { field: string }[];
@@ -190,20 +263,25 @@ function AddTableNode({ data }: NodeProps<AddTableNodeData>) {
                 <label className="block text-[10px] text-slate-500 mb-1">Join key</label>
                 <select
                   className="border border-slate-300 rounded px-2 py-1 text-xs"
-                  value={data.newDomain}
-                  onChange={(e) => data.onDomainChange(e.target.value as Domain)}
+                  value={data.newJoin}
+                  onChange={(e) => data.onJoinChange(e.target.value)}
                 >
                   <option value="">Choose…</option>
-                  {data.domainsForNewTable.map((d) => (
-                    <option key={d} value={d}>{data.domainLabel[d]}</option>
+                  {data.joinOptions.map((o) => (
+                    <option key={joinOptionKey(o)} value={joinOptionKey(o)}>
+                      {data.domainLabel[o.domain]}
+                      {o.via ? ` via ${o.via}` : ""}
+                    </option>
                   ))}
                 </select>
-                {data.domainsForNewTable.length === 0 && (
-                  <p className="text-[10px] text-amber-700 mt-1 max-w-[10rem]">No verified join key to Publications.</p>
+                {data.joinOptions.length === 0 && (
+                  <p className="text-[10px] text-amber-700 mt-1 max-w-[10rem]">
+                    No verified join key to {data.baseTable} or the tables merged so far.
+                  </p>
                 )}
               </div>
             )}
-            {data.newTable && data.newDomain && (
+            {data.newTable && data.newJoin && (
               <div className="max-w-xs">
                 <label className="block text-[10px] text-slate-500 mb-1">
                   Columns ({data.newColumns.size}/{data.nativeColumns.length})
@@ -227,7 +305,7 @@ function AddTableNode({ data }: NodeProps<AddTableNodeData>) {
                 </div>
               </div>
             )}
-            {data.newTable && data.newDomain && data.newColumns.size > 0 && (
+            {data.newTable && data.newJoin && data.newColumns.size > 0 && (
               <button onClick={data.onAdd} className="bg-accent text-white text-xs px-2 py-1 rounded">
                 Add to pipeline
               </button>
@@ -243,10 +321,12 @@ function AddTableNode({ data }: NodeProps<AddTableNodeData>) {
 const DAG_NODE_TYPES: NodeTypes = { dag: DagNode, add: AddTableNode };
 
 function DagView({
+  baseTable,
   edges,
   onRemove,
   addNodeData,
 }: {
+  baseTable: string;
   edges: DagEdge[];
   onRemove: (table: string) => void;
   addNodeData: AddTableNodeData;
@@ -256,32 +336,32 @@ function DagView({
   // left-to-right chain, not a fan-out of siblings.
   const nodes: Node[] = [
     {
-      id: "Publications",
+      id: "__base__",
       type: "dag",
       position: { x: 0, y: 0 },
-      data: { label: "Publications", root: true, columns: BASE_DISPLAY_COLUMNS },
+      data: { label: baseTable, root: true, columns: BASES[baseTable].display },
     },
     ...edges.map((e, i) => ({
       id: e.table,
       type: "dag",
-      position: { x: (i + 1) * 250, y: 0 },
+      position: { x: (i + 1) * DAG_NODE_GAP, y: 0 },
       data: { label: e.table, onRemove: () => onRemove(e.table), columns: e.columns },
     })),
     {
       id: "__add__",
       type: "add",
-      // Tighter gap than the 250 used between real nodes - that spacing is
+      // Tighter gap than DAG_NODE_GAP between real nodes - that spacing is
       // sized for a full DagNode box, but the "+" pill is much narrower, so
       // the same gap would leave it looking disconnected from the chain.
-      position: { x: edges.length * 250 + 175, y: 0 },
+      position: { x: edges.length * DAG_NODE_GAP + DAG_NODE_WIDTH + 16, y: 0 },
       data: addNodeData,
     },
   ];
   const flowEdges: Edge[] = edges.map((e, i) => ({
     id: e.table,
-    source: i === 0 ? "Publications" : edges[i - 1].table,
+    source: i === 0 ? "__base__" : edges[i - 1].table,
     target: e.table,
-    label: DOMAIN_LABEL_SHORT[e.domain],
+    label: DOMAIN_LABEL_SHORT[e.domain] + (e.via ? " (chained)" : ""),
     labelStyle: { fontSize: 10 },
     style: { stroke: "#94a3b8" },
   }));
@@ -312,22 +392,33 @@ function DagView({
 // --- Wide-table columns --------------------------------------------------
 
 const wideCol = createColumnHelper<Row>();
-const BASE_DISPLAY_COLUMNS = ["Title", "Resource Name", "Authors", "Publication Year"];
+/** Merged cells can hold thousands of joined values - clamp to three lines, full text on hover. */
+function clampedCell(info: { getValue: () => unknown }) {
+  const text = String(info.getValue() ?? "");
+  if (!text) return null;
+  return (
+    <p className="text-xs line-clamp-3 max-w-xs break-words" title={text.length > 2000 ? `${text.slice(0, 2000)}…` : text}>
+      {text}
+    </p>
+  );
+}
 
-function buildWideColumns(edges: DagEdge[]) {
-  const cols = BASE_DISPLAY_COLUMNS.map((field) =>
-    wideCol.accessor((row) => row[field] as string, { id: field, header: field }),
+function buildWideColumns(baseTable: string, edges: DagEdge[]) {
+  const cols = BASES[baseTable].display.map((field) =>
+    wideCol.accessor((row) => row[field] as string, { id: field, header: field, cell: clampedCell }),
   );
   for (const edge of edges) {
     for (const field of edge.columns) {
       const key = mergedFieldKey(edge.table, field);
-      cols.push(wideCol.accessor((row) => row[key] as string, { id: key, header: key }));
+      cols.push(wideCol.accessor((row) => row[key] as string, { id: key, header: key, cell: clampedCell }));
     }
   }
   return cols;
 }
 
 export function ConnectionsPage() {
+  const [baseTable, setBaseTable] = useState<string>("Publications");
+  const base = BASES[baseTable];
   const [pubRows, setPubRows] = useState<Row[] | null>(null);
   const [rawByTable, setRawByTable] = useState<Record<string, Row[]>>({});
   const [stats, setStats] = useState<ConnectionsStats | null>(null);
@@ -339,7 +430,7 @@ export function ConnectionsPage() {
 
   // "Add a table" form state.
   const [newTable, setNewTable] = useState<string>("");
-  const [newDomain, setNewDomain] = useState<Domain | "">("");
+  const [newJoin, setNewJoin] = useState<string>("");
   const [newColumns, setNewColumns] = useState<Set<string>>(new Set());
   const [addPopoverOpen, setAddPopoverOpen] = useState(false);
 
@@ -359,24 +450,34 @@ export function ConnectionsPage() {
   const [nodeScaleMode, setNodeScaleMode] = useState<"none" | "linear" | "log">("log");
   const [edgeSelected, setEdgeSelected] = useState<string[]>(["Resource Name"]);
   const [minShared, setMinShared] = useState(1);
-  const [maxNodes, setMaxNodes] = useState(60);
+  const [maxNodes, setMaxNodes] = useState(300);
   const [showAll, setShowAll] = useState(false);
   const [hubEnabled, setHubEnabled] = useState(false);
   const [hubThresholdPct, setHubThresholdPct] = useState(30);
 
   useEffect(() => {
-    loadPublications()
-      .then((rows) =>
-        setPubRows(
-          (rows as unknown as Row[]).map((r) => ({
-            ...r,
-            "Publication Year": publicationYearFrom(r["Publication Date"] as string),
-          })),
-        ),
-      )
-      .catch((e: Error) => setError(`Failed to load Publications: ${e.message}`));
     loadConnectionsStats().then(setStats);
   }, []);
+
+  useEffect(() => {
+    setPubRows(null);
+    loadRawTable(baseTable)
+      .then(setPubRows)
+      .catch((e: Error) => setError(`Failed to load ${baseTable}: ${e.message}`));
+  }, [baseTable]);
+
+  /** Start over from another table - every merge, filter and graph choice refers to the old base. */
+  function changeBase(table: string) {
+    setBaseTable(table);
+    setDagEdges([]);
+    setRawByTable({});
+    setFacetSelections({});
+    setFrozen(null);
+    setNodeFieldSelected("");
+    setNodeGraphEdgeField(BASES[table].defaultEdgeField);
+    setEdgeSelected([BASES[table].defaultEdgeField]);
+    closeAddPopover();
+  }
 
   useEffect(() => {
     for (const edge of dagEdges) {
@@ -392,10 +493,11 @@ export function ConnectionsPage() {
   }, [dagEdges]);
 
   function addEdge() {
-    if (!newTable || !newDomain || newColumns.size === 0) return;
-    setDagEdges((prev) => [...prev, { table: newTable, domain: newDomain, columns: Array.from(newColumns) }]);
+    const join = joinOptions.find((o) => joinOptionKey(o) === newJoin);
+    if (!newTable || !join || newColumns.size === 0) return;
+    setDagEdges((prev) => [...prev, { table: newTable, domain: join.domain, via: join.via, columns: Array.from(newColumns) }]);
     setNewTable("");
-    setNewDomain("");
+    setNewJoin("");
     setNewColumns(new Set());
     setAddPopoverOpen(false);
   }
@@ -403,12 +505,21 @@ export function ConnectionsPage() {
   function closeAddPopover() {
     setAddPopoverOpen(false);
     setNewTable("");
-    setNewDomain("");
+    setNewJoin("");
     setNewColumns(new Set());
   }
 
   function removeEdge(table: string) {
-    setDagEdges((prev) => prev.filter((e) => e.table !== table));
+    // Later edges joined via one of this table's columns lose their key, so they go too.
+    setDagEdges((prev) => {
+      const kept: DagEdge[] = [];
+      for (const e of prev) {
+        if (e.table === table) continue;
+        if (e.via && !kept.some((k) => e.via!.startsWith(`${k.table}: `))) continue;
+        kept.push(e);
+      }
+      return kept;
+    });
     setRawByTable((prev) => {
       const next = { ...prev };
       delete next[table];
@@ -418,9 +529,9 @@ export function ConnectionsPage() {
 
   const filteredPubRows = useMemo(() => {
     if (!pubRows) return [];
-    const selections = facetSelections.Publications;
+    const selections = facetSelections[baseTable];
     if (!selections) return pubRows;
-    const columns = facetColumnsFor("Publications");
+    const columns = facetColumnsFor(baseTable);
     return pubRows.filter((row) =>
       columns.every((c) => {
         const selected = selections[c.field];
@@ -428,7 +539,7 @@ export function ConnectionsPage() {
         return matchesFacet(row, { field: c.field, multivalue: c.multivalue, delimiter: c.delimiter }, selected);
       }),
     );
-  }, [pubRows, facetSelections]);
+  }, [pubRows, facetSelections, baseTable]);
 
   const filteredRawByTable = useMemo(() => {
     const out: Record<string, Row[]> = {};
@@ -452,24 +563,29 @@ export function ConnectionsPage() {
   }, [dagEdges, rawByTable, facetSelections]);
 
   const wideRows = useMemo(
-    () => buildWideRows(filteredPubRows, dagEdges, filteredRawByTable),
-    [filteredPubRows, dagEdges, filteredRawByTable],
+    () => buildWideRows(filteredPubRows, dagEdges, filteredRawByTable, baseTable),
+    [filteredPubRows, dagEdges, filteredRawByTable, baseTable],
   );
 
   const sql = useMemo(() => {
-    const pubFilters = toFacetFilters(facetSelections.Publications);
+    const pubFilters = toFacetFilters(facetSelections[baseTable]);
     const edgeFilters = Object.fromEntries(
       dagEdges.map((e) => [e.table, toFacetFilters(facetSelections[e.table])]),
     );
-    return generateSql(dagEdges, pubFilters, edgeFilters);
-  }, [dagEdges, facetSelections]);
-  const wideColumns = useMemo(() => buildWideColumns(dagEdges), [dagEdges]);
+    return generateSql(dagEdges, pubFilters, edgeFilters, baseTable, BASES[baseTable].idField);
+  }, [dagEdges, facetSelections, baseTable]);
+  const wideColumns = useMemo(() => buildWideColumns(baseTable, dagEdges), [baseTable, dagEdges]);
 
   // Graph edge options: Publications' own connectable columns + Resource Name,
   // plus every merged-in column - all now just plain columns of one wide table.
   const graphFieldOptions = useMemo(() => {
+    const meta = (field: string) => connectionsColumns(baseTable).find((c) => c.field === field);
     const opts: { field: string; label: string; delimiter?: string }[] = [
-      { field: "Resource Name", label: "Resource Name", delimiter: ";" },
+      ...BASES[baseTable].extraGraphFields.map((field) => ({
+        field,
+        label: field,
+        delimiter: meta(field)?.multivalue ? meta(field)?.delimiter ?? ";" : undefined,
+      })),
       // Meaningless as an edge field in the plain row-graph (two Publications
       // never share this key) but the natural "same paper" co-occurrence key
       // once nodes are a different field's values (e.g. connect two Authors
@@ -477,8 +593,8 @@ export function ConnectionsPage() {
       // buildValueNodes. Computed (PMC ID falling back to DOI, never a bare
       // PMID) rather than a specific identifier column, since PMID alone is
       // blank for ~3.3% of Publications (DOI-only rows).
-      { field: "__publicationKey", label: "Same Publication" },
-      ...nativeColumnsFor("Publications").map((c) => ({ field: c.field, label: c.field, delimiter: c.delimiter })),
+      { field: "__publicationKey", label: `Same ${BASES[baseTable].entity}` },
+      ...nativeColumnsFor(baseTable).map((c) => ({ field: c.field, label: c.field, delimiter: c.delimiter })),
     ];
     for (const edge of dagEdges) {
       for (const field of edge.columns) {
@@ -491,15 +607,19 @@ export function ConnectionsPage() {
       }
     }
     return opts;
-  }, [dagEdges]);
+  }, [dagEdges, baseTable]);
 
   const graphRows = useMemo(() => {
     const base = dropHubValues(wideRows, hubEnabled ? hubThresholdPct / 100 : 1, edgeSelected);
     // Attach once here, not per-consumer - a Publication's own resolved
     // identity key (PMC ID, falling back to DOI), used as the "Same
     // Publication" edge-field option in value-node mode.
-    return base.map((row) => ({ ...row, __publicationKey: publicationIdFor(row) }));
-  }, [wideRows, hubEnabled, hubThresholdPct, edgeSelected]);
+    // Other bases have a plain one-value identity column.
+    return base.map((row) => ({
+      ...row,
+      __publicationKey: baseTable === "Publications" ? publicationIdFor(row) : String(row[BASES[baseTable].idField] ?? ""),
+    }));
+  }, [wideRows, hubEnabled, hubThresholdPct, edgeSelected, baseTable]);
 
   // Row mode: the existing multi-select checkboxes (edgeSelected). Value-node
   // mode: exactly the one field chosen in the "Connect X by Y" sentence -
@@ -515,7 +635,7 @@ export function ConnectionsPage() {
   // "" (the default) keeps today's plain one-node-per-Publication behavior.
   const { graphNodeRows, graphNodeField, graphNodeSize } = useMemo(() => {
     if (!nodeFieldSelected) {
-      return { graphNodeRows: graphRows, graphNodeField: "Title", graphNodeSize: undefined };
+      return { graphNodeRows: graphRows, graphNodeField: BASES[baseTable].labelField, graphNodeSize: undefined };
     }
     const delimiter = graphFieldOptions.find((o) => o.field === nodeFieldSelected)?.delimiter;
     const valueNodes = buildValueNodes(graphRows, nodeFieldSelected, delimiter, graphEdgeFields, "__publicationKey");
@@ -543,7 +663,7 @@ export function ConnectionsPage() {
       return Math.sqrt(MIN_AREA + t * (MAX_AREA - MIN_AREA));
     };
     return { graphNodeRows: valueNodes, graphNodeField: "value", graphNodeSize: sizeFor };
-  }, [nodeFieldSelected, graphRows, graphFieldOptions, graphEdgeFields, nodeScaleMode]);
+  }, [nodeFieldSelected, graphRows, graphFieldOptions, graphEdgeFields, nodeScaleMode, baseTable]);
 
   // A quantity (e.g. Code Repositories' FAIR Score) vs. a category - drives
   // both valueCountsColumns and macroColumns below, from the same
@@ -556,12 +676,15 @@ export function ConnectionsPage() {
 
   // Title is free text (near-unique per row) - not worth a value-counts breakdown.
   const valueCountsColumns = useMemo(() => {
-    const cols: ValueCountsColumn[] = [
-      { field: "Title", skip: true },
-      { field: "Resource Name", delimiter: ";" },
-      { field: "Authors", delimiter: ";" },
-      { field: "Publication Year", numeric: isNumericField("Publications", "Publication Year") },
-    ];
+    const cols: ValueCountsColumn[] =
+      baseTable === "Publications"
+        ? [
+            { field: "Title", skip: true },
+            { field: "Resource Name", delimiter: ";" },
+            { field: "Authors", delimiter: ";" },
+            { field: "Publication Year", numeric: isNumericField("Publications", "Publication Year") },
+          ]
+        : BASES[baseTable].summary.map((c) => ({ ...c, numeric: isNumericField(baseTable, c.field) }));
     for (const edge of dagEdges) {
       // Always ";" - see graphFieldOptions' comment above for why the
       // source column's own delimiter (e.g. dataset_keywords' comma) is
@@ -576,7 +699,7 @@ export function ConnectionsPage() {
     }
     return cols;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dagEdges, stats]);
+  }, [dagEdges, stats, baseTable]);
 
   // The "at a glance" subset summary - every merged column from every edge
   // (not just each edge's first column), so it lines up 1:1 with
@@ -584,10 +707,10 @@ export function ConnectionsPage() {
   // genuine subset-vs-baseline contrast is possible. Title is still excluded
   // (free text, not in valueCountsColumns' skip-aware loop below either).
   const macroColumns = useMemo(() => {
-    const cols: MacroSummaryColumn[] = [
-      { field: "Resource Name", delimiter: ";" },
-      { field: "Publication Year", numeric: isNumericField("Publications", "Publication Year") },
-    ];
+    const cols: MacroSummaryColumn[] = BASES[baseTable].summary.map((c) => ({
+      ...c,
+      numeric: isNumericField(baseTable, c.field),
+    }));
     for (const edge of dagEdges) {
       // Always ";" - see graphFieldOptions' comment above.
       for (const field of edge.columns) {
@@ -600,21 +723,18 @@ export function ConnectionsPage() {
     }
     return cols;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dagEdges, stats]);
+  }, [dagEdges, stats, baseTable]);
 
   // Same table+field scope as macroColumns, just table-qualified - so the
   // baseline lines up 1:1 with the "At a Glance" subset summary below it and
   // tracks whatever the DAG actually is at freeze time, not a fixed list.
   const baselineColumns = useMemo(() => {
-    const cols: BaselineColumn[] = [
-      { table: "Publications", field: "Resource Name" },
-      { table: "Publications", field: "Publication Year" },
-    ];
+    const cols: BaselineColumn[] = BASES[baseTable].summary.map((c) => ({ table: baseTable, field: c.field }));
     for (const edge of dagEdges) {
       for (const field of edge.columns) cols.push({ table: edge.table, field });
     }
     return cols;
-  }, [dagEdges]);
+  }, [dagEdges, baseTable]);
 
   const [frozen, setFrozen] = useState<{ rows: Row[]; report: string } | null>(null);
 
@@ -622,13 +742,20 @@ export function ConnectionsPage() {
     const query = `## Query\n\n\`\`\`sql\n${sql}\n\`\`\``;
     const baseline = buildBaselineSummary(stats, baselineColumns);
     const macro = buildMacroSummary(wideRows, macroColumns);
-    const counts = buildValueCountsReport(wideRows, valueCountsColumns, dagEdges.map((e) => e.table));
+    const counts = buildValueCountsReport(
+      wideRows,
+      valueCountsColumns,
+      dagEdges.map((e) => e.table),
+      15,
+      baseTable === "Publications" ? "Publications" : `${baseTable} rows`,
+    );
     const report = [query, baseline, macro, counts].filter(Boolean).join("\n\n");
     setFrozen({ rows: wideRows, report });
   }
 
-  const availableTables = MERGEABLE_TABLES.filter((t) => !dagEdges.some((e) => e.table === t));
-  const domainsForNewTable = newTable ? validDomainsFor("Publications", newTable) : [];
+  const availableTables = ALL_TABLES.filter((t) => t !== baseTable && !dagEdges.some((e) => e.table === t));
+  const joinOptions = newTable ? joinOptionsFor(baseTable, newTable, dagEdges) : [];
+  const newJoinDomain = joinOptions.find((o) => joinOptionKey(o) === newJoin)?.domain;
 
   const addNodeData: AddTableNodeData = {
     open: addPopoverOpen,
@@ -638,14 +765,19 @@ export function ConnectionsPage() {
     newTable,
     onTableChange: (table) => {
       setNewTable(table);
-      setNewDomain("");
-      // Default to bringing in every column - unselect any that aren't wanted.
-      setNewColumns(table ? new Set(nativeColumnsFor(table).map((c) => c.field)) : new Set());
+      setNewJoin("");
+      setNewColumns(new Set());
     },
-    newDomain,
-    onDomainChange: setNewDomain,
-    domainsForNewTable,
+    newJoin,
+    onJoinChange: (key) => {
+      setNewJoin(key);
+      const domain = joinOptions.find((o) => joinOptionKey(o) === key)?.domain;
+      // Default to bringing in every column - unselect any that aren't wanted.
+      setNewColumns(domain ? new Set(mergeableColumnsFor(newTable, domain).map((c) => c.field)) : new Set());
+    },
+    joinOptions,
     domainLabel: DOMAIN_LABEL,
+    baseTable,
     newColumns,
     onToggleColumn: (field) =>
       setNewColumns((prev) => {
@@ -654,7 +786,7 @@ export function ConnectionsPage() {
         else next.add(field);
         return next;
       }),
-    nativeColumns: newTable ? nativeColumnsFor(newTable) : [],
+    nativeColumns: newTable && newJoinDomain ? mergeableColumnsFor(newTable, newJoinDomain) : [],
     onAdd: addEdge,
     loadingTable,
   };
@@ -662,25 +794,25 @@ export function ConnectionsPage() {
   return (
     <PageShell
       title="Connections"
-      count={`${wideRows.length.toLocaleString()} Publications row${wideRows.length === 1 ? "" : "s"} · ${dagEdges.length} table${dagEdges.length === 1 ? "" : "s"} merged in`}
+      count={`${wideRows.length.toLocaleString()} ${plural(base.entity, wideRows.length)} · ${dagEdges.length} table${dagEdges.length === 1 ? "" : "s"} merged in`}
       rail={
         <aside className="w-72 border-r border-slate-200 bg-slate-50 px-3 py-4 overflow-y-auto shrink-0">
           <h2 className="text-sm font-semibold text-slate-700 mb-3">Filters</h2>
           <details open className="mb-3">
             <summary className="text-xs font-semibold uppercase tracking-wide text-slate-600 mb-1 cursor-pointer select-none">
-              Publications
+              {baseTable}
             </summary>
             {!pubRows ? (
               <p className="text-xs text-slate-400 italic pl-1">Loading…</p>
             ) : (
-              facetColumnsFor("Publications").map((c) => (
+              facetColumnsFor(baseTable).map((c) => (
                 <Facet<Row>
                   key={c.field}
                   spec={{ field: c.field, multivalue: c.multivalue, delimiter: c.delimiter }}
                   rows={pubRows}
-                  selected={facetSelections.Publications?.[c.field] ?? new Set()}
+                  selected={facetSelections[baseTable]?.[c.field] ?? new Set()}
                   onChange={(next) =>
-                    setFacetSelections((prev) => ({ ...prev, Publications: { ...prev.Publications, [c.field]: next } }))
+                    setFacetSelections((prev) => ({ ...prev, [baseTable]: { ...prev[baseTable], [c.field]: next } }))
                   }
                 />
               ))
@@ -717,10 +849,23 @@ export function ConnectionsPage() {
         )}
 
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wide text-slate-600 mb-2">
-            Pipeline — Publications is always the base
-          </label>
-          <DagView edges={dagEdges} onRemove={removeEdge} addNodeData={addNodeData} />
+          <div className="flex items-center gap-2 mb-2">
+            <label htmlFor="base-table" className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+              Pipeline — start from
+            </label>
+            <select
+              id="base-table"
+              value={baseTable}
+              onChange={(e) => changeBase(e.target.value)}
+              className="px-2 py-0.5 border border-slate-300 rounded text-xs"
+            >
+              {Object.keys(BASES).map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+            {dagEdges.length > 0 && <span className="text-[10px] text-slate-400">changing it clears the merges</span>}
+          </div>
+          <DagView baseTable={baseTable} edges={dagEdges} onRemove={removeEdge} addNodeData={addNodeData} />
           {/* Same card as the DAG above (border-t-0 / rounded-b vs. DagView's
               rounded-t) - the SQL is just a verbal restatement of that same
               pipeline, styled like a read-only terminal to read as output,
@@ -754,7 +899,7 @@ export function ConnectionsPage() {
             >
               ❄️ Freeze table + value counts report
             </button>
-            {view === "table" && <ExportButton rows={wideRows} filename="publications_merged" />}
+            {view === "table" && <ExportButton rows={wideRows} filename={`${baseTable.toLowerCase().replace(/\s+/g, "_")}_merged`} />}
           </div>
         </div>
 
@@ -797,7 +942,7 @@ export function ConnectionsPage() {
         )}
 
         {view === "table" ? (
-          <DataTable<Row> rows={wideRows} columns={wideColumns} empty="No Publications match the current filters." />
+          <DataTable<Row> rows={wideRows} columns={wideColumns} empty={`No ${plural(base.entity, 0)} match the current filters.`} />
         ) : (
           <>
             <div className="border border-slate-200 rounded bg-white p-3 mb-3 text-sm flex items-center gap-2 flex-wrap">
@@ -807,7 +952,7 @@ export function ConnectionsPage() {
                 onChange={(e) => setNodeFieldSelected(e.target.value)}
                 className="px-2 py-1 border border-slate-300 rounded text-sm"
               >
-                <option value="">Publications</option>
+                <option value="">{baseTable}</option>
                 {graphFieldOptions.map((o) => (
                   <option key={o.field} value={o.field}>
                     {o.label}
@@ -842,6 +987,7 @@ export function ConnectionsPage() {
               showAll={showAll}
               onShowAllChange={setShowAll}
               hideFieldSelector={!!nodeFieldSelected}
+              edgeFieldCount={graphEdgeFields.length}
               nodeScale={
                 nodeFieldSelected ? { mode: nodeScaleMode, onModeChange: setNodeScaleMode } : undefined
               }
@@ -863,11 +1009,11 @@ export function ConnectionsPage() {
               nodeInfo={(row) =>
                 nodeFieldSelected ? (
                   <div className="text-xs text-slate-700">
-                    {(row as { count?: number }).count?.toLocaleString()} publication(s)
+                    {(row as { count?: number }).count?.toLocaleString()} {base.entity}(s)
                   </div>
                 ) : (
                   <div className="space-y-0.5">
-                    {[...BASE_DISPLAY_COLUMNS, ...dagEdges.flatMap((e) => e.columns.map((c) => mergedFieldKey(e.table, c)))]
+                    {[...base.display, ...dagEdges.flatMap((e) => e.columns.map((c) => mergedFieldKey(e.table, c)))]
                       .filter((f) => typeof row[f] === "string" && (row[f] as string).trim())
                       .slice(0, 6)
                       .map((f) => (

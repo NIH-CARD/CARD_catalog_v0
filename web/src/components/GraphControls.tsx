@@ -1,4 +1,4 @@
-import type { EdgeField } from "./KnowledgeGraph";
+import { sharedThresholdUnit, type EdgeField } from "./KnowledgeGraph";
 
 interface FieldOption<T> {
   field: keyof T & string;
@@ -34,6 +34,9 @@ interface Props<T> {
     mode: "none" | "linear" | "log";
     onModeChange: (mode: "none" | "linear" | "log") => void;
   };
+  /** Number of edge fields actually passed to the graph, when it differs from
+   * `selected` (e.g. a page's own single-field selector) - drives the threshold label. */
+  edgeFieldCount?: number;
 }
 
 export function GraphControls<T>({
@@ -49,7 +52,9 @@ export function GraphControls<T>({
   hubFilter,
   hideFieldSelector = false,
   nodeScale,
+  edgeFieldCount,
 }: Props<T>) {
+  const unit = sharedThresholdUnit(edgeFieldCount ?? selected.length);
   const toggle = (field: keyof T & string) => {
     if (selected.includes(field)) {
       onSelectedChange(selected.filter((f) => f !== field));
@@ -89,8 +94,15 @@ export function GraphControls<T>({
 
       <div className={"flex flex-wrap items-end gap-4 " + (hideFieldSelector ? "" : "pt-1 border-t border-slate-100")}>
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wide text-slate-600 mb-1">
-            Min shared
+          <label
+            className="block text-xs font-semibold uppercase tracking-wide text-slate-600 mb-1"
+            title={
+              unit === "fields"
+                ? "Connect two nodes when at least this many of the selected fields share a value"
+                : "Connect two nodes when they share at least this many values"
+            }
+          >
+            Min shared {unit}
           </label>
           <input
             type="number"
@@ -110,7 +122,7 @@ export function GraphControls<T>({
             type="number"
             min={1}
             value={maxNodes}
-            onChange={(e) => onMaxNodesChange(Math.max(1, parseInt(e.target.value || "60", 10)))}
+            onChange={(e) => onMaxNodesChange(Math.max(1, parseInt(e.target.value || "300", 10)))}
             className="w-20 px-2 py-1 border border-slate-300 rounded text-sm tabular-nums"
           />
         </div>

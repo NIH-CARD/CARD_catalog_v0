@@ -100,7 +100,7 @@ export function PublicationsPage() {
     "Resource Name",
   ]);
   const [minShared, setMinShared] = useState(1);
-  const [maxNodes, setMaxNodes] = useState(60);
+  const [maxNodes, setMaxNodes] = useState(300);
   const [showAll, setShowAll] = useState(false);
   const [hubEnabled, setHubEnabled] = useState(false);
   const [hubThresholdPct, setHubThresholdPct] = useState(30);

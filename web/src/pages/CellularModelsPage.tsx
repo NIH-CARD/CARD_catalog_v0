@@ -56,7 +56,7 @@ export function CellularModelsPage() {
   const [view, setView] = useState<"table" | "browse" | "graph">("table");
   const [edgeSelected, setEdgeSelected] = useState<(keyof CellularModel & string)[]>(["Gene"]);
   const [minShared, setMinShared] = useState(1);
-  const [maxNodes, setMaxNodes] = useState(60);
+  const [maxNodes, setMaxNodes] = useState(300);
   const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {

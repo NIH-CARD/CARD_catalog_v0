@@ -9,6 +9,7 @@ import { FilterRail } from "../components/FilterRail";
 import { GraphControls, buildEdgeFields } from "../components/GraphControls";
 import { InfoList } from "../components/HoverInfo";
 import { KnowledgeGraph } from "../components/KnowledgeGraph";
+import { FAIR_SCORE_LEGEND, fairScoreColor } from "../lib/graphColors";
 import { PageShell } from "../components/PageShell";
 import { matchesFacet, matchesQuery } from "../lib/filter";
 import { loadCodeRepos } from "../lib/loaders";
@@ -45,7 +46,7 @@ export function CodePage() {
   const [view, setView] = useState<"table" | "browse" | "graph">("table");
   const [edgeSelected, setEdgeSelected] = useState<(keyof CodeRepo & string)[]>(["Languages"]);
   const [minShared, setMinShared] = useState(1);
-  const [maxNodes, setMaxNodes] = useState(60);
+  const [maxNodes, setMaxNodes] = useState(300);
   const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
@@ -329,11 +330,14 @@ export function CodePage() {
               />
               <KnowledgeGraph<CodeRepo>
                 rows={filtered}
-                nodeField="Resource Name"
+                nodeField="Repository Link"
+                nodeLabel={(r) => (r["Repository Link"] ?? "").replace(/^https?:\/\/(www\.)?github\.com\//i, "")}
                 edgeFields={buildEdgeFields(GRAPH_FIELD_OPTIONS, edgeSelected)}
                 minShared={minShared}
                 maxNodes={maxNodes}
                 hideDisconnected={!showAll}
+                nodeColor={(r) => fairScoreColor(r["FAIR Score"])}
+                colorLegend={FAIR_SCORE_LEGEND}
                 nodeInfo={(r) => (
                   <InfoList
                     rows={[

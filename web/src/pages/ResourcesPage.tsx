@@ -7,6 +7,7 @@ import { FilterRail } from "../components/FilterRail";
 import { GraphControls, buildEdgeFields } from "../components/GraphControls";
 import { InfoList } from "../components/HoverInfo";
 import { KnowledgeGraph } from "../components/KnowledgeGraph";
+import { FAIR_LEVEL_LEGEND, fairLevelColor } from "../lib/graphColors";
 import { AnalysisPanel } from "../components/AnalysisPanel";
 import { ExportButton } from "../components/ExportButton";
 import { PageShell } from "../components/PageShell";
@@ -49,10 +50,12 @@ export function ResourcesPage() {
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<"table" | "browse" | "graph">("table");
   const [edgeSelected, setEdgeSelected] = useState<(keyof Resource & string)[]>([
+    "Coarse Data Modality",
+    "Granular Data Modality",
     "Diseases Included",
   ]);
-  const [minShared, setMinShared] = useState(1);
-  const [maxNodes, setMaxNodes] = useState(60);
+  const [minShared, setMinShared] = useState(2);
+  const [maxNodes, setMaxNodes] = useState(300);
   const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
@@ -310,6 +313,8 @@ export function ResourcesPage() {
                 minShared={minShared}
                 maxNodes={maxNodes}
                 hideDisconnected={!showAll}
+                nodeColor={(r) => fairLevelColor(r["FAIR Compliance Notes"])}
+                colorLegend={FAIR_LEVEL_LEGEND}
                 nodeInfo={(r) => (
                   <InfoList
                     rows={[
