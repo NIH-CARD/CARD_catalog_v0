@@ -317,7 +317,8 @@ export function mergedFieldKey(table: string, field: string): string {
  * look up matches for each Publication row in O(1). */
 export function buildJoinIndex(table: string, field: string, domain: Domain, rows: readonly Row[]): Map<string, string[]> {
   const meta = columnMeta(table, field);
-  const index = new Map<string, string[]>();
+  // Sets while building: a common key (e.g. APOE across SciLite) collects thousands of values.
+  const sets = new Map<string, Set<string>>();
   for (const row of rows) {
     const keys = splitMulti(domainValue(table, row, domain), ";");
     if (keys.length === 0) continue;
@@ -325,12 +326,12 @@ export function buildJoinIndex(table: string, field: string, domain: Domain, row
     if (typeof raw !== "string" || !raw.trim()) continue;
     const values = meta?.multivalue ? splitMulti(raw, meta.delimiter) : [raw];
     for (const key of keys) {
-      const bucket = index.get(key) ?? [];
-      for (const v of values) if (!bucket.includes(v)) bucket.push(v);
-      index.set(key, bucket);
+      let bucket = sets.get(key);
+      if (!bucket) sets.set(key, (bucket = new Set()));
+      for (const v of values) bucket.add(v);
     }
   }
-  return index;
+  return new Map([...sets].map(([k, v]) => [k, [...v]]));
 }
 
 /** Look up every value a Publication row's own domain value(s) resolve to in
@@ -338,11 +339,11 @@ export function buildJoinIndex(table: string, field: string, domain: Domain, row
  * Models' Linked Publications), so every key in it is tried. Values from
  * repeated lookups are deduplicated and joined with "; " (STRING_AGG). */
 export function joinedValue(baseDomainValue: string, index: Map<string, string[]>): string {
-  const out: string[] = [];
+  const out = new Set<string>();
   for (const key of splitMulti(baseDomainValue, ";")) {
-    for (const v of index.get(key) ?? []) if (!out.includes(v)) out.push(v);
+    for (const v of index.get(key) ?? []) out.add(v);
   }
-  return out.join("; ");
+  return [...out].join("; ");
 }
 
 /** One "merge this table into Publications" step - the DAG's edge. */
@@ -351,6 +352,8 @@ export interface DagEdge {
   domain: Domain;
   /** Which of the table's own columns to pull in - each becomes one wide-table column. */
   columns: string[];
+  /** Join on this merged-in wide-table column instead of the base table's own key (see JoinOption). */
+  via?: string;
 }
 
 /**
@@ -372,11 +375,13 @@ export interface DagEdge {
  * @param edges The DAG's edges, in order - order matters, since each one
  *   narrows what the next one sees.
  * @param rawByTable Each edge table's own (already facet-filtered) raw rows.
+ * @param baseTable The chain's starting table (Publications unless the user picked another).
  */
 export function buildWideRows(
   pubRows: readonly Row[],
   edges: readonly DagEdge[],
   rawByTable: Record<string, Row[] | undefined>,
+  baseTable = "Publications",
 ): Row[] {
   let current: Row[] = pubRows.map((r) => ({ ...r }));
 
@@ -389,7 +394,9 @@ export function buildWideRows(
 
     const next: Row[] = [];
     for (const row of current) {
-      const base = domainValue("Publications", row, edge.domain);
+      const base = edge.via
+        ? splitMulti(String(row[edge.via] ?? ""), ";").map(DOMAIN_KEY[edge.domain]).filter(Boolean).join(";")
+        : domainValue(baseTable, row, edge.domain);
       let anyHit = false;
       for (const { key, index } of indices) {
         const value = joinedValue(base, index);
@@ -458,6 +465,8 @@ export function generateSql(
   edges: readonly DagEdge[],
   pubFilters: readonly FacetFilter[] = [],
   edgeFilters: Record<string, readonly FacetFilter[]> = {},
+  baseTable = "Publications",
+  baseIdField = "PMID",
 ): string {
   const lines: string[] = [];
   lines.push("SELECT");
@@ -469,7 +478,7 @@ export function generateSql(
     );
     lines.push(cols.join(",\n") + (i < edges.length - 1 ? "," : ""));
   });
-  lines.push("FROM Publications p");
+  lines.push(baseTable === "Publications" ? "FROM Publications p" : `FROM "${baseTable}" p`);
   edges.forEach((edge, i) => {
     const alias = `t${i + 1}`;
     const where = sqlWhereClause(alias, edgeFilters[edge.table] ?? []);
@@ -477,11 +486,13 @@ export function generateSql(
     // INNER JOIN, chained - each one narrows the accumulated result so far,
     // not an independent join against Publications that gets unioned back in.
     lines.push(`INNER JOIN ${source} ${alias}`);
-    lines.push(`  ON ${DOMAIN_SQL_JOIN_KEY[edge.domain]} matches (p, ${alias})  -- ${edge.domain} domain`);
+    const viaIdx = edge.via ? edges.findIndex((e) => edge.via!.startsWith(`${e.table}: `)) : -1;
+    const left = viaIdx >= 0 ? `t${viaIdx + 1}."${edge.via!.slice(edges[viaIdx].table.length + 2)}"` : "p";
+    lines.push(`  ON ${DOMAIN_SQL_JOIN_KEY[edge.domain]} matches (${left}, ${alias})  -- ${edge.domain} domain`);
   });
   const pubWhere = sqlWhereClause("p", pubFilters);
   if (pubWhere) lines.push(`WHERE ${pubWhere}`);
-  if (edges.length > 0) lines.push("GROUP BY p.PMID");
+  if (edges.length > 0) lines.push(baseIdField === "PMID" ? "GROUP BY p.PMID" : `GROUP BY p."${baseIdField}"`);
   return lines.join("\n");
 }
 
@@ -657,12 +668,13 @@ export function buildValueCountsReport(
   columns: readonly ValueCountsColumn[],
   mergedTables: readonly string[],
   topN = 15,
+  baseLabel = "Publications",
 ): string {
   const lines: string[] = [];
   lines.push("# Cross-Table Report");
   lines.push("");
   lines.push(
-    `**${rows.length.toLocaleString()} Publications** merged with: ${mergedTables.length ? mergedTables.join(", ") : "(none)"}`,
+    `**${rows.length.toLocaleString()} ${baseLabel}** merged with: ${mergedTables.length ? mergedTables.join(", ") : "(none)"}`,
   );
   lines.push("");
   for (const col of columns) {

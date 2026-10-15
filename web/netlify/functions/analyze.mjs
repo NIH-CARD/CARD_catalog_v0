@@ -277,7 +277,7 @@ Use exact numbers and percentages. Always clarify scope: "this subset" or "the f
       // pairing is what makes a real contrastive claim possible without
       // needing abstract text (omitted here; may return in a future pass).
       const report = truncateFormatted(rows[0]?.report ?? "");
-      return `Today's date is ${todayIso()}. Below is a merged cross-table view of the CARD Catalog, built from Publications joined with other tables via verified keys (PMC ID/DOI, Resource Name, or gene/bioentity matching): a full-catalog baseline for every column involved, followed by the same columns' value counts within the current (filtered/merged) subset.
+      return `Today's date is ${todayIso()}. Below is a merged cross-table view of the CARD Catalog, built from a base table (Publications unless the user chose another, e.g. Human Cellular Models or Resources) joined with other tables via verified keys (PMC ID/DOI, Resource Name, or gene/bioentity matching): a full-catalog baseline for every column involved, followed by the same columns' value counts within the current (filtered/merged) subset.
 
 ${report}
 

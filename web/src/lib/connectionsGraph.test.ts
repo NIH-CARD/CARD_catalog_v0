@@ -13,6 +13,8 @@ import {
   dropHubValues,
   buildValueCountsReport,
   buildAbstractSample,
+  joinOptionsFor,
+  mergeableColumnsFor,
   type DagEdge,
 } from "./connectionsGraph";
 
@@ -402,5 +404,61 @@ describe("buildAbstractSample", () => {
 
   it("returns empty string when nothing has an abstract", () => {
     expect(buildAbstractSample([{ Title: "A" }, { Title: "B" }])).toBe("");
+  });
+});
+
+describe("other base tables and via-joins", () => {
+  const cells = [
+    { "Product Code": "C1", Gene: "APOE" },
+    { "Product Code": "C2", Gene: "MAPT" },
+  ];
+  const scilite = [
+    { "PMC ID": "PMC1", Exact: "APOE", Type: "Gene_Proteins" },
+    { "PMC ID": "PMC2", Exact: "APOE", Type: "Gene_Proteins" },
+  ];
+  const pubs = [
+    { "PubMed Central Link": "https://pmc.ncbi.nlm.nih.gov/articles/PMC2/", Authors: "Doe J" },
+  ];
+  const byGene: DagEdge = { table: "SciLite Annotations", domain: "concept", columns: ["PMC ID"] };
+  const viaPmc: DagEdge = {
+    table: "Publications",
+    domain: "publication",
+    via: "SciLite Annotations: PMC ID",
+    columns: ["Authors"],
+  };
+
+  it("offers the concept join once Human Cellular Models is the base", () => {
+    expect(joinOptionsFor("Human Cellular Models", "SciLite Annotations", [])).toContainEqual({ domain: "concept" });
+  });
+
+  it("offers a via-join on a merged column that carries the new table's key", () => {
+    expect(joinOptionsFor("Human Cellular Models", "Publications", [byGene])).toContainEqual({
+      domain: "publication",
+      via: "SciLite Annotations: PMC ID",
+    });
+  });
+
+  it("lets a concept join pull SciLite's PMC ID so the chain can continue", () => {
+    expect(mergeableColumnsFor("SciLite Annotations", "concept").map((c) => c.field)).toContain("PMC ID");
+    expect(mergeableColumnsFor("SciLite Annotations", "publication").map((c) => c.field)).not.toContain("PMC ID");
+  });
+
+  it("joins cell lines to SciLite by gene, then to Publications via the merged PMC IDs", () => {
+    const wide = buildWideRows(
+      cells,
+      [byGene, viaPmc],
+      { "SciLite Annotations": scilite, Publications: pubs },
+      "Human Cellular Models",
+    );
+    expect(wide).toHaveLength(1);
+    expect(wide[0]["SciLite Annotations: PMC ID"]).toBe("PMC1; PMC2");
+    expect(wide[0]["Publications: Authors"]).toBe("Doe J");
+  });
+
+  it("renders the base table and a via-join's left side in SQL", () => {
+    const sql = generateSql([byGene, viaPmc], [], {}, "Human Cellular Models", "Product Code");
+    expect(sql).toContain('FROM "Human Cellular Models" p');
+    expect(sql).toContain('matches (t1."PMC ID", t2)');
+    expect(sql).toContain('GROUP BY p."Product Code"');
   });
 });
