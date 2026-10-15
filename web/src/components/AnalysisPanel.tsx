@@ -40,6 +40,9 @@ const DESCRIPTIONS: Record<AnalysisType, string[]> = {
   ],
 };
 
+/** One-line AI disclosure appended to every analysis, on screen and in the downloaded file. */
+const AI_SIGNATURE = "\n\n---\n🤖 Generated with Claude (Anthropic) · CARD Catalog\n";
+
 function renderMarkdown(md: string): { __html: string } {
   return { __html: marked(md, { async: false }) as string };
 }
@@ -61,6 +64,7 @@ export function AnalysisPanel<T extends object>({
 }: Props<T>) {
   const [open, setOpen] = useState(false);
   const { text, loading, error, analyze } = useAnalysis();
+  const signedText = text ? text + AI_SIGNATURE : "";
 
   const handleAnalyze = () => {
     const sample = prepare(filtered.slice(0, maxRows));
@@ -68,7 +72,7 @@ export function AnalysisPanel<T extends object>({
   };
 
   const handleDownload = async () => {
-    const blob = new Blob([text], { type: "text/markdown" });
+    const blob = new Blob([signedText], { type: "text/markdown" });
     if ("showSaveFilePicker" in window) {
       try {
         const handle = await (window as typeof window & { showSaveFilePicker: (o: object) => Promise<FileSystemFileHandle> }).showSaveFilePicker({
@@ -160,7 +164,7 @@ export function AnalysisPanel<T extends object>({
 
           {(text || loading) && (
             <div className="bg-slate-50 rounded border border-slate-200 p-4 max-h-[600px] overflow-y-auto text-sm text-slate-700 leading-relaxed">
-              <div className="md-prose" dangerouslySetInnerHTML={renderMarkdown(text)} />
+              <div className="md-prose" dangerouslySetInnerHTML={renderMarkdown(loading ? text : signedText)} />
               {loading && <span className="animate-pulse text-slate-400">▌</span>}
             </div>
           )}
