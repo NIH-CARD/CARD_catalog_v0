@@ -30,6 +30,7 @@ const TABLE_SCHEMAS: { name: string; route: string; file: string; columns: strin
       "PMID", "DOI", "Resource Name", "Abbreviation",
       "PubMed Central Link", "Authors", "Affiliations", "Title",
       "Abstract", "Keywords", "Publication Date", "Publication Year", "Data Completeness",
+      "Verification Status", "Fetched With", "Inclusion Criteria", "Claim Text",
     ],
   },
   {
@@ -95,7 +96,7 @@ const TABLE_SCHEMAS: { name: string; route: string; file: string; columns: strin
     file: "scilite_annotations.tsv",
     columns: [
       "PMC ID", "Type", "Exact", "Prefix", "Postfix", "Section", "Provider",
-      "Annotation ID", "Tag Name", "Tag URI",
+      "Annotation ID", "Tag Name", "Tag URI", "subType", "frequency", "fileName",
     ],
   },
   {
@@ -218,8 +219,8 @@ export function DocsPage() {
           <li><strong>Tooling</strong> — frameworks and libraries identified (TensorFlow, FSL, scikit-learn…)</li>
         </ul>
         <p className="text-xs text-slate-500 mt-4">
-          All AI-generated content should be verified against original sources. Scores and
-          assessments assist discovery and do not replace human judgment.
+          All AI-generated content should be verified against original sources and not treated as
+          human-curated annotations. Scores and assessments assist discovery and do not replace human judgment.
         </p>
       </section>
 

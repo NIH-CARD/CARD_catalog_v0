@@ -12,6 +12,10 @@ export interface Publication {
   "Publication Date": string;
   "Publication Year": string;
   "Data Completeness": string;
+  "Verification Status"?: string;
+  "Fetched With"?: string;
+  "Inclusion Criteria"?: string;
+  "Claim Text"?: string;
 }
 
 export interface Resource {
@@ -115,6 +119,9 @@ export interface SciLiteAnnotation {
   "Annotation ID": string;
   "Tag Name": string;
   "Tag URI": string;
+  subType?: string;
+  frequency?: string;
+  fileName?: string;
 }
 
 export interface CellularModel {
