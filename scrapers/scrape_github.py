@@ -357,121 +357,102 @@ def get_repo_tree(owner: str, repo_name: str, default_branch: str, headers: Dict
         logger.warning(f"Error fetching git tree: {str(e)}")
         return None
 
-def check_fair_compliance(owner: str, repo_name: str, default_branch: str, headers: Dict, fair_logger: FAIRComplianceLogger, repo_url: str, study_name: str) -> Dict:
-    """Check repository for FAIR compliance indicators using Git Trees API"""
-    logger.debug(f"Checking FAIR compliance for {owner}/{repo_name}")
-    compliance_info = {
-        'has_readme': False,
-        'has_dependencies': False,
-        'has_version_info': False,
-        'has_container': False,
-        'has_environment': False,
-        'content_length': 0
+# FAIR file checks are language-agnostic: every repo is matched against every ecosystem's
+# files, by basename, anywhere in the top _FAIR_MAX_DEPTH path levels (README: root only).
+# Patterns are fnmatch-style on lowercased basenames.
+_FAIR_PATTERNS = {
+    'readme': ['readme', 'readme.*'],
+    'dependencies': [
+        'requirements*.txt', 'requirements*.in', 'setup.py', 'setup.cfg', 'pyproject.toml', 'pipfile',
+        'environment*.yml', 'environment*.yaml', 'description', 'renv.lock', 'install.r', 'project.toml',
+        'package.json', 'cargo.toml', 'go.mod', 'pom.xml', 'build.gradle', 'build.gradle.kts', 'gemfile',
+        'composer.json', 'conanfile.txt', 'conanfile.py', 'vcpkg.json',
+    ],
+    'version_info': [
+        '.python-version', '.nvmrc', '.node-version', 'runtime.txt', '.tool-versions', 'poetry.lock',
+        'pipfile.lock', 'uv.lock', 'conda-lock.yml', 'conda-lock.yaml', 'renv.lock', 'manifest.toml',
+        'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', 'cargo.lock', 'go.sum', 'gemfile.lock',
+        'composer.lock',
+    ],
+    'container': [
+        'dockerfile', 'dockerfile.*', '*.dockerfile', 'containerfile', 'docker-compose.yml',
+        'docker-compose.yaml', 'compose.yml', 'compose.yaml', 'singularity', 'singularity.def', 'apptainer.def',
+    ],
+    'environment': [
+        'environment*.yml', 'environment*.yaml', 'conda.yml', 'conda.yaml', 'pipfile', 'poetry.lock', 'uv.lock',
+        'renv.lock', 'manifest.toml', 'devcontainer.json', 'shell.nix', 'flake.nix',
+    ],
+}
+_FAIR_MAX_DEPTH = 3  # path segments: a file at the root or up to two folders deep
+_FAIR_VENDORED_DIRS = {'node_modules', 'vendor', 'third_party', 'site-packages', '.venv', 'venv', 'renv', 'packrat'}
+
+# (compliance key, logged issue type, stat name, issue details)
+_FAIR_ISSUES = [
+    ('has_readme', 'No README', 'no_readme',
+     'Repository lacks a README file, reducing accessibility and understandability'),
+    ('has_dependencies', 'No Dependencies', 'no_dependencies',
+     'No dependency manifest found (requirements.txt, pyproject.toml, DESCRIPTION, Project.toml, package.json, etc.), reducing reproducibility'),
+    ('has_version_info', 'No Version Info', 'no_version_info',
+     'No pinned-version or lock file found (renv.lock, poetry.lock, Manifest.toml, .python-version, etc.), may cause compatibility issues'),
+    ('has_container', 'No Container', 'no_container',
+     'No Docker/Singularity container definition found, limiting reproducibility across environments'),
+    ('has_environment', 'No Environment Spec', 'no_environment_info',
+     'No environment specification file (conda, Pipfile, renv.lock, devcontainer, Nix, etc.) found'),
+]
+
+
+def fair_flags(file_paths: set) -> Dict[str, bool]:
+    """Evaluate FAIR file checks on a set of lowercased repo-relative file paths."""
+    from fnmatch import fnmatch
+    root_names, names = set(), set()
+    for path in file_paths:
+        parts = path.split('/')
+        if len(parts) == 1:
+            root_names.add(parts[0])
+        if len(parts) <= _FAIR_MAX_DEPTH and not _FAIR_VENDORED_DIRS & set(parts[:-1]):
+            names.add(parts[-1])
+
+    def any_match(pool, key):
+        return any(fnmatch(n, pat) for n in pool for pat in _FAIR_PATTERNS[key])
+
+    return {
+        'has_readme': any_match(root_names, 'readme'),
+        'has_dependencies': any_match(names, 'dependencies'),
+        'has_version_info': any_match(names, 'version_info'),
+        'has_container': any_match(names, 'container'),
+        'has_environment': any_match(names, 'environment'),
     }
 
-    # Try to get file tree (optimized approach - 2 API requests instead of ~22)
+
+def check_fair_compliance(owner: str, repo_name: str, default_branch: str, headers: Dict, fair_logger: FAIRComplianceLogger, repo_url: str, study_name: str) -> Dict:
+    """Check a repo for FAIR file indicators and log one row per failed check, plus an 'Assessed' marker row.
+
+    The marker row lets downstream merges tell "assessed, no issues" apart from "never assessed".
+    """
+    logger.debug(f"Checking FAIR compliance for {owner}/{repo_name}")
+
+    # Recursive tree: 2 API requests. Fallback (truncated/unavailable tree): root listing only.
     file_paths = get_repo_tree(owner, repo_name, default_branch, headers)
-    
-    if file_paths:
-        # Use tree-based checking (O(1) lookups)
-        logger.debug("Using tree-based FAIR compliance checking")
-        
-        # Check for README (case-insensitive)
-        readme_files = ['readme.md', 'readme.rst', 'readme.txt', 'readme']
-        compliance_info['has_readme'] = any(f in file_paths for f in readme_files)
-        
-        # Check for dependency files
-        dependency_files = ['requirements.txt', 'package.json', 'setup.py', 'cargo.toml', 'go.mod', 'pom.xml', 'build.gradle']
-        compliance_info['has_dependencies'] = any(f in file_paths for f in dependency_files)
-        if compliance_info['has_dependencies']:
-            fair_logger.increment_stat('has_dependencies')
-        
-        # Check for version/environment files
-        version_files = ['.python-version', '.nvmrc', 'runtime.txt', '.tool-versions']
-        compliance_info['has_version_info'] = any(f in file_paths for f in version_files)
-        if compliance_info['has_version_info']:
-            fair_logger.increment_stat('has_version_info')
-        
-        # Check for container files
-        container_files = ['dockerfile', 'docker-compose.yml', 'docker-compose.yaml', '.dockerignore', 'containerfile']
-        compliance_info['has_container'] = any(f in file_paths for f in container_files)
-        if compliance_info['has_container']:
-            fair_logger.increment_stat('has_container')
-        
-        # Check for environment specification
-        env_files = ['environment.yml', 'environment.yaml', 'conda.yml', 'pipfile', 'poetry.lock']
-        compliance_info['has_environment'] = any(f in file_paths for f in env_files)
-    
-    else:
-        # Fallback to individual file checks if tree not available
-        logger.debug("Falling back to individual file checks")
-        
-        # Check for README
-        readme_url = f"https://api.github.com/repos/{owner}/{repo_name}/readme"
-        readme_response = github_request_with_retry(readme_url, headers)
-        if readme_response and readme_response.status_code == 200:
-            compliance_info['has_readme'] = True
-        
-        # Check for dependency files
-        dependency_files = ['requirements.txt', 'package.json', 'setup.py', 'Cargo.toml', 'go.mod', 'pom.xml', 'build.gradle']
-        for dep_file in dependency_files:
-            file_url = f"https://api.github.com/repos/{owner}/{repo_name}/contents/{dep_file}"
-            response = github_request_with_retry(file_url, headers)
-            if response and response.status_code == 200:
-                compliance_info['has_dependencies'] = True
-                fair_logger.increment_stat('has_dependencies')
-                break
-        
-        # Check for version/environment files
-        version_files = ['.python-version', '.nvmrc', 'runtime.txt', '.tool-versions']
-        for ver_file in version_files:
-            file_url = f"https://api.github.com/repos/{owner}/{repo_name}/contents/{ver_file}"
-            response = github_request_with_retry(file_url, headers)
-            if response and response.status_code == 200:
-                compliance_info['has_version_info'] = True
-                fair_logger.increment_stat('has_version_info')
-                break
-        
-        # Check for container files
-        container_files = ['Dockerfile', 'docker-compose.yml', 'docker-compose.yaml', '.dockerignore', 'Containerfile']
-        for cont_file in container_files:
-            file_url = f"https://api.github.com/repos/{owner}/{repo_name}/contents/{cont_file}"
-            response = github_request_with_retry(file_url, headers)
-            if response and response.status_code == 200:
-                compliance_info['has_container'] = True
-                fair_logger.increment_stat('has_container')
-                break
-        
-        # Check for environment specification
-        env_files = ['environment.yml', 'environment.yaml', 'conda.yml', 'Pipfile', 'poetry.lock']
-        for env_file in env_files:
-            file_url = f"https://api.github.com/repos/{owner}/{repo_name}/contents/{env_file}"
-            response = github_request_with_retry(file_url, headers)
-            if response and response.status_code == 200:
-                compliance_info['has_environment'] = True
-                break
+    if not file_paths:
+        logger.debug("Falling back to root directory listing")
+        file_paths = set()
+        response = github_request_with_retry(f"https://api.github.com/repos/{owner}/{repo_name}/contents/", headers)
+        if response and response.status_code == 200:
+            try:
+                file_paths = {item['name'].lower() for item in response.json() if item.get('type') == 'file'}
+            except Exception as e:
+                logger.warning(f"  Error parsing root listing for {owner}/{repo_name}: {e}")
 
-    # Log FAIR compliance issues
-    if not compliance_info['has_readme']:
-        fair_logger.increment_stat('no_readme')
-        fair_logger.log_issue(repo_url, study_name, 'No README', 'Repository lacks a README file, reducing accessibility and understandability')
-
-    if not compliance_info['has_dependencies']:
-        fair_logger.increment_stat('no_dependencies')
-        fair_logger.log_issue(repo_url, study_name, 'No Dependencies', 'No dependency file found (requirements.txt, package.json, etc.), reducing reproducibility')
-
-    if not compliance_info['has_version_info']:
-        fair_logger.increment_stat('no_version_info')
-        fair_logger.log_issue(repo_url, study_name, 'No Version Info', 'No version specification file found, may cause compatibility issues')
-
-    if not compliance_info['has_container']:
-        fair_logger.increment_stat('no_container')
-        fair_logger.log_issue(repo_url, study_name, 'No Container', 'No Docker or container file found, limiting reproducibility across environments')
-
-    if not compliance_info['has_environment']:
-        fair_logger.increment_stat('no_environment_info')
-        fair_logger.log_issue(repo_url, study_name, 'No Environment Spec', 'No environment specification file (conda, pipenv, etc.) found')
-
+    compliance_info = fair_flags(file_paths)
+    compliance_info['content_length'] = 0
+    for key, issue_type, stat, details in _FAIR_ISSUES:
+        if compliance_info[key]:
+            fair_logger.increment_stat(stat.replace('no_', 'has_'))
+        else:
+            fair_logger.increment_stat(stat)
+            fair_logger.log_issue(repo_url, study_name, issue_type, details)
+    passed = [k.removeprefix('has_') for k, *_ in _FAIR_ISSUES if compliance_info[k]]
+    fair_logger.log_issue(repo_url, study_name, 'Assessed', 'passed: ' + (', '.join(passed) or 'none'))
     return compliance_info
 
 def get_repo_content(owner: str, repo_name: str, headers: Dict, fair_logger: FAIRComplianceLogger = None, repo_url: str = "", study_name: str = "") -> str:

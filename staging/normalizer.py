@@ -487,6 +487,66 @@ def _backfill_source_from_pub_software(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+FAIR_ASSESSED_MARKER = "Assessed"  # scrapers/scrape_github.py logs one per checked repo
+
+
+def load_fair_issues(hits_dir: Path = HITS_DIR) -> pd.DataFrame:
+    """Latest FAIR assessment per repo across every fair_compliance_log_*.tsv.
+
+    Each github_search run logs only the repos it checked, while the code table keeps
+    repos from every run - so no single log covers it. A repo's issues come from the
+    newest log that mentions it. Logs list failed checks plus (since the language-agnostic
+    checker) one 'Assessed' marker row per repo, so a repo that passes every check still
+    supersedes its older assessments. Older logs have no markers: there, a repo with no
+    issues never appears and is indistinguishable from one never assessed.
+
+    Args:
+        hits_dir: Directory holding the FAIR compliance logs.
+
+    Returns:
+        One row per (repo_key, Issue Type), plus the logged Repository URL and source log name;
+        Issue Type == FAIR_ASSESSED_MARKER rows mark assessment, not an issue.
+    """
+    logs = sorted(hits_dir.glob("fair_compliance_log_*.tsv"))  # name timestamp = run order
+    if not logs:
+        return pd.DataFrame(columns=["repo_key", "Repository", "Issue Type", "log"])
+    frames = []
+    for i, f in enumerate(logs):
+        log = pd.read_csv(f, sep="\t", dtype=str).fillna("")
+        frames.append(log[["Repository", "Issue Type"]].assign(log=f.name, _order=i))
+    fair = pd.concat(frames, ignore_index=True)
+    fair = fair[(fair["Repository"].str.strip() != "") & (fair["Issue Type"].str.strip() != "")]
+    key = fair["Repository"].apply(_normalize_repo_url)
+    fair["repo_key"] = key.where(key != "", fair["Repository"].str.strip().str.lower())
+    fair = fair[fair["_order"] == fair.groupby("repo_key")["_order"].transform("max")]
+    n_repos = fair["repo_key"].nunique()
+    fair = fair.drop_duplicates(["repo_key", "Issue Type"]).drop(columns="_order")
+    logger.info(f"FAIR: {n_repos} repos assessed across {len(logs)} log(s)")
+    return fair[["repo_key", "Repository", "Issue Type", "log"]].reset_index(drop=True)
+
+
+def _merge_fair_scores(df: pd.DataFrame) -> pd.DataFrame:
+    """Add FAIR Issues / FAIR Score (10 minus distinct issues) from load_fair_issues()."""
+    df = df.drop(columns=["FAIR Issues", "FAIR Score"], errors="ignore")
+    fair = load_fair_issues()
+    if fair.empty:
+        logger.warning("No FAIR compliance log found — setting default scores")
+        df["FAIR Issues"], df["FAIR Score"] = "", "10"
+        return df
+    issues = fair.groupby("repo_key", sort=False)["Issue Type"].agg(
+        lambda x: [i for i in x if i != FAIR_ASSESSED_MARKER])
+    keys = df["Repository Link"].apply(_normalize_repo_url)
+    keys = keys.where(keys != "", df["Repository Link"].str.strip().str.lower())
+    matched = keys.map(issues)
+    df["FAIR Issues"] = matched.apply(lambda x: "; ".join(x) if isinstance(x, list) else "")
+    df["FAIR Score"] = matched.apply(lambda x: str(max(0, 10 - len(x))) if isinstance(x, list) else "10")
+    n_missing = matched.isna().sum()
+    if n_missing:
+        # Either fully compliant (logs only record failures) or never assessed - can't tell which.
+        logger.warning(f"code: {n_missing} repo(s) absent from every FAIR log — scored 10 (no logged issues)")
+    return df
+
+
 def _normalize_code(df: pd.DataFrame) -> pd.DataFrame:
     df = df.drop(columns=["Diseases Included"], errors="ignore")
 
@@ -500,36 +560,7 @@ def _normalize_code(df: pd.DataFrame) -> pd.DataFrame:
     if "Languages" in df.columns:
         df["Languages"] = df["Languages"].apply(_normalize_list_field)
 
-    # Merge FAIR compliance log — adds FAIR Score and FAIR Issues columns
-    hits_dir = Path(__file__).parent.parent / "tables" / "hits"
-    fair_files = sorted(hits_dir.glob("fair_compliance_log_*.tsv"))
-    if fair_files:
-        fair_df = pd.read_csv(fair_files[-1], sep="\t", dtype=str).fillna("")
-        by_repo = (
-            fair_df.groupby("Repository")["Issue Type"]
-            .apply(list)
-            .reset_index()
-        )
-        by_repo.columns = pd.Index(["Repository Link", "issues"])
-        by_repo["FAIR Issues"] = by_repo["issues"].apply(lambda x: "; ".join(x))
-        by_repo["FAIR Score"] = by_repo["issues"].apply(
-            lambda x: str(max(0, 10 - len(x)))
-        )
-        repo_col = "Repository_Link" if "Repository_Link" in df.columns else "Repository Link"
-        by_repo = by_repo.rename(columns={"Repository Link": repo_col})
-        df = df.merge(
-            by_repo[[repo_col, "FAIR Issues", "FAIR Score"]],
-            on=repo_col,
-            how="left",
-        )
-        df["FAIR Issues"] = df["FAIR Issues"].fillna("")
-        df["FAIR Score"] = df["FAIR Score"].fillna("10")
-    else:
-        logger.warning("No FAIR compliance log found — setting default scores")
-        df["FAIR Issues"] = ""
-        df["FAIR Score"] = "10"
-
-    return df
+    return _merge_fair_scores(df)
 
 
 def _normalize_pub_datasets(df: pd.DataFrame) -> pd.DataFrame:
