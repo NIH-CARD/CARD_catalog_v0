@@ -133,6 +133,17 @@ describe("buildWideRows", () => {
     expect(wide[0].Title).toBe("Paper A"); // original Publications columns preserved
   });
 
+  it("joins Resource Name across curly vs straight apostrophes and stray whitespace", () => {
+    const pubRows = [{ PMID: "1", "Resource Name": "Amyloid Imaging to Prevent Alzheimer's Disease Study" }];
+    const edges: DagEdge[] = [{ table: "Resources", domain: "resource", columns: ["Resource Type"] }];
+    const rawByTable = {
+      Resources: [{ "Resource Name": "Amyloid Imaging to Prevent Alzheimer’s Disease Study ", "Resource Type": "Study" }],
+    };
+    const wide = buildWideRows(pubRows, edges, rawByTable);
+    expect(wide).toHaveLength(1);
+    expect(wide[0]["Resources: Resource Type"]).toBe("Study");
+  });
+
   it("merges multiple edges independently onto the same rows", () => {
     const pubRows = [
       { PMID: "1", "PubMed Central Link": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1/", DOI: "" },

@@ -46,15 +46,27 @@ const PUBLICATION_FIELDS: Record<string, FieldSource[]> = {
   "Human Cellular Models": [{ field: "Linked Publications", extract: publicationKey }],
 };
 
+// Same set as staging/normalizer.py's _APOSTROPHE_VARIANTS.
+const APOSTROPHE_VARIANTS_RE = /[’ʼ`´‘‛]/g;
+
+/** A Resource Name as a join key - NFKC + straight apostrophes + trimmed, the
+ * same canonical form the pipeline normalizer writes. The Resources table is
+ * the hand-maintained inventory, copied into the app without passing through
+ * the normalizer, so a curly apostrophe there ("Alzheimer’s") would otherwise
+ * silently fail to match the straight one every pipeline table carries. */
+export function resourceKey(value: string): string {
+  return value.normalize("NFKC").replace(APOSTROPHE_VARIANTS_RE, "'").trim();
+}
+
 /** Tables that carry a Resource Name lineage. Human Cellular Models' Linked
  * Studies (precomputed server-side alongside Linked Publications, see
  * join_cellular_model_publications) is a semicolon list of Resource Name
  * values - a real Resource-domain field, not just a Publication one. */
 const RESOURCE_FIELDS: Record<string, FieldSource[]> = {
-  Resources: [{ field: "Resource Name" }],
-  "Code Repositories": [{ field: "Resource Name" }],
-  Publications: [{ field: "Resource Name" }],
-  "Human Cellular Models": [{ field: "Linked Studies" }],
+  Resources: [{ field: "Resource Name", extract: resourceKey }],
+  "Code Repositories": [{ field: "Resource Name", extract: resourceKey }],
+  Publications: [{ field: "Resource Name", extract: resourceKey }],
+  "Human Cellular Models": [{ field: "Linked Studies", extract: resourceKey }],
 };
 
 /** Tables that carry a gene/bioentity concept lineage - verified against real
@@ -85,6 +97,55 @@ export function validDomainsFor(base: string, table: string): Domain[] {
   return (["publication", "resource", "concept"] as const).filter(
     (d) => tablesInDomain(d).includes(base) && tablesInDomain(d).includes(table),
   );
+}
+
+/** How a raw value becomes a domain key - the same normalization each domain's FieldSource applies. */
+const DOMAIN_KEY: Record<Domain, (v: string) => string> = {
+  publication: publicationKey,
+  resource: resourceKey,
+  concept: (v) => v.trim(),
+};
+
+/** Whether `field` of `table` carries `domain`'s join key (e.g. SciLite's PMC ID for publication). */
+function isDomainField(table: string, field: string, domain: Domain): boolean {
+  return (sourcesFor(domain)[table] ?? []).some((s) => s.field === field);
+}
+
+/** A way to join `table` into the current chain: on the base table's own key, or `via` a column
+ * an earlier edge merged in (e.g. Human Cellular Models -> SciLite by gene, then Publications
+ * via the merged "SciLite Annotations: PMC ID"). */
+export interface JoinOption {
+  domain: Domain;
+  via?: string;
+}
+
+/** Every join option for adding `table` after `edges` onto `base`. */
+export function joinOptionsFor(base: string, table: string, edges: readonly DagEdge[]): JoinOption[] {
+  const out: JoinOption[] = validDomainsFor(base, table).map((domain) => ({ domain }));
+  for (const edge of edges) {
+    for (const field of edge.columns) {
+      for (const domain of ["publication", "resource", "concept"] as const) {
+        if (isDomainField(edge.table, field, domain) && tablesInDomain(domain).includes(table)) {
+          out.push({ domain, via: mergedFieldKey(edge.table, field) });
+        }
+      }
+    }
+  }
+  return out;
+}
+
+/** Columns offered when merging `table` by `domain`: its curated columns, plus any field that
+ * carries a *different* domain's key - so a chain can continue from it (see JoinOption.via). */
+export function mergeableColumnsFor(table: string, domain: Domain): ColumnMeta[] {
+  const cols = nativeColumnsFor(table);
+  for (const other of ["publication", "resource", "concept"] as const) {
+    if (other === domain) continue;
+    for (const spec of sourcesFor(other)[table] ?? []) {
+      const meta = columnMeta(table, spec.field);
+      if (meta && !cols.some((c) => c.field === meta.field)) cols.push(meta);
+    }
+  }
+  return cols;
 }
 
 function columnMeta(table: string, field: string): ColumnMeta | undefined {
