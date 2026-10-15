@@ -15,6 +15,10 @@ from pathlib import Path
 import re
 from collections import Counter, defaultdict
 from scipy.stats import gaussian_kde
+import sys
+
+sys.path.append(str(Path(__file__).parent.parent))
+from staging.normalizer import FAIR_ASSESSED_MARKER, _normalize_repo_url, load_fair_issues  # noqa: E402
 
 # Paths
 TABLES_DIR = Path(__file__).parent.parent / "tables"
@@ -74,19 +78,9 @@ def create_figure():
     # Load code repos
     code_df = load_latest_file("gits_to_reannotate_completed_*.tsv")
 
-    # Load FAIR compliance log (single authoritative file)
-    fair_file = max(HITS_DIR.glob("fair_compliance_log_*.tsv"), key=lambda p: p.stat().st_mtime)
-    print(f"Loading FAIR compliance log: {fair_file.name}")
-    fair_df = pd.read_csv(fair_file, sep='\t', low_memory=False)
-    print(f"  {len(fair_df)} rows, {fair_df['Repository'].nunique()} unique repos")
-    fair_issues_by_repo = {}
-    for _, row in fair_df.iterrows():
-        repo = row.get('Repository', '')
-        issue_type = row.get('Issue Type', '')
-        if repo and issue_type:
-            if repo not in fair_issues_by_repo:
-                fair_issues_by_repo[repo] = set()
-            fair_issues_by_repo[repo].add(issue_type)
+    # FAIR issues per repo: newest assessment across every log (same as the normalizer)
+    fair_df = load_fair_issues(HITS_DIR)
+    fair_issues_by_repo = {k: v - {FAIR_ASSESSED_MARKER} for k, v in fair_df.groupby('repo_key')['Issue Type'].agg(set).items()}
     print(f"Total unique repos with FAIR data: {len(fair_issues_by_repo)}")
 
     # Create figure - panel C as wide as A and B combined
@@ -173,11 +167,12 @@ def create_figure():
             continue
 
         # Skip repos not assessed by FAIR scraper
-        if repo_link not in fair_issues_by_repo:
+        repo_key = _normalize_repo_url(str(repo_link)) or str(repo_link).strip().lower()
+        if repo_key not in fair_issues_by_repo:
             continue
 
         # Get issues for this repo
-        repo_issues = fair_issues_by_repo.get(repo_link, set())
+        repo_issues = fair_issues_by_repo[repo_key]
 
         for lang in langs:
             lang_idx = top_languages.index(lang)

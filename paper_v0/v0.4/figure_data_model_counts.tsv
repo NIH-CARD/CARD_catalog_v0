@@ -1,0 +1,32 @@
+metric	value	source_file
+Resources: rows	237	resources-inventory-Jun_8_2026.tab
+Publications: rows	4979	misc_publications_20260903_142027.tsv
+Publications -> Resources: papers with a Resource Name in Resources	4979	misc_publications_20260903_142027.tsv
+Publications -> Resources: distinct Resources reached	226	misc_publications_20260903_142027.tsv
+Code Repositories: rows	1898	gits_to_reannotate_completed_20260831_100000.tsv
+Code Repositories -> Resources: repositories with a Resource Name in Resources	1898	gits_to_reannotate_completed_20260831_100000.tsv
+Code Repositories -> Resources: distinct Resources reached	171	gits_to_reannotate_completed_20260831_100000.tsv
+datasets: rows	11215	pub_datasets_20260901_012504.tsv
+datasets -> Publications: distinct papers matched	3869	pub_datasets_20260901_012504.tsv
+supp: rows	10194	pub_supplementary_20260824_080502.tsv
+supp -> Publications: distinct papers matched	3312	pub_supplementary_20260824_080502.tsv
+grants: rows	45278	pub_grants_20260824_080502.tsv
+grants -> Publications: distinct papers matched	3881	pub_grants_20260824_080502.tsv
+software: rows	4239	pub_software_20260825_010000.tsv
+software -> Publications: distinct papers matched	1150	pub_software_20260825_010000.tsv
+models: rows	330	pub_models_20260909_160540.tsv
+models -> Publications: distinct papers matched	131	pub_models_20260909_160540.tsv
+Code Repositories: found via GitHub search	855	gits_to_reannotate_completed_20260831_100000.tsv
+Code Repositories: found via paper software mentions	1056	gits_to_reannotate_completed_20260831_100000.tsv
+Code Repositories: found via both routes	13	gits_to_reannotate_completed_20260831_100000.tsv
+SciLite Annotations: rows	956172	scilite_annotations_20260824_083712.tsv
+SciLite -> Publications: distinct papers matched	3951	scilite_annotations_20260824_083712.tsv
+Human Cellular Models: rows	626	cellular_models_20260824_152510.tsv
+HCM -> Publications: lines with a Linked Publication in Publications	113	cellular_models_20260824_152510.tsv
+HCM -> Publications: distinct papers reached	211	cellular_models_20260824_152510.tsv
+HCM -> Resources: lines with a Linked Study in Resources	113	cellular_models_20260824_152510.tsv
+HCM -> Resources: distinct Resources reached	98	cellular_models_20260824_152510.tsv
+HCM dbSNP = SciLite RefSNP Tag Name: lines matched	113	scilite_annotations_20260824_083712.tsv
+HCM dbSNP = SciLite RefSNP Tag Name: distinct variants matched	33	scilite_annotations_20260824_083712.tsv
+HCM Gene = SciLite Gene_Proteins Exact: lines matched	591	scilite_annotations_20260824_083712.tsv
+HCM Gene = SciLite Gene_Proteins Exact: distinct genes matched	99	scilite_annotations_20260824_083712.tsv

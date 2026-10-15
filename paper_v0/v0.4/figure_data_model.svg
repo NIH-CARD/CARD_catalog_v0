@@ -1,0 +1,228 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1780" height="1156" viewBox="0 0 1780 1156">
+<defs>
+  <marker id="arrow-pub" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#2b5d9b"/></marker>
+  <marker id="arrow-var" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#2e7d4f"/></marker>
+  <marker id="arrow-res" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#c0631b"/></marker>
+</defs>
+<rect width="1780" height="1156" fill="#ffffff"/>
+<text x="60" y="42" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" font-style="normal" fill="#5b6574" text-anchor="start">CORE ENTITIES</text>
+<text x="1310" y="42" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" font-style="normal" fill="#5b6574" text-anchor="start">PUBLICATION-LINKED ANNOTATIONS</text>
+<line x1="60" y1="54" x2="1090" y2="54" stroke="#d5dae1" stroke-width="1"/>
+<line x1="1310" y1="54" x2="1720" y2="54" stroke="#d5dae1" stroke-width="1"/>
+<g>
+<rect x="60" y="80" width="400" height="248" rx="9" fill="#ffffff" stroke="none"/>
+<path d="M60,152 V89 a9,9 0 0 1 9,-9 H451 a9,9 0 0 1 9,9 V152 Z" fill="#e9eef5" stroke="none"/>
+<rect x="60" y="80" width="400" height="248" rx="9" fill="none" stroke="#7d8896" stroke-width="1.8"/>
+<line x1="60" y1="152" x2="460" y2="152" stroke="#d5dae1" stroke-width="1"/>
+<text x="78" y="114" font-family="Helvetica, Arial, sans-serif" font-size="25" font-weight="bold" font-style="normal" fill="#1d2430" text-anchor="start">Resources</text>
+<text x="444" y="114" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" font-style="normal" fill="#5b6574" text-anchor="end">n = 237</text>
+<text x="78" y="139" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="normal" font-style="italic" fill="#5b6574" text-anchor="start">AD/ADRD studies &amp; data resources</text>
+<circle cx="84" cy="173.94" r="5" fill="#c0631b" stroke="#c0631b" stroke-width="1.8"/>
+<text x="98" y="179.44" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="bold" font-style="normal" fill="#c0631b" text-anchor="start">Resource Name</text>
+<text x="98" y="206.44" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">Abbreviation</text>
+<text x="98" y="233.44" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">Resource Type</text>
+<text x="98" y="260.44" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">Diseases Included</text>
+<text x="98" y="287.44" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">Coarse / Granular Data Modality</text>
+<text x="98" y="314.44" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">Access URL</text>
+</g>
+<g>
+<rect x="650" y="80" width="440" height="275" rx="9" fill="#ffffff" stroke="none"/>
+<path d="M650,152 V89 a9,9 0 0 1 9,-9 H1081 a9,9 0 0 1 9,9 V152 Z" fill="#dde7f3" stroke="none"/>
+<rect x="650" y="80" width="440" height="275" rx="9" fill="none" stroke="#2b5d9b" stroke-width="2.6"/>
+<line x1="650" y1="152" x2="1090" y2="152" stroke="#d5dae1" stroke-width="1"/>
+<text x="668" y="114" font-family="Helvetica, Arial, sans-serif" font-size="27" font-weight="bold" font-style="normal" fill="#1d2430" text-anchor="start">Publications</text>
+<text x="1074" y="114" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" font-style="normal" fill="#5b6574" text-anchor="end">n = 4,979</text>
+<text x="668" y="139" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="normal" font-style="italic" fill="#5b6574" text-anchor="start">Papers using catalogued resources</text>
+<circle cx="674" cy="173.94" r="5" fill="#c0631b" stroke="#c0631b" stroke-width="1.8"/>
+<text x="688" y="179.44" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="bold" font-style="normal" fill="#c0631b" text-anchor="start">Resource Name</text>
+<circle cx="674" cy="200.94" r="5" fill="#2b5d9b" stroke="#2b5d9b" stroke-width="1.8"/>
+<text x="688" y="206.44" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="bold" font-style="normal" fill="#2b5d9b" text-anchor="start">PubMed Central Link (PMC ID)</text>
+<circle cx="674" cy="227.94" r="5" fill="#2b5d9b" stroke="#2b5d9b" stroke-width="1.8"/>
+<text x="688" y="233.44" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="bold" font-style="normal" fill="#2b5d9b" text-anchor="start">DOI</text>
+<text x="688" y="260.44" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">PMID</text>
+<text x="688" y="287.44" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">Title / Abstract</text>
+<text x="688" y="314.44" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">Authors / Affiliations</text>
+<text x="688" y="341.44" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">Keywords · Publication Year</text>
+</g>
+<g>
+<rect x="60" y="545" width="400" height="248" rx="9" fill="#ffffff" stroke="none"/>
+<path d="M60,617 V554 a9,9 0 0 1 9,-9 H451 a9,9 0 0 1 9,9 V617 Z" fill="#e9eef5" stroke="none"/>
+<rect x="60" y="545" width="400" height="248" rx="9" fill="none" stroke="#7d8896" stroke-width="1.8"/>
+<line x1="60" y1="617" x2="460" y2="617" stroke="#d5dae1" stroke-width="1"/>
+<text x="78" y="579" font-family="Helvetica, Arial, sans-serif" font-size="25" font-weight="bold" font-style="normal" fill="#1d2430" text-anchor="start">Code Repositories</text>
+<text x="444" y="579" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" font-style="normal" fill="#5b6574" text-anchor="end">n = 1,898</text>
+<text x="78" y="604" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="normal" font-style="italic" fill="#5b6574" text-anchor="start">Analysis code tied to resources</text>
+<circle cx="84" cy="638.94" r="5" fill="#c0631b" stroke="#c0631b" stroke-width="1.8"/>
+<text x="98" y="644.44" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="bold" font-style="normal" fill="#c0631b" text-anchor="start">Resource Name</text>
+<text x="98" y="671.44" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">Repository Link</text>
+<text x="98" y="698.44" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">Owner / Contributors</text>
+<text x="98" y="725.44" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">Languages · Tooling</text>
+<text x="98" y="752.44" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">Data Types</text>
+<text x="98" y="779.44" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">FAIR Score / FAIR Issues</text>
+</g>
+<text x="64" y="819" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="normal" font-style="normal" fill="#5b6574" text-anchor="start">= 855 via GitHub search  ∪  1,056 via software mentions</text>
+<text x="64" y="839" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="normal" font-style="normal" fill="#5b6574" text-anchor="start">(13 found by both)</text>
+<g>
+<rect x="650" y="545" width="440" height="275" rx="9" fill="#ffffff" stroke="none"/>
+<path d="M650,617 V554 a9,9 0 0 1 9,-9 H1081 a9,9 0 0 1 9,9 V617 Z" fill="#e9eef5" stroke="none"/>
+<rect x="650" y="545" width="440" height="275" rx="9" fill="none" stroke="#7d8896" stroke-width="1.8"/>
+<line x1="650" y1="617" x2="1090" y2="617" stroke="#d5dae1" stroke-width="1"/>
+<text x="668" y="579" font-family="Helvetica, Arial, sans-serif" font-size="25" font-weight="bold" font-style="normal" fill="#1d2430" text-anchor="start">Human Cellular Models</text>
+<text x="1074" y="579" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" font-style="normal" fill="#5b6574" text-anchor="end">n = 626</text>
+<text x="668" y="604" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="normal" font-style="italic" fill="#5b6574" text-anchor="start">iPSC lines with engineered variants</text>
+<circle cx="674" cy="638.94" r="5" fill="#2e7d4f" stroke="#2e7d4f" stroke-width="1.8"/>
+<text x="688" y="644.44" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="bold" font-style="normal" fill="#2e7d4f" text-anchor="start">dbSNP</text>
+<circle cx="674" cy="665.94" r="5" fill="#2e7d4f" stroke="#2e7d4f" stroke-width="1.8"/>
+<text x="688" y="671.44" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="bold" font-style="normal" fill="#2e7d4f" text-anchor="start">Gene</text>
+<text x="688" y="698.44" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">Product Code · Parental Line</text>
+<text x="688" y="725.44" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">Gene Variant · Genotype</text>
+<text x="688" y="752.44" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">Condition</text>
+<circle cx="674" cy="773.94" r="5" fill="#ffffff" stroke="#2b5d9b" stroke-width="1.8"/>
+<text x="688" y="779.44" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="bold" font-style="normal" fill="#2b5d9b" text-anchor="start">Linked Publications (PMC IDs)</text>
+<circle cx="674" cy="800.94" r="5" fill="#ffffff" stroke="#c0631b" stroke-width="1.8"/>
+<text x="688" y="806.44" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="bold" font-style="normal" fill="#c0631b" text-anchor="start">Linked Studies (Resource Names)</text>
+</g>
+<g>
+<rect x="1310" y="80" width="410" height="151" rx="9" fill="#ffffff" stroke="none"/>
+<path d="M1310,142 V89 a9,9 0 0 1 9,-9 H1711 a9,9 0 0 1 9,9 V142 Z" fill="#f3f4f6" stroke="none"/>
+<rect x="1310" y="80" width="410" height="151" rx="9" fill="none" stroke="#aab2bd" stroke-width="1.2"/>
+<line x1="1310" y1="142" x2="1720" y2="142" stroke="#d5dae1" stroke-width="1"/>
+<text x="1328" y="109" font-family="Helvetica, Arial, sans-serif" font-size="20" font-weight="bold" font-style="normal" fill="#1d2430" text-anchor="start">Cited Datasets</text>
+<text x="1704" y="109" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" font-style="normal" fill="#5b6574" text-anchor="end">n = 11,215</text>
+<text x="1328" y="131" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="normal" font-style="italic" fill="#5b6574" text-anchor="start">Datasets cited in a paper</text>
+<circle cx="1334" cy="162.5" r="5" fill="#2b5d9b" stroke="#2b5d9b" stroke-width="1.8"/>
+<text x="1348" y="168.0" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="bold" font-style="normal" fill="#2b5d9b" text-anchor="start">source_url  →  PMC ID / DOI</text>
+<text x="1348" y="193.0" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">dataset_identifier · data_repository</text>
+<text x="1348" y="218.0" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">access_mode</text>
+</g>
+<g>
+<rect x="1310" y="247" width="410" height="126" rx="9" fill="#ffffff" stroke="none"/>
+<path d="M1310,309 V256 a9,9 0 0 1 9,-9 H1711 a9,9 0 0 1 9,9 V309 Z" fill="#f3f4f6" stroke="none"/>
+<rect x="1310" y="247" width="410" height="126" rx="9" fill="none" stroke="#aab2bd" stroke-width="1.2"/>
+<line x1="1310" y1="309" x2="1720" y2="309" stroke="#d5dae1" stroke-width="1"/>
+<text x="1328" y="276" font-family="Helvetica, Arial, sans-serif" font-size="20" font-weight="bold" font-style="normal" fill="#1d2430" text-anchor="start">Supplementary Files</text>
+<text x="1704" y="276" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" font-style="normal" fill="#5b6574" text-anchor="end">n = 10,194</text>
+<text x="1328" y="298" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="normal" font-style="italic" fill="#5b6574" text-anchor="start">Files deposited with a paper</text>
+<circle cx="1334" cy="329.5" r="5" fill="#2b5d9b" stroke="#2b5d9b" stroke-width="1.8"/>
+<text x="1348" y="335.0" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="bold" font-style="normal" fill="#2b5d9b" text-anchor="start">source_url  →  PMC ID / DOI</text>
+<text x="1348" y="360.0" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">content_type · file_extension</text>
+</g>
+<g>
+<rect x="1310" y="389" width="410" height="126" rx="9" fill="#ffffff" stroke="none"/>
+<path d="M1310,451 V398 a9,9 0 0 1 9,-9 H1711 a9,9 0 0 1 9,9 V451 Z" fill="#f3f4f6" stroke="none"/>
+<rect x="1310" y="389" width="410" height="126" rx="9" fill="none" stroke="#aab2bd" stroke-width="1.2"/>
+<line x1="1310" y1="451" x2="1720" y2="451" stroke="#d5dae1" stroke-width="1"/>
+<text x="1328" y="418" font-family="Helvetica, Arial, sans-serif" font-size="20" font-weight="bold" font-style="normal" fill="#1d2430" text-anchor="start">Grants</text>
+<text x="1704" y="418" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" font-style="normal" fill="#5b6574" text-anchor="end">n = 45,278</text>
+<text x="1328" y="440" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="normal" font-style="italic" fill="#5b6574" text-anchor="start">Funding acknowledged in a paper</text>
+<circle cx="1334" cy="471.5" r="5" fill="#2b5d9b" stroke="#2b5d9b" stroke-width="1.8"/>
+<text x="1348" y="477.0" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="bold" font-style="normal" fill="#2b5d9b" text-anchor="start">source_url  →  PMC ID / DOI</text>
+<text x="1348" y="502.0" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">funder_name · grant_number</text>
+</g>
+<g>
+<rect x="1310" y="531" width="410" height="126" rx="9" fill="#ffffff" stroke="none"/>
+<path d="M1310,593 V540 a9,9 0 0 1 9,-9 H1711 a9,9 0 0 1 9,9 V593 Z" fill="#f3f4f6" stroke="none"/>
+<rect x="1310" y="531" width="410" height="126" rx="9" fill="none" stroke="#aab2bd" stroke-width="1.2"/>
+<line x1="1310" y1="593" x2="1720" y2="593" stroke="#d5dae1" stroke-width="1"/>
+<text x="1328" y="560" font-family="Helvetica, Arial, sans-serif" font-size="20" font-weight="bold" font-style="normal" fill="#1d2430" text-anchor="start">Software Mentions</text>
+<text x="1704" y="560" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" font-style="normal" fill="#5b6574" text-anchor="end">n = 4,239</text>
+<text x="1328" y="582" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="normal" font-style="italic" fill="#5b6574" text-anchor="start">Software used in a paper</text>
+<circle cx="1334" cy="613.5" r="5" fill="#2b5d9b" stroke="#2b5d9b" stroke-width="1.8"/>
+<text x="1348" y="619.0" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="bold" font-style="normal" fill="#2b5d9b" text-anchor="start">source_url  →  PMC ID / DOI</text>
+<text x="1348" y="644.0" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">software_name · url</text>
+</g>
+<g>
+<rect x="1310" y="673" width="410" height="126" rx="9" fill="#ffffff" stroke="none"/>
+<path d="M1310,735 V682 a9,9 0 0 1 9,-9 H1711 a9,9 0 0 1 9,9 V735 Z" fill="#f3f4f6" stroke="none"/>
+<rect x="1310" y="673" width="410" height="126" rx="9" fill="none" stroke="#aab2bd" stroke-width="1.2"/>
+<line x1="1310" y1="735" x2="1720" y2="735" stroke="#d5dae1" stroke-width="1"/>
+<text x="1328" y="702" font-family="Helvetica, Arial, sans-serif" font-size="20" font-weight="bold" font-style="normal" fill="#1d2430" text-anchor="start">Models</text>
+<text x="1704" y="702" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" font-style="normal" fill="#5b6574" text-anchor="end">n = 330</text>
+<text x="1328" y="724" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="normal" font-style="italic" fill="#5b6574" text-anchor="start">ML/AI models used in a paper</text>
+<circle cx="1334" cy="755.5" r="5" fill="#2b5d9b" stroke="#2b5d9b" stroke-width="1.8"/>
+<text x="1348" y="761.0" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="bold" font-style="normal" fill="#2b5d9b" text-anchor="start">source_url  →  PMC ID / DOI</text>
+<text x="1348" y="786.0" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">model_name · url</text>
+</g>
+<g>
+<rect x="1310" y="815" width="410" height="176" rx="9" fill="#ffffff" stroke="none"/>
+<path d="M1310,877 V824 a9,9 0 0 1 9,-9 H1711 a9,9 0 0 1 9,9 V877 Z" fill="#f3f4f6" stroke="none"/>
+<rect x="1310" y="815" width="410" height="176" rx="9" fill="none" stroke="#aab2bd" stroke-width="1.2"/>
+<line x1="1310" y1="877" x2="1720" y2="877" stroke="#d5dae1" stroke-width="1"/>
+<text x="1328" y="844" font-family="Helvetica, Arial, sans-serif" font-size="20" font-weight="bold" font-style="normal" fill="#1d2430" text-anchor="start">SciLite Annotations</text>
+<text x="1704" y="844" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" font-style="normal" fill="#5b6574" text-anchor="end">n = 956,172</text>
+<text x="1328" y="866" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="normal" font-style="italic" fill="#5b6574" text-anchor="start">Europe PMC text-mined entities</text>
+<circle cx="1334" cy="897.5" r="5" fill="#2b5d9b" stroke="#2b5d9b" stroke-width="1.8"/>
+<text x="1348" y="903.0" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="bold" font-style="normal" fill="#2b5d9b" text-anchor="start">PMC ID</text>
+<circle cx="1334" cy="922.5" r="5" fill="#2e7d4f" stroke="#2e7d4f" stroke-width="1.8"/>
+<text x="1348" y="928.0" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="bold" font-style="normal" fill="#2e7d4f" text-anchor="start">Tag Name  [RefSNP subset]</text>
+<circle cx="1334" cy="947.5" r="5" fill="#2e7d4f" stroke="#2e7d4f" stroke-width="1.8"/>
+<text x="1348" y="953.0" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="bold" font-style="normal" fill="#2e7d4f" text-anchor="start">Exact  [Gene_Proteins subset]</text>
+<text x="1348" y="978.0" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">Type · Section</text>
+</g>
+<path d="M650,173.94 H462" fill="none" stroke="#c0631b" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow-res)"/>
+<text x="555.0" y="163.94" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#c0631b" text-anchor="middle" stroke="#ffffff" stroke-width="6" paint-order="stroke" stroke-linejoin="round">Resource Name</text>
+<text x="545.0" y="197.94" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="normal" fill="#c0631b" text-anchor="middle" stroke="#ffffff" stroke-width="6" paint-order="stroke" stroke-linejoin="round">4,979 papers</text>
+<text x="545.0" y="216.94" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="normal" fill="#c0631b" text-anchor="middle" stroke="#ffffff" stroke-width="6" paint-order="stroke" stroke-linejoin="round">→ 226 resources</text>
+<path d="M260,545 V330" fill="none" stroke="#c0631b" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow-res)"/>
+<text x="260" y="442.5" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#c0631b" text-anchor="middle" stroke="#ffffff" stroke-width="6" paint-order="stroke" stroke-linejoin="round">Resource Name</text>
+<text x="260" y="463.5" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="normal" fill="#c0631b" text-anchor="middle" stroke="#ffffff" stroke-width="6" paint-order="stroke" stroke-linejoin="round">1,898 repositories → 171 resources</text>
+<path d="M650,773.94 H622 V200.94 H648" fill="none" stroke="#2b5d9b" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="7 5" marker-end="url(#arrow-pub)"/>
+<text x="636" y="446.0" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#2b5d9b" text-anchor="start" stroke="#ffffff" stroke-width="6" paint-order="stroke" stroke-linejoin="round">Linked Publications → PMC ID</text>
+<text x="636" y="467.0" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="normal" fill="#2b5d9b" text-anchor="start" stroke="#ffffff" stroke-width="6" paint-order="stroke" stroke-linejoin="round">113 lines → 211 papers</text>
+<path d="M650,800.94 H535 V288 H462" fill="none" stroke="#c0631b" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="7 5" marker-end="url(#arrow-res)"/>
+<text x="535" y="411.5" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#c0631b" text-anchor="middle" stroke="#ffffff" stroke-width="6" paint-order="stroke" stroke-linejoin="round">Linked Studies</text>
+<text x="535" y="431.5" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#c0631b" text-anchor="middle" stroke="#ffffff" stroke-width="6" paint-order="stroke" stroke-linejoin="round">→ Resource Name</text>
+<text x="535" y="452.5" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="normal" fill="#c0631b" text-anchor="middle" stroke="#ffffff" stroke-width="6" paint-order="stroke" stroke-linejoin="round">113 lines</text>
+<text x="535" y="471.5" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="normal" fill="#c0631b" text-anchor="middle" stroke="#ffffff" stroke-width="6" paint-order="stroke" stroke-linejoin="round">→ 98 resources</text>
+<line x1="1215" y1="162.5" x2="1215" y2="897.5" stroke="#2b5d9b" stroke-width="2.4" stroke-linecap="round"/>
+<line x1="1215" y1="162.5" x2="1310" y2="162.5" stroke="#2b5d9b" stroke-width="2.4"/>
+<circle cx="1215" cy="162.5" r="3.6" fill="#2b5d9b"/>
+<line x1="1215" y1="329.5" x2="1310" y2="329.5" stroke="#2b5d9b" stroke-width="2.4"/>
+<circle cx="1215" cy="329.5" r="3.6" fill="#2b5d9b"/>
+<line x1="1215" y1="471.5" x2="1310" y2="471.5" stroke="#2b5d9b" stroke-width="2.4"/>
+<circle cx="1215" cy="471.5" r="3.6" fill="#2b5d9b"/>
+<line x1="1215" y1="613.5" x2="1310" y2="613.5" stroke="#2b5d9b" stroke-width="2.4"/>
+<circle cx="1215" cy="613.5" r="3.6" fill="#2b5d9b"/>
+<line x1="1215" y1="755.5" x2="1310" y2="755.5" stroke="#2b5d9b" stroke-width="2.4"/>
+<circle cx="1215" cy="755.5" r="3.6" fill="#2b5d9b"/>
+<line x1="1215" y1="897.5" x2="1310" y2="897.5" stroke="#2b5d9b" stroke-width="2.4"/>
+<circle cx="1215" cy="897.5" r="3.6" fill="#2b5d9b"/>
+<text x="1264.5" y="154.5" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" fill="#2b5d9b" text-anchor="middle" stroke="#ffffff" stroke-width="6" paint-order="stroke" stroke-linejoin="round">3,869 papers</text>
+<text x="1264.5" y="321.5" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" fill="#2b5d9b" text-anchor="middle" stroke="#ffffff" stroke-width="6" paint-order="stroke" stroke-linejoin="round">3,312 papers</text>
+<text x="1264.5" y="463.5" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" fill="#2b5d9b" text-anchor="middle" stroke="#ffffff" stroke-width="6" paint-order="stroke" stroke-linejoin="round">3,881 papers</text>
+<text x="1264.5" y="605.5" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" fill="#2b5d9b" text-anchor="middle" stroke="#ffffff" stroke-width="6" paint-order="stroke" stroke-linejoin="round">1,150 papers</text>
+<text x="1264.5" y="747.5" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" fill="#2b5d9b" text-anchor="middle" stroke="#ffffff" stroke-width="6" paint-order="stroke" stroke-linejoin="round">131 papers</text>
+<text x="1264.5" y="889.5" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" fill="#2b5d9b" text-anchor="middle" stroke="#ffffff" stroke-width="6" paint-order="stroke" stroke-linejoin="round">3,951 papers</text>
+<path d="M1215,200.94 H1092" fill="none" stroke="#2b5d9b" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow-pub)"/>
+<text x="1152.5" y="226.94" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#2b5d9b" text-anchor="middle" stroke="#ffffff" stroke-width="6" paint-order="stroke" stroke-linejoin="round">PMC ID / DOI</text>
+<path d="M1090,638.94 H1180 V922.5 H1308" fill="none" stroke="#2e7d4f" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow-var)"/>
+<path d="M1090,665.94 H1150 V947.5 H1308" fill="none" stroke="#2e7d4f" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow-var)"/>
+<text x="1079.5" y="857" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#2e7d4f" text-anchor="end" stroke="#ffffff" stroke-width="6" paint-order="stroke" stroke-linejoin="round">dbSNP = Tag Name (RefSNP)</text>
+<text x="1079.5" y="877" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="normal" fill="#2e7d4f" text-anchor="end" stroke="#ffffff" stroke-width="6" paint-order="stroke" stroke-linejoin="round">113 lines · 33 variants</text>
+<text x="1136" y="917" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#2e7d4f" text-anchor="end" stroke="#ffffff" stroke-width="6" paint-order="stroke" stroke-linejoin="round">Gene = Exact (Gene_Proteins)</text>
+<text x="1136" y="937" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="normal" fill="#2e7d4f" text-anchor="end" stroke="#ffffff" stroke-width="6" paint-order="stroke" stroke-linejoin="round">591 lines · 99 genes</text>
+<line x1="1087.5" y1="851.5" x2="1176.0" y2="784.5" stroke="#1d2430" stroke-width="0.9"/>
+<text x="60" y="1036" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" font-style="normal" fill="#5b6574" text-anchor="start">Join key</text>
+<line x1="60" y1="1060" x2="106" y2="1060" stroke="#2b5d9b" stroke-width="3"/>
+<text x="116" y="1066" font-family="Helvetica, Arial, sans-serif" font-size="15.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">Publication (PMC ID / DOI)</text>
+<line x1="60" y1="1088" x2="106" y2="1088" stroke="#c0631b" stroke-width="3"/>
+<text x="116" y="1094" font-family="Helvetica, Arial, sans-serif" font-size="15.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">Resource (Resource Name)</text>
+<line x1="60" y1="1116" x2="106" y2="1116" stroke="#2e7d4f" stroke-width="3"/>
+<text x="116" y="1122" font-family="Helvetica, Arial, sans-serif" font-size="15.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">Variant / gene (dbSNP, Gene)</text>
+<text x="330" y="1036" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" font-style="normal" fill="#5b6574" text-anchor="start">Relationship</text>
+<line x1="330" y1="1060" x2="376" y2="1060" stroke="#1d2430" stroke-width="2.4"/>
+<text x="386" y="1066" font-family="Helvetica, Arial, sans-serif" font-size="15.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">Direct: shared key column</text>
+<line x1="330" y1="1088" x2="376" y2="1088" stroke="#1d2430" stroke-width="1.5" stroke-dasharray="7 5"/>
+<text x="386" y="1094" font-family="Helvetica, Arial, sans-serif" font-size="15.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">Derived: precomputed via the dbSNP = RefSNP match</text>
+<text x="900" y="1036" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" font-style="normal" fill="#5b6574" text-anchor="start">Fields</text>
+<circle cx="906" cy="1060" r="5" fill="#1d2430"/>
+<text x="920" y="1066" font-family="Helvetica, Arial, sans-serif" font-size="15.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">Key column</text>
+<circle cx="906" cy="1088" r="5" fill="#ffffff" stroke="#1d2430" stroke-width="1.8"/>
+<text x="920" y="1094" font-family="Helvetica, Arial, sans-serif" font-size="15.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">Derived key column</text>
+<text x="1120" y="1036" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" font-style="normal" fill="#5b6574" text-anchor="start">Numbers</text>
+<text x="1120" y="1066" font-family="Helvetica, Arial, sans-serif" font-size="15.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">n = rows in the table</text>
+<text x="1120" y="1094" font-family="Helvetica, Arial, sans-serif" font-size="15.5" font-weight="normal" font-style="normal" fill="#1d2430" text-anchor="start">On links: rows matched by that key</text>
+</svg>

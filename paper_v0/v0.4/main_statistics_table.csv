@@ -69,14 +69,14 @@ Distribution,,,
 76-100%,,2009,
 ,,,
 CODE REPOSITORIES,,,
-Total Repositories,1903,,
+Total Repositories,1898,,
 ,,,
 Top Programming Languages,,,
-Python,,531,27.9%
+Python,,531,28.0%
 Jupyter Notebook,,371,19.5%
-R,,360,18.9%
-HTML,,83,4.4%
-MATLAB,,77,4.0%
+R,,357,18.8%
+HTML,,82,4.3%
+MATLAB,,76,4.0%
 C++,,54,2.8%
 JavaScript,,44,2.3%
 TypeScript,,38,2.0%
@@ -84,52 +84,52 @@ C,,33,1.7%
 Shell,,32,1.7%
 ,,,
 Top 10 Keywords from Tooling,,% Repositories,
-python,,855,47.4%
-data,,576,31.9%
-package,,328,18.2%
-programming,,419,23.2%
-language,,415,23.0%
-learning,,322,17.8%
+python,,855,47.5%
+data,,575,31.9%
+package,,327,18.2%
+programming,,418,23.2%
+language,,414,23.0%
+learning,,322,17.9%
 version,,238,13.2%
 visualization,,250,13.9%
-management,,239,13.2%
-file,,234,13.0%
+management,,239,13.3%
+file,,232,12.9%
 ,,,
 Top 10 Keywords from Data Types,,% Repositories,
-data,,1647,93.7%
-clinical,,660,37.6%
-brain,,499,28.4%
-sequencing,,318,18.1%
-files,,294,16.7%
-format,,320,18.2%
-mri,,327,18.6%
-imaging,,322,18.3%
-gene,,291,16.6%
-disease,,298,17.0%
+data,,1643,93.8%
+clinical,,657,37.5%
+brain,,496,28.3%
+sequencing,,317,18.1%
+files,,293,16.7%
+format,,317,18.1%
+mri,,327,18.7%
+imaging,,320,18.3%
+gene,,289,16.5%
+disease,,297,17.0%
 ,,,
 Top 10 Keywords from Code Summary,,% Repositories,
-data,,981,51.6%
-brain,,542,28.5%
-code,,662,34.8%
+data,,978,51.6%
+brain,,539,28.4%
+code,,662,34.9%
 disease,,577,30.4%
-learning,,432,22.7%
-provides,,480,25.2%
-cell,,202,10.6%
-pipeline,,317,16.7%
-gene,,237,12.5%
-models,,299,15.7%
+learning,,431,22.7%
+provides,,480,25.3%
+cell,,200,10.5%
+pipeline,,315,16.6%
+models,,299,15.8%
+gene,,234,12.3%
 ,,,
 FAIR Component Completeness,,% with component,
-README,,,99.2%
-Dependencies,,,24.6%
-Container,,,8.1%
-Environment Spec,,,5.6%
-Version Info,,,3.1%
+README,,,99.4%
+Dependencies,,,42.3%
+Container,,,9.2%
+Version Info,,,8.3%
+Environment Spec,,,7.5%
 ,,,
 Mean FAIR Score by Language (0-10 scale),,,
-Python,6.63/10,n=531,
-Jupyter Notebook,6.18/10,n=371,
-R,5.91/10,n=360,
+Python,7.01/10,n=531,
+Jupyter Notebook,6.49/10,n=371,
+R,6.46/10,n=357,
 ,,,
 HUMAN CELLULAR MODELS,,,
 Total Cell Models,626,,
