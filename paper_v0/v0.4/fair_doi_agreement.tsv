@@ -1,20 +1,20 @@
 # Cited Datasets only (original)
 FAIR Level	With DOI	Without DOI	Total	% With DOI
-Excellent	57	65	122	46.7
-Strong	29	31	60	48.3
+Excellent	58	64	122	47.5
+Strong	30	30	60	50.0
 Good	16	39	55	29.1
-Total	102	135	237	43.0
+Total	104	133	237	43.9
 
 # Software Mentions only
 FAIR Level	With DOI	Without DOI	Total	% With DOI
-Excellent	43	79	122	35.2
+Excellent	44	78	122	36.1
 Strong	19	41	60	31.7
 Good	11	44	55	20.0
-Total	73	164	237	30.8
+Total	74	163	237	31.2
 
 # Combined (Cited Datasets OR Software Mentions)
 FAIR Level	With DOI	Without DOI	Total	% With DOI
-Excellent	61	61	122	50.0
-Strong	30	30	60	50.0
+Excellent	62	60	122	50.8
+Strong	31	29	60	51.7
 Good	21	34	55	38.2
-Total	112	125	237	47.3
+Total	114	123	237	48.1
