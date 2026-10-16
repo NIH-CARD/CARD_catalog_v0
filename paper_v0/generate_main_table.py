@@ -181,13 +181,11 @@ def analyze_resources():
     if 'FAIR Compliance Notes' in df.columns:
         fair_levels = {'Excellent': 0, 'Strong': 0, 'Good': 0}
         for note in df['FAIR Compliance Notes'].dropna():
-            note_lower = str(note).lower()
-            if 'excellent' in note_lower:
-                fair_levels['Excellent'] += 1
-            elif 'strong' in note_lower:
-                fair_levels['Strong'] += 1
-            elif 'good' in note_lower:
-                fair_levels['Good'] += 1
+            # Level is the note's leading word - notes like "Strong FAIR compliance
+            # with excellent findability" must not match a later adjective
+            match = re.match(r'\s*(Excellent|Strong|Good)\b', str(note), re.IGNORECASE)
+            if match:
+                fair_levels[match.group(1).capitalize()] += 1
 
         stats['fair_levels'] = fair_levels
         total_with_fair = sum(fair_levels.values())

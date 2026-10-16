@@ -57,15 +57,10 @@ def get_fair_level(fair_note):
     if pd.isna(fair_note):
         return 'Unknown'
 
-    note_lower = str(fair_note).lower()
-    if 'excellent' in note_lower:
-        return 'Excellent'
-    elif 'strong' in note_lower:
-        return 'Strong'
-    elif 'good' in note_lower:
-        return 'Good'
-    else:
-        return 'Unknown'
+    # Level is the note's leading word - notes like "Strong FAIR compliance with
+    # excellent findability" must not match a later adjective
+    match = re.match(r'\s*(Excellent|Strong|Good)\b', str(fair_note), re.IGNORECASE)
+    return match.group(1).capitalize() if match else 'Unknown'
 
 
 def create_figure():
