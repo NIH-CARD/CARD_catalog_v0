@@ -87,3 +87,7 @@ prompts/validate_fetched_publications/fulltext_batch_**
 
 # Local Netlify folder
 .netlify
+
+# Zenodo data package (built by paper_v0/build_zenodo_release.py)
+paper_v0/zenodo_release/
+scrapers/recheck_fair_compliance.py

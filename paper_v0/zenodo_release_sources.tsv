@@ -1,0 +1,12 @@
+file	source	rows
+resources.tsv	resources-inventory-Jun_8_2026.tab	237
+publications.tsv	misc_publications_20260903_142027.tsv	4979
+code_repositories.tsv	gits_to_reannotate_completed_20260831_100000.tsv	1898
+human_cellular_models.tsv	cellular_models_20260824_152510.tsv	626
+cited_datasets.tsv	pub_datasets_20260901_012504.tsv	11215
+supplementary_files.tsv	pub_supplementary_20260824_080502.tsv	10194
+grants.tsv	pub_grants_20260824_080502.tsv	45278
+software_mentions.tsv	pub_software_20260825_010000.tsv	4239
+models.tsv	pub_models_20260909_160540.tsv	330
+scilite_annotations.tsv.gz	scilite_annotations_20260824_083712.tsv	956172
+fair_compliance.tsv	fair_compliance_log_*.tsv (merged)	7683
