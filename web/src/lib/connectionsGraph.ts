@@ -232,7 +232,7 @@ const FACET_COLUMNS: Record<string, string[]> = {
   Grants: ["funder_name", "grant_number", "recipient"],
   "Software Mentions": ["software_name", "version", "mention_type"],
   Models: ["model_name", "version", "mention_type"],
-  "SciLite Annotations": ["Type", "Section", "Tag Name"],
+  "SciLite Annotations": ["Type", "Section", "Tag Name", "Exact"],
   "Human Cellular Models": ["Gene", "Condition", "Parental Line", "Genotype"],
 };
 
@@ -442,7 +442,7 @@ function sqlEscape(v: string): string {
 function sqlWhereClause(alias: string, filters: readonly FacetFilter[]): string {
   return filters
     .filter((f) => f.values.length > 0)
-    .map((f) => `${alias}."${f.field}" IN (${f.values.map((v) => `'${sqlEscape(v)}'`).join(", ")})`)
+    .map((f) => `${alias ? `${alias}.` : ""}"${f.field}" IN (${f.values.map((v) => `'${sqlEscape(v)}'`).join(", ")})`)
     .join(" AND ");
 }
 
@@ -481,7 +481,8 @@ export function generateSql(
   lines.push(baseTable === "Publications" ? "FROM Publications p" : `FROM "${baseTable}" p`);
   edges.forEach((edge, i) => {
     const alias = `t${i + 1}`;
-    const where = sqlWhereClause(alias, edgeFilters[edge.table] ?? []);
+    // Unqualified: the alias names the subquery's result and isn't in scope inside it.
+    const where = sqlWhereClause("", edgeFilters[edge.table] ?? []);
     const source = where ? `(\n  SELECT * FROM "${edge.table}" WHERE ${where}\n)` : `"${edge.table}"`;
     // INNER JOIN, chained - each one narrows the accumulated result so far,
     // not an independent join against Publications that gets unioned back in.

@@ -268,10 +268,10 @@ describe("generateSql", () => {
   it("renders a merge-source table's filters as a pre-join subquery, not a WHERE after the JOIN", () => {
     const edges: DagEdge[] = [{ table: "Grants", domain: "publication", columns: ["funder_name"] }];
     const sql = generateSql(edges, [], { Grants: [{ field: "funder_name", values: ["NIH"] }] });
-    expect(sql).toContain(`SELECT * FROM "Grants" WHERE t1."funder_name" IN ('NIH')`);
+    expect(sql).toContain(`SELECT * FROM "Grants" WHERE "funder_name" IN ('NIH')`);
     expect(sql).toContain("INNER JOIN (");
     // the filter appears exactly once, inside the subquery - not duplicated as a post-join WHERE
-    expect(sql.match(/WHERE t1\."funder_name"/g)).toHaveLength(1);
+    expect(sql.match(/WHERE "funder_name"/g)).toHaveLength(1);
   });
 
   it("combines Publications' own WHERE with edge subqueries and multiple selected values", () => {
@@ -282,7 +282,7 @@ describe("generateSql", () => {
       { Grants: [{ field: "funder_name", values: ["NIH"] }] },
     );
     expect(sql).toContain(`WHERE p."Publication Year" IN ('2023', '2024')`);
-    expect(sql).toContain(`WHERE t1."funder_name" IN ('NIH')`);
+    expect(sql).toContain(`WHERE "funder_name" IN ('NIH')`);
   });
 
   it("escapes a single quote in a filter value", () => {
