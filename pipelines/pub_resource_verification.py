@@ -1,5 +1,9 @@
 """
-Stage 4f — Publication vLLM batch verification results ingestion.
+Stage 4f — Publication–resource verification: vLLM batch verdict ingestion.
+
+Each candidate (resource, publication) link from discovery is a conjecture; the
+verifier tests it against the publication's full text and labels it confirmed
+(corroborated) or not_confirmed / insufficient_evidence.
 
 *** WORK IN PROGRESS — not yet wired into orchestrator.py. ***
 Do not add this to the pub_metadata concurrent stage list (or anywhere else in
@@ -13,13 +17,13 @@ already completed and left results in prompts/validate_fetched_publications/.
 Orchestrator does not manage that self-hosted, VPN-gated round-trip itself -
 this stage only picks up whatever results already exist on disk.
 
-Writes a standalone table (tables/hits/pub_verification_{ts}.tsv) - deliberately
+Writes a standalone table (tables/hits/pub_resource_verification_{ts}.tsv) - deliberately
 separate from the Publications table's own Verification Status/Claim Text/
 Rationale columns (populated by the older paperclip-based method), so the two
 can be compared rather than one silently overwriting the other.
 
 Input:  prompts/validate_fetched_publications/ (fulltext_batch_*_results.jsonl)
-Output: tables/hits/pub_verification_{ts}.tsv
+Output: tables/hits/pub_resource_verification_{ts}.tsv
 """
 import logging
 from pathlib import Path
@@ -39,7 +43,7 @@ def _latest_combine_hits() -> Optional[Path]:
     return matches[-1] if matches else None
 
 
-class PubVerificationStage(PipelineStage):
+class PubResourceVerificationStage(PipelineStage):
     def run(
         self,
         input_path: Path,

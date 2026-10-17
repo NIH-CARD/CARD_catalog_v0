@@ -701,7 +701,7 @@ def _normalize_pub_models(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-def _normalize_pub_verification(df: pd.DataFrame) -> pd.DataFrame:
+def _normalize_pub_resource_verification(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
@@ -1163,7 +1163,7 @@ _NORMALIZERS = {
     "pub_grants": _normalize_pub_grants,
     "pub_software": _normalize_pub_software,
     "pub_models": _normalize_pub_models,
-    "pub_verification": _normalize_pub_verification,
+    "pub_resource_verification": _normalize_pub_resource_verification,
     "new_corpus": _normalize_new_corpus,
     "scilite": _normalize_scilite,
 }

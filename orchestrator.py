@@ -544,13 +544,13 @@ def run_full_rebuild(
         no_new_literature_pulled = "pubmed_search" in skip_stages and "page_navigation" in skip_stages
         latest_confirmed = _latest(HITS_DIR, "misc_publications_confirmed_*.tsv") if no_new_literature_pulled else None
         if latest_confirmed:
-            logger.info(f"[pub_verification] pubmed_search and page_navigation both skipped — no new "
+            logger.info(f"[pub_resource_verification] pubmed_search and page_navigation both skipped — no new "
                         f"literature pulled this run, reusing latest confirmed corpus as-is instead of "
                         f"re-combining/re-verifying: {latest_confirmed.name}")
             pub_metadata_input = latest_confirmed
         else:
             if no_new_literature_pulled:
-                logger.warning("[pub_verification] pubmed_search and page_navigation both skipped, but no "
+                logger.warning("[pub_resource_verification] pubmed_search and page_navigation both skipped, but no "
                                 "existing misc_publications_confirmed_*.tsv found to reuse — running full "
                                 "verification/recombination anyway.")
             if pubmed_hits and pubmed_hits.exists():
@@ -595,13 +595,13 @@ def run_full_rebuild(
                 )
                 verified_hits_path = HITS_DIR / f"misc_publications_{_ts()}.tsv"
                 verified.to_csv(verified_hits_path, sep="\t", index=False)
-                logger.info(f"[pub_verification] wrote {len(verified)} verified row(s) -> {verified_hits_path.name}")
+                logger.info(f"[pub_resource_verification] wrote {len(verified)} verified row(s) -> {verified_hits_path.name}")
                 run_normalizer(verified_hits_path, "misc_publications", "misc_publications_*.tsv", force=force)
 
                 confirmed_df = verified[verified["Verification Status"] == "confirmed"].copy()
                 confirmed_hits_path = HITS_DIR / f"misc_publications_confirmed_{_ts()}.tsv"
                 confirmed_df.to_csv(confirmed_hits_path, sep="\t", index=False)
-                logger.info(f"[pub_verification] {len(confirmed_df)}/{len(verified)} row(s) confirmed -> "
+                logger.info(f"[pub_resource_verification] {len(confirmed_df)}/{len(verified)} row(s) confirmed -> "
                             f"{confirmed_hits_path.name} (feeds pub_datasets/supplementary/grants/software/models/scilite)")
                 pub_metadata_input = confirmed_hits_path
             else:

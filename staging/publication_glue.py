@@ -5,7 +5,7 @@ enriches an already publication-shaped table with columns computed by a
 separate downstream process, keyed by (resource, doc). Several such joins
 live here:
 
-- build_misc_publications(): joins pub_verification's vLLM-based verdicts
+- build_misc_publications(): joins pub_resource_verification's vLLM-based verdicts
   into a copy of combine_hits.tsv (misc_publications_*.tsv), leaving the
   original combine_hits file untouched.
 - extract_new_corpus_publications(): explodes a new_corpus table (page
@@ -282,18 +282,18 @@ def build_scilite_type_aggregate(scilite_pattern: str = "scilite_annotations_*.t
 
 
 def build_misc_publications(combine_hits_path: Path | None = None,
-                             pub_verification_path: Path | None = None) -> Path | None:
-    """Join pub_verification's vLLM-based verdicts into a copy of combine_hits.tsv.
+                             pub_resource_verification_path: Path | None = None) -> Path | None:
+    """Join pub_resource_verification's vLLM-based verdicts into a copy of combine_hits.tsv.
 
     Overwrites Verification Status/Rationale with the new verdicts - Claim Text is left
-    untouched (from whichever earlier method populated it; pub_verification's own claim_text
+    untouched (from whichever earlier method populated it; pub_resource_verification's own claim_text
     isn't merged in, only verification_status/rationale, per how this table's meant to be
     used). The original combine_hits file is never modified; this writes a new
     tables/hits/misc_publications_{ts}.tsv, reusing the Publications row shape.
 
     Args:
         combine_hits_path: combine_hits_*.tsv to enrich (default: latest in tables/hits/).
-        pub_verification_path: pub_verification_*.tsv to join in (default: latest in
+        pub_resource_verification_path: pub_resource_verification_*.tsv to join in (default: latest in
             tables/hits/).
 
     Returns:
@@ -302,20 +302,20 @@ def build_misc_publications(combine_hits_path: Path | None = None,
     from staging.validate_fetched_publications import _resolve_doc_id
 
     combine_hits_path = combine_hits_path or _latest_hits("combine_hits_*.tsv")
-    pub_verification_path = pub_verification_path or _latest_hits("pub_verification_*.tsv")
+    pub_resource_verification_path = pub_resource_verification_path or _latest_hits("pub_resource_verification_*.tsv")
     if not combine_hits_path:
         logger.error("No combine_hits TSV found in tables/hits/")
         return None
-    if not pub_verification_path:
-        logger.error("No pub_verification TSV found in tables/hits/")
+    if not pub_resource_verification_path:
+        logger.error("No pub_resource_verification TSV found in tables/hits/")
         return None
 
     logger.info(f"Loading combine_hits: {combine_hits_path.name}")
     combine_hits = pd.read_csv(combine_hits_path, sep="\t", dtype=str).fillna("")
     logger.info(f"  {len(combine_hits)} rows loaded")
 
-    logger.info(f"Loading pub_verification: {pub_verification_path.name}")
-    verification = pd.read_csv(pub_verification_path, sep="\t", dtype=str).fillna("")
+    logger.info(f"Loading pub_resource_verification: {pub_resource_verification_path.name}")
+    verification = pd.read_csv(pub_resource_verification_path, sep="\t", dtype=str).fillna("")
     logger.info(f"  {len(verification)} rows loaded")
 
     v_lookup = {

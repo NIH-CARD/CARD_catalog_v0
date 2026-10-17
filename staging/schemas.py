@@ -538,15 +538,15 @@ class PubModelRow(_Base):
 
 
 # ---------------------------------------------------------------------------
-# Table: Publication verification results   (tables/final/pub_verification_*.tsv)
+# Table: Publication–resource verification (tables/final/pub_resource_verification_*.tsv)
 #
-# NOT audited 2026-09-08, NOT in VALIDATED_TARGETS - pipelines/pub_verification.py
+# NOT audited 2026-09-08, NOT in VALIDATED_TARGETS - pipelines/pub_resource_verification.py
 # is explicitly WIP ("not yet wired into orchestrator.py" per its own module
 # docstring) and has never produced a tables/final/ file (only tables/hits/
-# pub_verification_*.tsv exists). Audit this one for real once that stage
+# pub_resource_verification_*.tsv exists). Audit this one for real once that stage
 # actually ships.
 # ---------------------------------------------------------------------------
-class PubVerificationRow(_Base):
+class PubResourceVerificationRow(_Base):
     Resource_Name: str = ""
     Doc_ID: str = ""
     URL: str = ""
@@ -735,7 +735,7 @@ SCHEMA_REGISTRY: dict[str, type[_Base]] = {
     "pub_grants": PubGrantRow,
     "pub_software": PubSoftwareRow,
     "pub_models": PubModelRow,
-    "pub_verification": PubVerificationRow,
+    "pub_resource_verification": PubResourceVerificationRow,
     "new_corpus": NewCorpusRow,
     "scilite": SciLiteAnnotationRow,
 }
@@ -747,7 +747,7 @@ SCHEMA_REGISTRY: dict[str, type[_Base]] = {
 # NOT "every key in SCHEMA_REGISTRY". Every model in this file was audited on
 # 2026-09-08 against its table's real current tables/final/ columns; the
 # ones below matched (code) or were rebuilt to match (everything else except
-# publications/pub_verification/new_corpus - see those classes' own
+# publications/pub_resource_verification/new_corpus - see those classes' own
 # docstrings/comments for why they're excluded). Add a new target here only
 # after the same audit: confirm the model's fields match the real file's
 # columns, or every row will validate as trivially "fine" using nothing but
