@@ -30,7 +30,7 @@ requests==2.32.4
 python-dotenv==1.0.0
 
 # Data Gatherer
-git+https://github.com/VIDA-NYU/data-gatherer.git@devel
+data-gatherer==0.3.1
 
 # ============================
 # System Requirements
