@@ -20,7 +20,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from pipelines.base import PipelineStage, redact_secrets
+from pipelines.base import DATA_GATHERER_LLM, PipelineStage, redact_secrets
 from staging.cache_utils import combine_cached_and_new, latest_final
 
 logger = logging.getLogger(__name__)
@@ -121,7 +121,7 @@ class PageNavigationStage(PipelineStage):
                 .set_index("dataset_webpage")[["Resource Name", "Abbreviation"]]
                 .to_dict("index")
             )
-            dg = DataGatherer(llm_name="claude-haiku-4-5", log_level=log_level, log_file_override=str(log_file) if log_file else None, clear_previous_logs=False)
+            dg = DataGatherer(llm_name=DATA_GATHERER_LLM, log_level=log_level, log_file_override=str(log_file) if log_file else None, clear_previous_logs=False)
             outputs = dg.process_metadata(
                 new_expanded_df,
                 pass_cols_to_prompt=[

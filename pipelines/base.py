@@ -7,6 +7,10 @@ from pathlib import Path
 
 _SECRET_NAME_PATTERN = re.compile(r"key|token", re.IGNORECASE)
 
+# Claude model every DataGatherer-based stage uses. Must be in data_gatherer's
+# entire_document_models allow-list, or full-document read silently falls back to retrieval.
+DATA_GATHERER_LLM = "claude-haiku-5-5"
+
 
 def redact_secrets(args: dict) -> dict:
     """Redact any argument whose name looks like a credential (contains 'key' or

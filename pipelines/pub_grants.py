@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from pipelines.base import PipelineStage, redact_secrets
+from pipelines.base import DATA_GATHERER_LLM, PipelineStage, redact_secrets
 from pipelines.pub_metadata_shared import await_batches, chunked, load_pmc_links, submit_batch_chunks
 from staging.cache_utils import combine_cached_and_new, latest_final
 
@@ -72,7 +72,7 @@ class PubGrantsStage(PipelineStage):
         grants_df = None
         if new_pmc_links:
             dg_grants = DataGatherer(
-                llm_name="claude-haiku-4-5-20251001",
+                llm_name=DATA_GATHERER_LLM,
                 process_entire_document=False,  # funding sections are short — rule-based retrieval only
                 log_level=log_level, log_file_override=log_file_str, clear_previous_logs=False,
                 raw_data_df_parquet_filepath=fetch_cache_str,

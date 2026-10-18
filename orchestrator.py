@@ -621,6 +621,7 @@ def run_full_rebuild(
         from pipelines.pub_models import PubModelsStage
         from pipelines.pub_metadata_shared import load_pmc_links
         from data_gatherer.data_gatherer import DataGatherer
+        from pipelines.base import DATA_GATHERER_LLM
 
         # Fetch each article's full text once, up front, so the four stages below
         # (which all need the same PMC full text) read from the same shared cache
@@ -633,7 +634,7 @@ def run_full_rebuild(
         pmc_links = load_pmc_links(pub_metadata_input)
         existing_cache = str(fetch_cache_path) if fetch_cache_path.exists() else None
         prefetch_dg = DataGatherer(
-            llm_name="claude-haiku-4-5",
+            llm_name=DATA_GATHERER_LLM,
             log_level="DEBUG" if verbose else "INFO",
             log_file_override=str(log_file) if log_file else None,
             clear_previous_logs=False,

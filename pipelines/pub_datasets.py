@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from pipelines.base import PipelineStage, redact_secrets
+from pipelines.base import DATA_GATHERER_LLM, PipelineStage, redact_secrets
 from pipelines.pub_metadata_shared import await_batches, chunked, load_pmc_links, submit_batch_chunks
 from staging.cache_utils import combine_cached_and_new, latest_final
 
@@ -131,7 +131,7 @@ class PubDatasetsStage(PipelineStage):
             # Must match an entry in data_gatherer's entire_document_models allow-list
             # (data_gatherer.py:125-127) or DataGatherer silently sets full_document_read=False
             # regardless of what's passed here, falling back to semantic-retrieval/embeddings.
-            llm_name = "claude-haiku-4-5-20251001" if batch_mode else "vllm-openai/gpt-oss-20b"
+            llm_name = DATA_GATHERER_LLM if batch_mode else "vllm-openai/gpt-oss-20b"
             dg = DataGatherer(llm_name=llm_name, log_level=log_level, log_file_override=log_file_str,
             clear_previous_logs=False, process_entire_document=full_document_read,
             raw_data_df_parquet_filepath=fetch_cache_str)

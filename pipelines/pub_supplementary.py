@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from pipelines.base import PipelineStage, redact_secrets
+from pipelines.base import DATA_GATHERER_LLM, PipelineStage, redact_secrets
 from pipelines.pub_metadata_shared import load_pmc_links
 from staging.cache_utils import combine_cached_and_new, latest_final
 
@@ -70,7 +70,7 @@ class PubSupplementaryStage(PipelineStage):
 
         supp_raw = None
         if new_pmc_links:
-            dg_supp = DataGatherer(llm_name="claude-haiku-4-5", log_level=log_level, log_file_override=log_file_str,
+            dg_supp = DataGatherer(llm_name=DATA_GATHERER_LLM, log_level=log_level, log_file_override=log_file_str,
             clear_previous_logs=False, raw_data_df_parquet_filepath=fetch_cache_str)
             supp_raw = dg_supp.process_articles(
                 new_pmc_links,
