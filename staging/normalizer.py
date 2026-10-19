@@ -328,10 +328,15 @@ def _normalize_publications(df: pd.DataFrame) -> pd.DataFrame:
         df["Keywords"] = _canonicalize_term_casing(df["Keywords"])
     if "Publication Date" in df.columns:
         df["Publication Date"] = df["Publication Date"].apply(_fmt_month_year)
-    completeness_fields = [
-        "PubMed_Central_Link", "Abstract", "Keywords", "Authors", "Affiliations",
-    ]
-    present = [c for c in completeness_fields if c in df.columns]
+    return _add_data_completeness(df, [f.replace(" ", "_") for f in _COMPLETENESS_FIELDS])
+
+
+# Publication metadata fields scored by "Data Completeness" (share populated, 0-100).
+_COMPLETENESS_FIELDS = ["PubMed Central Link", "Abstract", "Keywords", "Authors", "Affiliations"]
+
+
+def _add_data_completeness(df: pd.DataFrame, fields: list[str]) -> pd.DataFrame:
+    present = [c for c in fields if c in df.columns]
     if present:
         df["Data Completeness"] = df[present].apply(
             lambda row: str(round(
@@ -1050,6 +1055,7 @@ def _normalize_misc_publications(df: pd.DataFrame) -> pd.DataFrame:
     logger.info(f"misc_publications: {len(confirmed)} confirmed (resource, publication) row(s) "
                 f"-> {len(result)} unique publication(s)")
     result = _enrich_misc_publication_authors(result)
+    result = _add_data_completeness(result, _COMPLETENESS_FIELDS)
     _log_residual_publication_duplicates(result)
     return result
 

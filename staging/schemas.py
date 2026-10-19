@@ -127,6 +127,7 @@ class MiscPublicationRow(_Base):
     Abstract: str = ""
     Keywords: str = ""
     Publication_Date: str = ""
+    Data_Completeness: str = ""
     Verification_Status: str = ""
     Paperclip_Repo: str = ""
     Paperclip_Doc_ID: str = ""
@@ -143,7 +144,7 @@ class MiscPublicationRow(_Base):
 
     @field_validator(
         "PMID", "DOI", "PubMed_Central_Link", "Authors", "Affiliations",
-        "Title", "Abstract", "Keywords", "Publication_Date",
+        "Title", "Abstract", "Keywords", "Publication_Date", "Data_Completeness",
         "Verification_Status", "Paperclip_Repo", "Paperclip_Doc_ID",
         "Resource_Name", "Abbreviation", "Fetched_With",
         "Inclusion_Criteria", "Claim_Text",
@@ -201,7 +202,7 @@ class MiscPublicationRow(_Base):
 
     COLUMNS: ClassVar[list[str]] = [
         "PMID", "DOI", "PubMed Central Link", "Authors", "Affiliations",
-        "Title", "Abstract", "Keywords", "Publication Date",
+        "Title", "Abstract", "Keywords", "Publication Date", "Data Completeness",
         "Verification Status", "Paperclip Repo", "Paperclip Doc ID",
         "Resource Name", "Abbreviation", "Fetched With",
         "Inclusion Criteria", "Claim Text",

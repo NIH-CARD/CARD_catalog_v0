@@ -19,7 +19,7 @@ import {
   loadSciLite,
   loadSupplementary,
 } from "../lib/loaders";
-import { pmcidFrom, publicationYearFrom } from "../lib/loadPublications";
+import { pmcidFrom, publicationYearFrom, splitMulti } from "../lib/loadPublications";
 import {
   applyToPubs,
   PAPER_GRAPH_FIELD_OPTIONS,
@@ -96,6 +96,7 @@ export function PublicationsPage() {
   const [sc, setSc] = useState<SciLiteAnnotation[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<"table" | "browse" | "graph" | "trends">("table");
+  const [showProvenance, setShowProvenance] = useState(false);
   const [edgeSelected, setEdgeSelected] = useState<(keyof GraphPublication & string)[]>([
     "Resource Name",
   ]);
@@ -330,6 +331,39 @@ export function PublicationsPage() {
     [dsByPmc, spByPmc, scByPmc],
   );
 
+  // Verification trace, shown on demand: how the link was proposed (Fetched With), the
+  // evidence it was tested against (Claim Text) and the verifier's reasoning (Inclusion
+  // Criteria). Multi-resource papers carry one ";"-joined entry per resource.
+  const provenanceColumns = useMemo(
+    () =>
+      (
+        [
+          ["Fetched With", "Fetched With (discovery)"],
+          ["Claim Text", "Claim Text (evidence)"],
+          ["Inclusion Criteria", "Inclusion Criteria (rationale)"],
+        ] as const
+      ).map(([field, header]) =>
+        col.accessor(field, {
+          header,
+          size: 280,
+          cell: (info) => (
+            <div className="space-y-1">
+              {splitMulti(info.getValue() ?? "").map((part, i) => (
+                <p key={i} className="text-xs text-slate-700 line-clamp-4" title={part}>
+                  {part}
+                </p>
+              ))}
+            </div>
+          ),
+        }),
+      ),
+    [],
+  );
+  const tableColumns = useMemo(
+    () => (showProvenance ? [...columns, ...provenanceColumns] : columns),
+    [showProvenance, columns, provenanceColumns],
+  );
+
   return (
     <PageShell
       query={query}
@@ -389,12 +423,23 @@ export function PublicationsPage() {
                 </button>
               ))}
             </div>
-            <ExportButton rows={filtered} filename="publications" />
+            <div className="flex items-center gap-2">
+              {view === "table" && (
+                <button
+                  onClick={() => setShowProvenance((v) => !v)}
+                  className="px-3 py-1.5 text-sm rounded border border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
+                  title="How each publication was found and why it was linked to its resource"
+                >
+                  {showProvenance ? "Hide provenance columns" : "Show provenance columns"}
+                </button>
+              )}
+              <ExportButton rows={filtered} filename="publications" />
+            </div>
           </div>
           {view === "trends" ? (
             <TrendsChart rows={filtered} allRows={allAugmented} filters={trendsFilters} />
           ) : view === "table" ? (
-            <DataTable<GraphPublication> rows={filtered} columns={columns} />
+            <DataTable<GraphPublication> rows={filtered} columns={tableColumns} />
           ) : view === "browse" ? (
             <BrowseGrid>
               {filtered.map((p, i) => {
