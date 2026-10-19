@@ -6,16 +6,26 @@ The live app is a React + TypeScript app (in `web/`, deployed to Netlify). The o
 
 Maintained by [DataTecnica](https://datatecnica.com) for NIH's [Center for Alzheimer's and Related Dementias (CARD)](https://card.nih.gov) and the NIA Laboratory of Neurogenetics (LNG).
 
+**Live app:** [alzheimersdatahub.org](https://alzheimersdatahub.org) · **Data release:** [Zenodo v1.0.0](https://zenodo.org/records/23376003) (September 2026 snapshot, code at tag [`zenodo-v1.0.0`](https://github.com/NIH-CARD/CARD_catalog_v0/tree/zenodo-v1.0.0))
+
+![How the CARD Catalog is built: the curated Resources Inventory seeds discovery (GitHub, PubMed, Paperclip search, resource page navigation); candidate hits are verified and annotated, normalized, and published as the Software, Annotations, Publications and Cell Models tables](docs/images/catalog_build.png)
+
+*Literature is the glue: every candidate link between a resource and a publication is proposed by search, then checked against the paper's full text before it enters the catalog.*
+
 ---
 
 ## What's in the catalog
 
+September 2026 snapshot:
+
 | Section | Count | Description |
 |---|---|---|
-| Resources | 236 | Neuroscience datasets and resources with knowledge graphs and AI analysis |
-| Publications | 1,288 | PubMed Central papers linked to catalog resources |
-| Code Repositories | 674 | GitHub repos with AI quality scoring and FAIR compliance |
-| Human Cellular Models | 626 | iNDI iPSC cell lines for neurodegenerative disease research |
+| Resources | 237 | Curated AD/ADRD studies, repositories, biorepositories and data catalogs, with FAIR compliance ratings |
+| Publications | 4,979 | Papers verified (full-text check) to use one of 226 cataloged resources |
+| Code Repositories | 1,898 | GitHub repos from code search and papers' software mentions, with AI annotation and FAIR scoring |
+| Human Cellular Models | 626 | iNDI iPSC lines with gene/variant annotation |
+
+Paper-level annotations extracted from the publications' full text: 11,215 cited datasets, 10,194 supplementary files, 45,278 grant records, 4,239 software mentions, 330 AI/ML models, and 956,172 Europe PMC SciLite annotations. The **Connections** page joins all ten tables on shared keys (publication ID, resource name, gene/variant).
 
 ---
 
@@ -27,20 +37,24 @@ Inventory (.tab)
       ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                          Pipeline                            │
-│  1. pubmed_search                                            │
-│  2. prefetch_articles — shared PMC full-text cache            │
+│  1. pubmed_search   — PubMed/PMC queries (v2–v5), Paperclip  │
+│     agentic search, resource page navigation                 │
+│  2. verification    — every candidate (resource, paper) link │
+│     checked against the full text (vLLM); confirmed links    │
+│     form the publications table                              │
+│  3. prefetch_articles — shared PMC full-text cache            │
 │     (tables/cache/pub_fulltext_cache.parquet), read-and-      │
-│     update in place across runs, before the 4 stages below    │
-│  3. pub_datasets / pub_supplementary / pub_grants /            │
-│     pub_software  (AI, run CONCURRENTLY — each independently   │
+│     update in place across runs, before the stages below      │
+│  4. pub_datasets / pub_supplementary / pub_grants /            │
+│     pub_software / pub_models  (AI, run CONCURRENTLY — each    │
 │     caches against its own tables/final/ output; --no-cache    │
 │     forces a full reprocess)                                   │
-│  4. scilite         (Europe PMC annotations)                   │
-│  5. github_search   — also enriches GitHub repos discovered     │
+│  5. scilite         (Europe PMC annotations)                   │
+│  6. github_search   — also enriches GitHub repos discovered     │
 │     by pub_software (--extra-repos), same FAIR/tree-walk        │
 │     treatment as Code-Search-discovered repos                   │
-│  6. repo_analysis   (AI, cache-aware)                           │
-│  7. page_navigation (AI+browser, cache-aware)                   │
+│  7. repo_analysis   (AI, cache-aware)                           │
+│  8. page_navigation (AI+browser, cache-aware)                   │
 └───────────┬───────────────────────────────────────────────────┘
             │
        tables/hits/          ← intermediate outputs
@@ -187,6 +201,8 @@ CARD_catalog_v0/
 | `ANTHROPIC_API_KEY` | `repo_analysis`, `pub_datasets`, `pub_supplementary`, `pub_grants`, `pub_software`, `page_navigation`, `web/backend` AI-analysis proxy | All AI stages use Anthropic models |
 | `GITHUB_TOKEN` | `github_search` | Required for GitHub scraping |
 | `NCBI_API_KEY` | `pubmed_search` | Optional; raises rate limit from 3/s to 10/s |
+| `PAPERCLIP_API_KEY` | `pubmed_search --query-method paperclip` | Paperclip agentic literature search |
+| `VLLM_MODEL`, `VLLM_CLIENT` | publication verification | Self-hosted vLLM endpoint for the full-text verification model (gpt-oss-20b) |
 | `FIREFOX_PROFILE_DIR` | `page_navigation` | Pre-authenticated Firefox profile path |
 
 ---
