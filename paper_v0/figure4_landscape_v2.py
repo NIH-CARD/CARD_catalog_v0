@@ -117,7 +117,7 @@ def create_figure():
     ax1.set_yticks(range(len(sorted_datatypes)))
     ax1.set_yticklabels(sorted_datatypes, fontsize=11, rotation=15, ha='right')
     ax1.set_xlabel('Number of Resources', fontsize=12, fontweight='bold')
-    ax1.set_title(f'A. Resources by Coarse Data Modality,\nStratified by FAIR Compliance (n={len(datasets_df)})',
+    ax1.set_title(f'a. Resources by Coarse Data Modality,\nStratified by FAIR Compliance (n={len(datasets_df)})',
                   fontsize=13, fontweight='bold', pad=10)
     ax1.legend(title='FAIR Level', loc='upper right', fontsize=10)
     ax1.grid(axis='x', alpha=0.3)
@@ -192,7 +192,7 @@ def create_figure():
                         fontsize=11, rotation=15, ha='right')
     ax2.set_xlabel('FAIR Component', fontsize=12, fontweight='bold')
     ax2.set_ylabel('Programming Language', fontsize=12, fontweight='bold')
-    ax2.set_title('B. Code Repository FAIR Issues by Language (% repositories missing component)',
+    ax2.set_title('b. Code Repository FAIR Issues by Language (% repositories missing component)',
                   fontsize=13, fontweight='bold', pad=10)
 
     # Add percentage annotations
@@ -213,6 +213,11 @@ def create_figure():
     datatype_samples = defaultdict(list)
 
     for _, row in datasets_df.iterrows():
+        # Studies only: repositories, biorepositories and data catalogs aggregate or
+        # re-host participants from constituent studies (as stated in the Results)
+        resource_types = {t.strip().lower() for t in str(row.get('Resource Type', '')).split(',') if t.strip()}
+        if resource_types != {'study'}:
+            continue
         # Get sample size
         size_str = str(row.get('Sample Size', ''))
         match = re.search(r'([\d,]+)', size_str)
@@ -294,7 +299,7 @@ def create_figure():
 
     print("="*70 + "\n")
 
-    colors_density = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd']
+    colors_density = ['#0072B2', '#E69F00', '#009E73', '#D55E00', '#CC79A7']  # Okabe-Ito, colour-blind safe
 
     for idx, dtype in enumerate(top_datatypes_for_density):
         samples = datatype_samples[dtype]
@@ -316,7 +321,7 @@ def create_figure():
     ax3.set_xscale('log')
     ax3.set_xlabel('Sample Size (log scale)', fontsize=12, fontweight='bold')
     ax3.set_ylabel('Density', fontsize=12, fontweight='bold')
-    ax3.set_title('C. Sample-size distributions for the five most common data modalities among the resources in (A)',
+    ax3.set_title('c. Sample-size distributions for the five most common data modalities among studies in (a)',
                   fontsize=13, fontweight='bold', pad=10)
     ax3.legend(loc='upper right', fontsize=10)
     ax3.tick_params(axis='both', labelsize=10)

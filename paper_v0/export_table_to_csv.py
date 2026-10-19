@@ -204,7 +204,47 @@ def create_wide_csv():
     df.to_csv(output_tsv, sep='\t', index=False, header=False)
     print(f"TSV saved to: {output_tsv}")
 
+    output_xlsx = OUTPUT_DIR / "Table_1.xlsx"
+    write_table1_xlsx(rows, output_xlsx)
+    print(f"XLSX saved to: {output_xlsx}")
+
     return df
+
+
+def write_table1_xlsx(rows, output_path):
+    """Write Table 1 as submitted: label | value | % per row, blank spacer rows dropped.
+
+    Args:
+        rows: The [label, value, value, pct] rows built for the CSV.
+        output_path: Destination .xlsx path.
+    """
+    import openpyxl
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "table_1_CARD_Catalog_main"
+    for row in rows:
+        label, values = row[0], [v for v in row[1:] if str(v) != '']
+        if str(label) == '' and not values:
+            continue
+        ws.append([label] + [_xlsx_value(v) for v in values])
+        for cell in ws[ws.max_row][1:]:
+            if isinstance(cell.value, float) and str(row[1:]).count('%') and cell.column == ws.max_column:
+                cell.number_format = '0.0%'
+    wb.save(output_path)
+
+
+def _xlsx_value(v):
+    s = str(v).strip()
+    if s.endswith('%'):
+        try:
+            return float(s[:-1]) / 100
+        except ValueError:
+            return s
+    try:
+        return int(s) if re.fullmatch(r'-?\d+', s) else float(s)
+    except ValueError:
+        return s
 
 
 def main():

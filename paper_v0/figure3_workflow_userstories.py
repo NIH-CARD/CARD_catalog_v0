@@ -18,6 +18,8 @@ so the figure argues one coherent point (the field underweights the
 preclinical/presymptomatic window) from two independent angles, rather than
 reading as three unrelated anecdotes.
 """
+from pathlib import Path
+
 
 def generate_workflow_panel():
     """Panel A: CARD Catalog Development Workflow"""
@@ -190,7 +192,6 @@ direction worth tracking, or a sign we're behind?
     │    while the field's own baseline still leans postmortem-tissue     │
     │    transcriptomics - the same blind spot a researcher independently │
     │    found from the science side (Panel B).                           │
-    │    Peer to track, sign we're behind? Our portfolio - unchecked      │
     └─────────────────────────────────────────────────────────────────────┘
 """
     return story
@@ -302,6 +303,32 @@ FIGURE 3: CARD CATALOG USER STORIES
 
     print(f"Figure 3 saved to: {output_file}\n")
     print(figure3)
+    render_figure(figure3, Path("paper_v0/v0.4/figure3_userstories"))
+
+
+def render_figure(text: str, out_stem: Path) -> None:
+    """Render the box-drawing text as a figure file (journals don't accept .txt figures).
+
+    Args:
+        text: The figure text as written to the .txt file.
+        out_stem: Output path without extension; writes .pdf and a 300 dpi .png.
+    """
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from matplotlib.font_manager import FontProperties
+
+    lines = text.strip("\n").splitlines()
+    mono = FontProperties(fname="/System/Library/Fonts/Menlo.ttc", size=7)
+    width_in = max(len(line) for line in lines) * 7 * 0.6 / 72 + 0.4  # Menlo advance ~0.6 em
+    height_in = len(lines) * 7 * 1.6 / 72 + 1  # generous canvas; the tight bbox below trims it
+    fig = plt.figure(figsize=(width_in, height_in))
+    fig.text(0.2 / width_in, 1 - 0.2 / height_in, "\n".join(lines), fontproperties=mono,
+             va="top", ha="left", linespacing=1.18)
+    for ext in ("pdf", "png"):
+        fig.savefig(f"{out_stem}.{ext}", dpi=300, facecolor="white", bbox_inches="tight", pad_inches=0.2)
+    plt.close(fig)
+    print(f"Figure 3 rendered to: {out_stem}.pdf / .png")
 
 
 if __name__ == "__main__":
