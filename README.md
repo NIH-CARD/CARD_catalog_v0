@@ -29,43 +29,20 @@ Paper-level annotations extracted from the publications' full text: 11,215 cited
 
 ---
 
-## Architecture
+## Pipeline stages
 
-```
-Inventory (.tab)
-      │
-      ▼
-┌─────────────────────────────────────────────────────────────┐
-│                          Pipeline                            │
-│  1. pubmed_search   — PubMed/PMC queries (v2–v5), Paperclip  │
-│     agentic search, resource page navigation                 │
-│  2. verification    — every candidate (resource, paper) link │
-│     checked against the full text (vLLM); confirmed links    │
-│     form the publications table                              │
-│  3. prefetch_articles — shared PMC full-text cache            │
-│     (tables/cache/pub_fulltext_cache.parquet), read-and-      │
-│     update in place across runs, before the stages below      │
-│  4. pub_datasets / pub_supplementary / pub_grants /            │
-│     pub_software / pub_models  (AI, run CONCURRENTLY — each    │
-│     caches against its own tables/final/ output; --no-cache    │
-│     forces a full reprocess)                                   │
-│  5. scilite         (Europe PMC annotations)                   │
-│  6. github_search   — also enriches GitHub repos discovered     │
-│     by pub_software (--extra-repos), same FAIR/tree-walk        │
-│     treatment as Code-Search-discovered repos                   │
-│  7. repo_analysis   (AI, cache-aware)                           │
-│  8. page_navigation (AI+browser, cache-aware)                   │
-└───────────┬───────────────────────────────────────────────────┘
-            │
-       tables/hits/          ← intermediate outputs
-            │
-       Normalizer            ← field normalization + validation
-            │
-       tables/final/         ← app-ready validated TSVs
-            │
-   React app (web/) — live, deployed on Netlify
-   (Streamlit app in app/ is the legacy v0 predecessor)
-```
+The diagram above, as `orchestrator.py` runs it. Each stage writes to `tables/hits/`; the normalizer validates the outputs into `tables/final/`, which the React app (`web/`) serves.
+
+| # | Stage | What it does |
+|---|---|---|
+| 1 | `pubmed_search` | Discovery: PubMed/PMC queries (v2–v5), Paperclip agentic search, resource page navigation |
+| 2 | verification | Checks every candidate (resource, paper) link against the full text (vLLM); confirmed links form the publications table |
+| 3 | `prefetch_articles` | Shared PMC full-text cache (`tables/cache/pub_fulltext_cache.parquet`) for the stages below |
+| 4 | `pub_datasets`, `pub_supplementary`, `pub_grants`, `pub_software`, `pub_models` | AI extraction from full text, run concurrently, each cached per item (`--no-cache` reprocesses all) |
+| 5 | `scilite` | Europe PMC entity annotations |
+| 6 | `github_search` | GitHub code search, plus repos found in papers' software mentions; FAIR file-tree checks |
+| 7 | `repo_analysis` | AI repository annotation (cache-aware) |
+| 8 | `page_navigation` | AI + headless browser on resource pages (cache-aware) |
 
 Full architecture details: [`docs/overview.md`](docs/overview.md), [`docs/api_reference.md`](docs/api_reference.md)
 
