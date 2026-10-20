@@ -12,7 +12,7 @@ by design - it surfaced independently while verifying each panel: Panel B's
 researcher finds that TREM2 (a major AD microglial risk gene) is studied
 almost entirely after symptoms appear, not before; Panel C's program
 officer finds that a peer funder (Gates Ventures) is doing the opposite -
-concentrating specifically on presymptomatic/preclinical screening, at 6x
+concentrating specifically on presymptomatic/preclinical screening, at 7x
 the catalog's baseline rate. Panel C's OUTCOME calls this out explicitly,
 so the figure argues one coherent point (the field underweights the
 preclinical/presymptomatic window) from two independent angles, rather than
@@ -103,10 +103,11 @@ RESEARCH QUESTION: Role of microglial dysfunction in early-stage Alzheimer's?
     │  HOW: Connections -> +Join SciLite Annotations (facet:              │
     │       Type=Gene_Proteins, Exact=TREM2) onto Publications -> +Join   │
     │       Resources (join key: Resource Name, facet: Diseases           │
-    │       Included = Alzheimer's Disease or Preclinical AD) -> Freeze   │
-    │       -> read the Scientific Read's own Contrastive section         │
+    │       Included = Alzheimer's Disease or Preclinical Alzheimer's     │
+    │       Disease) -> Freeze -> read the Scientific Read's own          │
+    │       Contrastive section                                           │
     │                                                                     │
-    │  219 AD/Preclinical-linked TREM2 papers - dominated by postmortem-  │
+    │  215 AD/Preclinical-linked TREM2 papers - dominated by postmortem-  │
     │  tissue and genomics infrastructure (AMP-AD, ROS/MAP family, ADGC,  │
     │  ADSP). Swedish BioFINDER-2 - the catalog's 2nd-largest resource    │
     │  overall - doesn't even crack the top 15 here.                      │
@@ -118,9 +119,9 @@ RESEARCH QUESTION: Role of microglial dysfunction in early-stage Alzheimer's?
     │  GENE?                                                              │
     │  HOW: repeat the Phase 1 join for APOE -> compare                   │
     │                                                                     │
-    │  Same query, same disease restriction, 1,254 APOE papers: BioFINDER-│
+    │  Same query, same disease restriction, 1,221 APOE papers: BioFINDER-│
     │  2 IS the #1 resource here, at 9% of the subset. Same catalog, same │
-    │  cohort - APOE uses it constantly, TREM2 doesn't use it at all.     │
+    │  cohort - APOE uses it constantly, TREM2 barely at all (3 papers).  │
     └─────────────────────────────────────────────────────────────────────┘
                                    │
                                    ▼
@@ -158,7 +159,7 @@ def generate_program_officer_story():
     42) - same failure mode as Panel B's original Kampmann claim. Gates
     Ventures was found and verified live in-session instead: a single
     Connections query (Grants + Resources joined in one pass, not staged
-    across phases) surfaces a 6x Preclinical-AD enrichment and a below-
+    across phases) surfaces a 7x Preclinical-AD enrichment and a below-
     baseline transcriptomics rate, both confirmed independently against
     tables/final/.
     """
@@ -175,12 +176,13 @@ direction worth tracking, or a sign we're behind?
     │  PHASE 1: WHAT IS GATES VENTURES ACTUALLY INTERESTED IN?            │
     │  HOW: Connections -> +Join Grants (facet: funder_name = Gates       │
     │       Ventures) -> +Join Resources (facet: Diseases Included =      │
-    │       Alzheimer's Disease or Preclinical AD) -> Freeze -> AI Read   │
+    │       Alzheimer's Disease or Preclinical Alzheimer's Disease) ->    │
+    │       Freeze -> AI Read                                             │
     │                                                                     │
-    │  25 papers, all from 2025, zero NIH-style grant numbers (100%) - a  │
+    │  26 papers (2024-2026), none with an NIH-style grant number - a     │
     │  private philanthropic initiative, not a federal program. The       │
-    │  Preclinical AD tag appears 6x the catalog baseline (24% vs. 3.8%); │
-    │  transcriptomics is LOWER than baseline (28% vs. 38%) despite       │
+    │  Preclinical AD tag appears 7x the catalog baseline (27% vs. 3.8%); │
+    │  transcriptomics is LOWER than baseline (27% vs. 38%) despite       │
     │  genetics and proteomics both being elevated - a specific tilt      │
     │  toward fluid and digital biomarkers in presymptomatic populations, │
     │  not the postmortem-tissue transcriptomics that dominates the field.│
@@ -188,10 +190,10 @@ direction worth tracking, or a sign we're behind?
                                    │
                                    ▼
     ┌─────────────────────────────────────────────────────────────────────┐
-    │  OUTCOME (Torres): Gates is interested in presymptomatic screening  │
-    │    while the field's own baseline still leans postmortem-tissue     │
-    │    transcriptomics - the same blind spot a researcher independently │
-    │    found from the science side (Panel B).                           │
+    │  OUTCOME (Torres): Gates Ventures is interested in presymptomatic   │
+    │    screening while the field's own baseline still leans postmortem- │
+    │    tissue transcriptomics - the same blind spot a researcher        │
+    │    independently found from the science side (Panel B).             │
     └─────────────────────────────────────────────────────────────────────┘
 """
     return story
