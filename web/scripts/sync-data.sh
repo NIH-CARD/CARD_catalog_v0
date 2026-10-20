@@ -36,6 +36,8 @@ copy_latest "pub_grants_*.tsv"                 pub_grants.tsv           "$FINAL_
 copy_latest "pub_software_*.tsv"               pub_software.tsv         "$FINAL_DIR"
 copy_latest "pub_models_*.tsv"                 pub_models.tsv           "$FINAL_DIR"
 copy_latest "scilite_annotations_*.tsv"        scilite_annotations.tsv  "$FINAL_DIR"
+copy_latest "pubtator_entities_*.tsv"          pubtator_entities.tsv    "$FINAL_DIR"
+copy_latest "pubtator_relations_*.tsv"         pubtator_relations.tsv   "$FINAL_DIR"
 
 # Resources inventory & iNDI live at the tables/ root, not in final/
 copy_latest "resources-inventory-*"            resources.tsv            "$TABLES_DIR"

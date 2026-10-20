@@ -1160,6 +1160,31 @@ def _normalize_scilite(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+# PubTator's Species "name" is the bare NCBI Taxonomy ID - map the common ones to
+# readable names; anything else becomes "Taxon <id>" so it never reads like a count.
+_TAXON_NAMES = {
+    "9606": "Homo sapiens", "10090": "Mus musculus", "10116": "Rattus norvegicus",
+    "7227": "Drosophila melanogaster", "6239": "Caenorhabditis elegans", "7955": "Danio rerio",
+    "4932": "Saccharomyces cerevisiae", "559292": "Saccharomyces cerevisiae",
+    "9544": "Macaca mulatta", "9541": "Macaca fascicularis", "9823": "Sus scrofa",
+    "9913": "Bos taurus", "9615": "Canis lupus familiaris", "9986": "Oryctolagus cuniculus",
+    "9031": "Gallus gallus", "562": "Escherichia coli", "4097": "Nicotiana tabacum",
+    "11676": "HIV-1", "2697049": "SARS-CoV-2", "10029": "Cricetulus griseus",
+}
+
+
+def _normalize_pubtator_entities(df: pd.DataFrame) -> pd.DataFrame:
+    if "Sections" in df.columns:
+        df["Sections"] = df["Sections"].apply(_normalize_list_field)
+    species = (df["Type"] == "Species") & df["Name"].str.fullmatch(r"\d+")
+    df.loc[species, "Name"] = df.loc[species, "Name"].map(lambda t: _TAXON_NAMES.get(t, f"Taxon {t}"))
+    return df
+
+
+def _normalize_pubtator_relations(df: pd.DataFrame) -> pd.DataFrame:
+    return df
+
+
 _NORMALIZERS = {
     "publications": _normalize_publications,
     "misc_publications": _normalize_misc_publications,
@@ -1172,6 +1197,8 @@ _NORMALIZERS = {
     "pub_resource_verification": _normalize_pub_resource_verification,
     "new_corpus": _normalize_new_corpus,
     "scilite": _normalize_scilite,
+    "pubtator_entities": _normalize_pubtator_entities,
+    "pubtator_relations": _normalize_pubtator_relations,
 }
 
 # ---------------------------------------------------------------------------

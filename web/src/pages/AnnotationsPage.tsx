@@ -19,6 +19,8 @@ import {
   loadPubGrants,
   loadPubModels,
   loadPubSoftware,
+  loadPubTatorEntities,
+  loadPubTatorRelations,
   loadSciLite,
   loadSupplementary,
 } from "../lib/loaders";
@@ -30,6 +32,8 @@ import type {
   PubGrant,
   PubModel,
   PubSoftware,
+  PubTatorEntity,
+  PubTatorRelation,
   SciLiteAnnotation,
   Supplementary,
 } from "../types";
@@ -82,6 +86,9 @@ function SubNav() {
       </NavLink>
       <NavLink to="/annotations/scilite" className={itemCls}>
         🏷️ SciLite Annotations
+      </NavLink>
+      <NavLink to="/annotations/pubtator" className={itemCls}>
+        🧬 PubTator
       </NavLink>
     </nav>
   );
@@ -832,6 +839,327 @@ function SciliteTab() {
 }
 
 // ---------------------------------------------------------------------------
+// PubTator3 sub-pages (entities + relations)
+// ---------------------------------------------------------------------------
+
+/** Link a PubTator identifier to its source database record, or null if there isn't one. */
+function pubTatorIdentifierUrl(type: string, id: string): string | null {
+  if (/^rs\d+$/i.test(id)) return `https://www.ncbi.nlm.nih.gov/snp/${id}`;
+  if (id.startsWith("MESH:")) return `https://meshb.nlm.nih.gov/record/ui?ui=${id.slice(5)}`;
+  if (type === "Gene" && /^\d+$/.test(id)) return `https://www.ncbi.nlm.nih.gov/gene/${id}`;
+  if (type === "Species" && /^\d+$/.test(id))
+    return `https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=${id}`;
+  return null;
+}
+
+function PubTatorId({ type, id }: { type: string; id: string }) {
+  const url = pubTatorIdentifierUrl(type, id);
+  return url ? (
+    <a href={url} target="_blank" rel="noreferrer" className="font-mono text-xs text-accent hover:underline">
+      {id}
+    </a>
+  ) : (
+    <span className="font-mono text-xs text-slate-600 break-all">{id}</span>
+  );
+}
+
+function PaperIds({ pmid, pmc }: { pmid: string; pmc: string }) {
+  return (
+    <span className="font-mono text-xs text-slate-600">
+      {pmc || (
+        <a href={`https://pubmed.ncbi.nlm.nih.gov/${pmid}/`} target="_blank" rel="noreferrer" className="hover:underline">
+          PMID {pmid}
+        </a>
+      )}
+    </span>
+  );
+}
+
+function PubTatorViewToggle() {
+  const [sp] = useSearchParams();
+  const pmc = sp.get("pmc");
+  const suffix = pmc ? `?pmc=${encodeURIComponent(pmc)}` : "";
+  const cls = ({ isActive }: { isActive: boolean }) =>
+    "px-3 py-1.5 " + (isActive ? "bg-accent text-white" : "bg-white text-slate-700 hover:bg-slate-100");
+  return (
+    <div className="inline-flex rounded border border-slate-200 overflow-hidden text-sm">
+      <NavLink to={`/annotations/pubtator${suffix}`} end className={cls}>
+        Entities
+      </NavLink>
+      <NavLink to={`/annotations/pubtator/relations${suffix}`} className={cls}>
+        Relations
+      </NavLink>
+    </div>
+  );
+}
+
+function PubTatorNote() {
+  return (
+    <p className="text-xs text-slate-500 mb-3">
+      Normalised entities and typed relations from{" "}
+      <a href="https://www.ncbi.nlm.nih.gov/research/pubtator3/" target="_blank" rel="noreferrer" className="text-accent hover:underline">
+        PubTator3
+      </a>{" "}
+      (NCBI). Entities come from full text where PMC has it; relations are document-level, extracted from abstracts.
+    </p>
+  );
+}
+
+const PT_ENTITY_FACETS: readonly FacetSpec<PubTatorEntity>[] = [
+  { field: "Type", label: "Entity Type", multivalue: false },
+  { field: "Name", label: "Entity", multivalue: false },
+  { field: "Sections", label: "Section", multivalue: true },
+  { field: "Text Scope", multivalue: false },
+];
+const PT_ENTITY_SEARCH: (keyof PubTatorEntity & string)[] = ["Name", "Identifier", "Mentions", "PMID", "PMC ID"];
+const ptEntCol = createColumnHelper<PubTatorEntity>();
+
+function PubTatorEntitiesTab() {
+  const [rows, setRows] = useState<PubTatorEntity[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [sp] = useSearchParams();
+  const pmcFilter = sp.get("pmc");
+
+  useEffect(() => {
+    loadPubTatorEntities().then(setRows).catch((e: Error) => setError(e.message));
+  }, []);
+
+  const fields = useMemo(() => PT_ENTITY_FACETS.map((f) => f.field), []);
+  const { selections, query, setFacet, setQuery, clearAll, totalSelected } =
+    useFacets(fields as readonly (keyof PubTatorEntity & string)[]);
+
+  const scoped = useMemo(() => {
+    if (!rows) return [];
+    return pmcFilter ? rows.filter((r) => r["PMC ID"] === pmcFilter) : rows;
+  }, [rows, pmcFilter]);
+
+  const filtered = useMemo(
+    () =>
+      scoped.filter((r) => {
+        for (const spec of PT_ENTITY_FACETS) {
+          if (!matchesFacet(r, spec, selections[spec.field] ?? new Set())) return false;
+        }
+        return matchesQuery(r, PT_ENTITY_SEARCH, query);
+      }),
+    [scoped, selections, query],
+  );
+
+  const columns = useMemo(
+    () => [
+      ptEntCol.accessor("PMC ID", {
+        header: "Paper",
+        cell: (info) => <PaperIds pmid={info.row.original.PMID} pmc={info.getValue()} />,
+      }),
+      ptEntCol.accessor("Type", { header: "Type" }),
+      ptEntCol.accessor("Name", {
+        header: "Entity",
+        cell: (info) => <span className="text-xs text-slate-800 font-medium">{info.getValue()}</span>,
+      }),
+      ptEntCol.accessor("Identifier", {
+        header: "Identifier",
+        cell: (info) => <PubTatorId type={info.row.original.Type} id={info.getValue()} />,
+      }),
+      ptEntCol.accessor((r) => Number(r["Mention Count"]) || 0, {
+        id: "Mention Count",
+        header: "Mentions",
+        cell: (info) => <span className="text-xs text-slate-600">{info.getValue()}</span>,
+      }),
+      ptEntCol.accessor("Mentions", {
+        header: "As written",
+        cell: (info) => <Chips value={info.getValue()} />,
+      }),
+      ptEntCol.accessor("Sections", {
+        header: "Sections",
+        cell: (info) => <span className="text-xs text-slate-600">{info.getValue().split(";").join(", ")}</span>,
+      }),
+    ],
+    [],
+  );
+
+  return (
+    <PageShell
+      query={query}
+      onQueryChange={setQuery}
+      title="Annotations"
+      count={rows ? `${filtered.length.toLocaleString()} of ${scoped.length.toLocaleString()}` : "Loading…"}
+      rail={
+        <FilterRail<PubTatorEntity>
+          specs={PT_ENTITY_FACETS}
+          rows={scoped}
+          selections={selections as Record<string, Set<string>>}
+          onFacetChange={(field, next) => setFacet(field as (typeof PT_ENTITY_FACETS)[number]["field"], next)}
+          totalSelected={totalSelected}
+          onClearAll={clearAll}
+          error={error}
+        />
+      }
+    >
+      <SubNav />
+      <PmcBanner />
+      <PubTatorNote />
+      {rows ? (
+        <>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <PubTatorViewToggle />
+            <ExportButton rows={filtered} filename="pubtator_entities" />
+          </div>
+          <DataTable<PubTatorEntity> rows={filtered} columns={columns} />
+        </>
+      ) : (
+        <div className="text-sm text-slate-500">Loading PubTator entities…</div>
+      )}
+    </PageShell>
+  );
+}
+
+const PT_REL_FACETS: readonly FacetSpec<PubTatorRelation>[] = [
+  { field: "Relation Type", multivalue: false },
+  { field: "Entity 1 Type", multivalue: false },
+  { field: "Entity 2 Type", multivalue: false },
+  { field: "Entity 1 Name", label: "Entity 1", multivalue: false },
+  { field: "Entity 2 Name", label: "Entity 2", multivalue: false },
+];
+const PT_REL_SEARCH: (keyof PubTatorRelation & string)[] = [
+  "Entity 1 Name",
+  "Entity 2 Name",
+  "Entity 1 Identifier",
+  "Entity 2 Identifier",
+  "PMID",
+  "PMC ID",
+];
+const MIN_SCORE_OPTIONS = [0, 0.5, 0.8, 0.9, 0.95, 0.99];
+const ptRelCol = createColumnHelper<PubTatorRelation>();
+
+function PubTatorRelationsTab() {
+  const [rows, setRows] = useState<PubTatorRelation[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [sp, setSp] = useSearchParams();
+  const pmcFilter = sp.get("pmc");
+  const minScore = Number(sp.get("minScore")) || 0;
+
+  useEffect(() => {
+    loadPubTatorRelations().then(setRows).catch((e: Error) => setError(e.message));
+  }, []);
+
+  const fields = useMemo(() => PT_REL_FACETS.map((f) => f.field), []);
+  const { selections, query, setFacet, setQuery, clearAll, totalSelected } =
+    useFacets(fields as readonly (keyof PubTatorRelation & string)[]);
+
+  const scoped = useMemo(() => {
+    if (!rows) return [];
+    return rows.filter(
+      (r) => (!pmcFilter || r["PMC ID"] === pmcFilter) && (minScore === 0 || Number(r.Score) >= minScore),
+    );
+  }, [rows, pmcFilter, minScore]);
+
+  const filtered = useMemo(
+    () =>
+      scoped.filter((r) => {
+        for (const spec of PT_REL_FACETS) {
+          if (!matchesFacet(r, spec, selections[spec.field] ?? new Set())) return false;
+        }
+        return matchesQuery(r, PT_REL_SEARCH, query);
+      }),
+    [scoped, selections, query],
+  );
+
+  const setMinScore = (v: number) => {
+    const next = new URLSearchParams(sp);
+    if (v === 0) next.delete("minScore");
+    else next.set("minScore", String(v));
+    setSp(next, { replace: true });
+  };
+
+  const columns = useMemo(
+    () => [
+      ptRelCol.accessor("PMC ID", {
+        header: "Paper",
+        cell: (info) => <PaperIds pmid={info.row.original.PMID} pmc={info.getValue()} />,
+      }),
+      ptRelCol.accessor("Entity 1 Name", {
+        header: "Entity 1",
+        cell: (info) => (
+          <span className="text-xs">
+            <span className="font-medium text-slate-800">{info.getValue()}</span>{" "}
+            <span className="text-slate-400">({info.row.original["Entity 1 Type"]})</span>
+          </span>
+        ),
+      }),
+      ptRelCol.accessor("Relation Type", {
+        header: "Relation",
+        cell: (info) => <span className="text-xs text-violet-700">{info.getValue().replace(/_/g, " ")}</span>,
+      }),
+      ptRelCol.accessor("Entity 2 Name", {
+        header: "Entity 2",
+        cell: (info) => (
+          <span className="text-xs">
+            <span className="font-medium text-slate-800">{info.getValue()}</span>{" "}
+            <span className="text-slate-400">({info.row.original["Entity 2 Type"]})</span>
+          </span>
+        ),
+      }),
+      ptRelCol.accessor((r) => Number(r.Score) || 0, {
+        id: "Score",
+        header: "Score",
+        cell: (info) => <span className="text-xs text-slate-600">{info.getValue().toFixed(3)}</span>,
+      }),
+    ],
+    [],
+  );
+
+  return (
+    <PageShell
+      query={query}
+      onQueryChange={setQuery}
+      title="Annotations"
+      count={rows ? `${filtered.length.toLocaleString()} of ${scoped.length.toLocaleString()}` : "Loading…"}
+      rail={
+        <FilterRail<PubTatorRelation>
+          specs={PT_REL_FACETS}
+          rows={scoped}
+          selections={selections as Record<string, Set<string>>}
+          onFacetChange={(field, next) => setFacet(field as (typeof PT_REL_FACETS)[number]["field"], next)}
+          totalSelected={totalSelected}
+          onClearAll={clearAll}
+          error={error}
+        />
+      }
+    >
+      <SubNav />
+      <PmcBanner />
+      <PubTatorNote />
+      {rows ? (
+        <>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <PubTatorViewToggle />
+              <label className="text-sm text-slate-600 flex items-center gap-2">
+                Min score
+                <select
+                  value={minScore}
+                  onChange={(e) => setMinScore(Number(e.target.value))}
+                  className="border border-slate-200 rounded px-2 py-1 text-sm bg-white"
+                >
+                  {MIN_SCORE_OPTIONS.map((v) => (
+                    <option key={v} value={v}>
+                      {v === 0 ? "Any" : `≥ ${v}`}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <ExportButton rows={filtered} filename="pubtator_relations" />
+          </div>
+          <DataTable<PubTatorRelation> rows={filtered} columns={columns} />
+        </>
+      ) : (
+        <div className="text-sm text-slate-500">Loading PubTator relations…</div>
+      )}
+    </PageShell>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Software sub-page
 // ---------------------------------------------------------------------------
 
@@ -1178,6 +1506,8 @@ export function AnnotationsPage() {
       <Route path="software" element={<SoftwareTab />} />
       <Route path="models" element={<ModelsTab />} />
       <Route path="scilite" element={<SciliteTab />} />
+      <Route path="pubtator" element={<PubTatorEntitiesTab />} />
+      <Route path="pubtator/relations" element={<PubTatorRelationsTab />} />
       <Route path="*" element={<Navigate to="" replace />} />
     </Routes>
   );

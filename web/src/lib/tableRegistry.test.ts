@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { findColumn, findTable, suggestJoin, TABLE_REGISTRY } from "./tableRegistry";
 
 describe("TABLE_REGISTRY", () => {
-  it("has an entry for all ten catalog tables", () => {
-    expect(TABLE_REGISTRY).toHaveLength(10);
+  it("has an entry for all twelve catalog tables", () => {
+    expect(TABLE_REGISTRY).toHaveLength(12);
     expect(TABLE_REGISTRY.map((t) => t.name)).toEqual([
       "Resources",
       "Publications",
@@ -14,6 +14,8 @@ describe("TABLE_REGISTRY", () => {
       "Software Mentions",
       "Models",
       "SciLite Annotations",
+      "PubTator Entities",
+      "PubTator Relations",
       "Human Cellular Models",
     ]);
   });

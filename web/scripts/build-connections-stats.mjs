@@ -42,6 +42,8 @@ const TSV_FILE = {
   "Software Mentions": "pub_software.tsv",
   Models: "pub_models.tsv",
   "SciLite Annotations": "scilite_annotations.tsv",
+  "PubTator Entities": "pubtator_entities.tsv",
+  "PubTator Relations": "pubtator_relations.tsv",
   "Human Cellular Models": "cellular_models.tsv",
 };
 

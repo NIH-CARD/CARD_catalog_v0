@@ -28,6 +28,8 @@ describe("tablesInDomain / validDomainsFor", () => {
       "Software Mentions",
       "Models",
       "SciLite Annotations",
+      "PubTator Entities",
+      "PubTator Relations",
       "Human Cellular Models",
     ]);
   });
@@ -41,8 +43,8 @@ describe("tablesInDomain / validDomainsFor", () => {
     ]);
   });
 
-  it("lists exactly Human Cellular Models and SciLite Annotations for concept", () => {
-    expect(tablesInDomain("concept")).toEqual(["Human Cellular Models", "SciLite Annotations"]);
+  it("lists exactly Human Cellular Models, SciLite Annotations and PubTator Entities for concept", () => {
+    expect(tablesInDomain("concept")).toEqual(["Human Cellular Models", "SciLite Annotations", "PubTator Entities"]);
   });
 
   it("Cited Datasets can only join Publications via the publication domain", () => {
@@ -453,6 +455,21 @@ describe("other base tables and via-joins", () => {
     expect(wide).toHaveLength(1);
     expect(wide[0]["SciLite Annotations: PMC ID"]).toBe("PMC1; PMC2");
     expect(wide[0]["Publications: Authors"]).toBe("Doe J");
+  });
+
+  it("joins cell lines to PubTator Entities by gene symbol and by dbSNP rsID, not by bare gene ID", () => {
+    const hcm = [
+      { "Product Code": "C1", Gene: "APOE", dbSNP: "rs429358" },
+      { "Product Code": "C2", Gene: "348", dbSNP: "" },
+    ];
+    const entities = [
+      { "PMC ID": "PMC1", Type: "Gene", Name: "APOE", Identifier: "348" },
+      { "PMC ID": "PMC2", Type: "Variant", Name: "p.C130R", Identifier: "rs429358" },
+    ];
+    const edge: DagEdge = { table: "PubTator Entities", domain: "concept", columns: ["PMC ID"] };
+    const wide = buildWideRows(hcm, [edge], { "PubTator Entities": entities }, "Human Cellular Models");
+    expect(wide).toHaveLength(1);
+    expect(wide[0]["PubTator Entities: PMC ID"]).toBe("PMC1; PMC2");
   });
 
   it("renders the base table and a via-join's left side in SQL", () => {

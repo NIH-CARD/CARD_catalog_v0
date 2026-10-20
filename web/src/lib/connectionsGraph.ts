@@ -41,6 +41,10 @@ const PUBLICATION_FIELDS: Record<string, FieldSource[]> = {
   Models: [{ field: "source_url", extract: publicationKey }],
   // Europe PMC's SciLite API is PMC-ID-keyed only - no DOI path exists here.
   "SciLite Annotations": [{ field: "PMC ID", extract: publicationKey }],
+  // PMC ID is backfilled from PubTator's title passage / the input corpus; ~5% of
+  // PubTator rows are PMID-only (no PMC deposit) and can't join here.
+  "PubTator Entities": [{ field: "PMC ID", extract: publicationKey }],
+  "PubTator Relations": [{ field: "PMC ID", extract: publicationKey }],
   // Precomputed server-side (join_cellular_model_publications, via SciLite's
   // RefSNP annotations) - PMC-ID-only for the same reason as SciLite above.
   "Human Cellular Models": [{ field: "Linked Publications", extract: publicationKey }],
@@ -78,9 +82,21 @@ const RESOURCE_FIELDS: Record<string, FieldSource[]> = {
  * dbSNP/RefSNP-matched, only ~18% coverage) - Gene<->Exact is its own, more
  * reliable, verified pairing and needs its own domain. */
 const CONCEPT_FIELDS: Record<string, FieldSource[]> = {
-  "Human Cellular Models": [{ field: "Gene" }],
+  "Human Cellular Models": [{ field: "Gene" }, { field: "dbSNP", extract: rsidOnly }],
   "SciLite Annotations": [{ field: "Exact" }],
+  // PubTator's normalised entity Name (the official gene symbol for Gene rows) plus
+  // the rsID from Identifier. Verified 2026-10-19 against Human Cellular Models
+  // (full-text entities): 91/111 genes and 57/144 dbSNP rsIDs matched, reaching
+  // 2,331 / 315 papers - vs. SciLite's 99 genes (free-text Exact) / 33 rsIDs.
+  // Identifier is restricted to rsIDs: a bare NCBI Gene ID ("348") would
+  // spuriously match numeric free text in a chained SciLite Exact join.
+  "PubTator Entities": [{ field: "Name" }, { field: "Identifier", extract: rsidOnly }],
 };
+
+function rsidOnly(value: string): string {
+  const v = value.trim();
+  return /^rs\d+$/i.test(v) ? v.toLowerCase() : "";
+}
 
 function sourcesFor(domain: Domain): Record<string, FieldSource[]> {
   return domain === "publication" ? PUBLICATION_FIELDS : domain === "resource" ? RESOURCE_FIELDS : CONCEPT_FIELDS;
@@ -233,6 +249,8 @@ const FACET_COLUMNS: Record<string, string[]> = {
   "Software Mentions": ["software_name", "version", "mention_type"],
   Models: ["model_name", "version", "mention_type"],
   "SciLite Annotations": ["Type", "Section", "Tag Name", "Exact"],
+  "PubTator Entities": ["Type", "Name", "Database", "Sections", "Text Scope"],
+  "PubTator Relations": ["Relation Type", "Entity 1 Type", "Entity 2 Type", "Entity 1 Name", "Entity 2 Name"],
   "Human Cellular Models": ["Gene", "Condition", "Parental Line", "Genotype"],
 };
 
@@ -278,7 +296,8 @@ export function facetColumnsFor(table: string): ColumnMeta[] {
  * a connectable column in its own right, since the raw mention text itself
  * (not just its normalized Tag Name) is a meaningful thing to merge in or
  * build a value-node graph on - e.g. a gene co-mention graph connecting two
- * Exact values that appear in the same publication.
+ * Exact values that appear in the same publication. The same holds for
+ * Human Cellular Models' dbSNP and PubTator Entities' Name/Identifier.
  */
 const CONNECTABLE_COLUMNS: Record<string, string[]> = {
   Resources: ["Coarse Data Modality", "Granular Data Modality", "Diseases Included", "Resource Type", "Is Part Of"],
@@ -290,6 +309,8 @@ const CONNECTABLE_COLUMNS: Record<string, string[]> = {
   "Software Mentions": ["software_name", "url"],
   Models: ["model_name", "url"],
   "SciLite Annotations": ["Type", "Tag Name", "Exact", "Section", "Provider", "Tag URI"],
+  "PubTator Entities": ["Type", "Name", "Identifier", "Database", "Sections"],
+  "PubTator Relations": ["Relation Type", "Score", "Entity 1 Type", "Entity 1 Name", "Entity 2 Type", "Entity 2 Name"],
   "Human Cellular Models": ["Parental Line", "Gene Variant", "Genotype", "dbSNP", "Condition"],
 };
 
@@ -414,7 +435,7 @@ export function buildWideRows(
 const DOMAIN_SQL_JOIN_KEY: Record<Domain, string> = {
   publication: "pmcid_or_doi(...)",
   resource: "Resource Name",
-  concept: "Gene / Exact (gene symbol)",
+  concept: "Gene / dbSNP / Exact / Name (gene symbol or rsID)",
 };
 
 /** One sidebar facet's selected values, in the shape generateSql needs -

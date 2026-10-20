@@ -11,6 +11,7 @@ Coordinates two run modes:
                     PubMed (3-year window) + publication metadata (datasets +
                     supplementary + grants + software mentions, run
                     concurrently) + SciLite annotations (Europe PMC) +
+                    PubTator3 annotations (NCBI) +
                     GitHub search + AI repo analysis + study page navigation.
 
 Usage:
@@ -723,6 +724,25 @@ def run_full_rebuild(
             run_normalizer(scilite_hits, "scilite", "scilite_annotations_*.tsv", force=force)
     else:
         logger.warning("Skipping scilite: no pub_metadata_input available")
+
+    # --- Stage 7: PubTator3 annotations (NCBI) ---
+    if pub_metadata_input and pub_metadata_input.exists():
+        from pipelines.pubtator import PubTatorStage, relations_path_for
+        pubtator_hits = run_stage(
+            "pubtator", PubTatorStage(),
+            input_path=pub_metadata_input,
+            hits_pattern="pubtator_entities_*.tsv",
+            stage_kwargs=dict(verbose=verbose, log_file=log_file),
+            skip_stages=skip_stages,
+            force=force,
+        )
+        if pubtator_hits and pubtator_hits.exists():
+            run_normalizer(pubtator_hits, "pubtator_entities", "pubtator_entities_*.tsv", force=force)
+            relations_hits = relations_path_for(pubtator_hits)
+            if relations_hits.exists():
+                run_normalizer(relations_hits, "pubtator_relations", "pubtator_relations_*.tsv", force=force)
+    else:
+        logger.warning("Skipping pubtator: no pub_metadata_input available")
 
     # --- Stage 2: GitHub search ---
     if not github_token:

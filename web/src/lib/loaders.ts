@@ -9,6 +9,8 @@ import type {
   PubModel,
   PubSoftware,
   Publication,
+  PubTatorEntity,
+  PubTatorRelation,
   Resource,
   SciLiteAnnotation,
   SciLitePmcTypeCount,
@@ -33,6 +35,10 @@ export const loadPubModels = () =>
   loadTsv<PubModel>("/data/pub_models.tsv");
 export const loadSciLite = () =>
   loadTsv<SciLiteAnnotation>("/data/scilite_annotations.tsv");
+export const loadPubTatorEntities = () =>
+  loadTsv<PubTatorEntity>("/data/pubtator_entities.tsv");
+export const loadPubTatorRelations = () =>
+  loadTsv<PubTatorRelation>("/data/pubtator_relations.tsv");
 export const loadCellularModels = () =>
   loadTsv<CellularModel>("/data/cellular_models.tsv");
 export const loadAnnotationSummary = (): Promise<AnnotationSummary> =>

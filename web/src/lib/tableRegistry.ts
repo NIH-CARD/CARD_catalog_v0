@@ -6,6 +6,8 @@ import {
   loadPubModels,
   loadPublications,
   loadPubSoftware,
+  loadPubTatorEntities,
+  loadPubTatorRelations,
   loadResources,
   loadSciLite,
   loadSupplementary,
@@ -206,6 +208,41 @@ export const TABLE_REGISTRY: readonly TableMeta[] = [
     ],
   },
   {
+    name: "PubTator Entities",
+    route: "/annotations/pubtator",
+    loadRows: () => loadPubTatorEntities() as unknown as Promise<Row[]>,
+    columns: [
+      col("PMID"),
+      col("PMC ID"),
+      col("Text Scope"),
+      col("Type"),
+      col("Identifier"),
+      col("Database"),
+      col("Name"),
+      col("Mention Count"),
+      col("Mentions", true, ";"),
+      col("Sections", true, ";"),
+    ],
+  },
+  {
+    name: "PubTator Relations",
+    route: "/annotations/pubtator/relations",
+    loadRows: () => loadPubTatorRelations() as unknown as Promise<Row[]>,
+    columns: [
+      col("PMID"),
+      col("PMC ID"),
+      col("Text Scope"),
+      col("Relation Type"),
+      col("Score"),
+      col("Entity 1 Type"),
+      col("Entity 1 Identifier"),
+      col("Entity 1 Name"),
+      col("Entity 2 Type"),
+      col("Entity 2 Identifier"),
+      col("Entity 2 Name"),
+    ],
+  },
+  {
     name: "Human Cellular Models",
     route: "/cellular-models",
     loadRows: () => loadCellularModels() as unknown as Promise<Row[]>,
@@ -265,6 +302,11 @@ const JOIN_SUGGESTIONS: readonly JoinSuggestion[] = [
   { tableA: "Software Mentions", fieldA: "source_url", tableB: "Publications", fieldB: "PubMed Central Link" },
   { tableA: "Models", fieldA: "source_url", tableB: "Publications", fieldB: "PubMed Central Link" },
   { tableA: "SciLite Annotations", fieldA: "PMC ID", tableB: "Publications", fieldB: "PubMed Central Link", extract: "pmcid" },
+  { tableA: "PubTator Entities", fieldA: "PMC ID", tableB: "Publications", fieldB: "PubMed Central Link", extract: "pmcid" },
+  { tableA: "PubTator Relations", fieldA: "PMC ID", tableB: "Publications", fieldB: "PubMed Central Link", extract: "pmcid" },
+  // Unlike SciLite, PubTator's per-(paper, entity) table is small enough to load raw, so
+  // the gene symbol can be matched directly against its normalised entity Name.
+  { tableA: "Human Cellular Models", fieldA: "Gene", tableB: "PubTator Entities", fieldB: "Name" },
   { tableA: "Code Repositories", fieldA: "Resource Name", tableB: "Resources", fieldB: "Resource Name" },
   // Not Gene <-> SciLite's Exact: that match needs raw per-annotation SciLite rows
   // (~270MB, never loaded client-side). Linked Publications is precomputed

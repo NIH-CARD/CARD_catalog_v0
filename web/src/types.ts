@@ -124,6 +124,33 @@ export interface SciLiteAnnotation {
   fileName?: string;
 }
 
+export interface PubTatorEntity {
+  PMID: string;
+  "PMC ID": string;
+  "Text Scope": string;
+  Type: string;
+  Identifier: string;
+  Database: string;
+  Name: string;
+  "Mention Count": string;
+  Mentions: string;
+  Sections: string;
+}
+
+export interface PubTatorRelation {
+  PMID: string;
+  "PMC ID": string;
+  "Text Scope": string;
+  "Relation Type": string;
+  Score: string;
+  "Entity 1 Type": string;
+  "Entity 1 Identifier": string;
+  "Entity 1 Name": string;
+  "Entity 2 Type": string;
+  "Entity 2 Identifier": string;
+  "Entity 2 Name": string;
+}
+
 export interface CellularModel {
   "Product Code": string;
   "Parental Line": string;

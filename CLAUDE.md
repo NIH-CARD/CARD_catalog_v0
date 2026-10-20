@@ -79,6 +79,7 @@ After the pipeline writes new `tables/final/` outputs, run `npm run sync-data` (
 | `repo_analysis` | github_hits | `github_analyzed_*.tsv` | scrapers/batch_ai_analysis.py (Batch API) |
 | `page_navigation` | inventory.tab | `new_corpus_*.tsv` | data_gatherer + headless Firefox |
 | `scilite` | pubmed_hits | `annotations_*.json` | scrapers/scrape_annotations.py (Europe PMC API) |
+| `pubtator` | pubmed_hits | `pubtator_entities_*.tsv`, `pubtator_relations_*.tsv` | scrapers/scrape_pubtator.py (PubTator3 API) |
 
 After each stage, the normalizer validates and writes to `tables/final/`. Rejected rows go to `tables/hits/rejected_*.tsv`.
 

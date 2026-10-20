@@ -684,6 +684,105 @@ class SciLiteAnnotationRow(_Base):
 
 
 # ---------------------------------------------------------------------------
+# Table: PubTator3 entities   (tables/final/pubtator_entities_*.tsv)
+#
+# One row per (paper, normalised entity) - not per mention - so the table
+# stays browser-sized. Identifier is the NCBI Gene ID / MeSH ID / rsID (or
+# PubTator's tmVar string for variants with no rsID) / taxonomy ID.
+# ---------------------------------------------------------------------------
+class PubTatorEntityRow(_Base):
+    PMID: str = ""
+    PMC_ID: str = ""
+    Text_Scope: str = ""
+    Type: str = ""
+    Identifier: str = ""
+    Database: str = ""
+    Name: str = ""
+    Mention_Count: str = ""
+    Mentions: str = ""
+    Sections: str = ""
+
+    model_config = {
+        "populate_by_name": True,
+        "alias_generator": lambda s: s.replace("_", " "),
+    }
+
+    @field_validator("*", mode="before")
+    @classmethod
+    def to_str(cls, v: object) -> str:
+        return _coerce_str(v)
+
+    @field_validator("Type", "Identifier")
+    @classmethod
+    def required(cls, v: str) -> str:
+        if not v:
+            raise ValueError("required")
+        return v
+
+    @field_validator("PMC_ID")
+    @classmethod
+    def paper_id_required(cls, v: str, info) -> str:
+        if not v and not info.data.get("PMID"):
+            raise ValueError("PMID or PMC ID is required - an entity must be tied to a publication")
+        return v
+
+    COLUMNS: ClassVar[list[str]] = [
+        "PMID", "PMC ID", "Text Scope", "Type", "Identifier", "Database",
+        "Name", "Mention Count", "Mentions", "Sections",
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Table: PubTator3 relations   (tables/final/pubtator_relations_*.tsv)
+#
+# Document-level typed relations (Association, Positive_Correlation, …) with
+# PubTator's confidence score; no evidence sentence is provided by the API.
+# ---------------------------------------------------------------------------
+class PubTatorRelationRow(_Base):
+    PMID: str = ""
+    PMC_ID: str = ""
+    Text_Scope: str = ""
+    Relation_Type: str = ""
+    Score: str = ""
+    Entity_1_Type: str = ""
+    Entity_1_Identifier: str = ""
+    Entity_1_Name: str = ""
+    Entity_2_Type: str = ""
+    Entity_2_Identifier: str = ""
+    Entity_2_Name: str = ""
+
+    model_config = {
+        "populate_by_name": True,
+        "alias_generator": lambda s: s.replace("_", " "),
+    }
+
+    @field_validator("*", mode="before")
+    @classmethod
+    def to_str(cls, v: object) -> str:
+        return _coerce_str(v)
+
+    @field_validator("Relation_Type", "Entity_1_Identifier", "Entity_2_Identifier")
+    @classmethod
+    def required(cls, v: str) -> str:
+        if not v:
+            raise ValueError("required")
+        return v
+
+    @field_validator("PMC_ID")
+    @classmethod
+    def paper_id_required(cls, v: str, info) -> str:
+        if not v and not info.data.get("PMID"):
+            raise ValueError("PMID or PMC ID is required - a relation must be tied to a publication")
+        return v
+
+    COLUMNS: ClassVar[list[str]] = [
+        "PMID", "PMC ID", "Text Scope", "Relation Type", "Score",
+        "Entity 1 Type", "Entity 1 Identifier", "Entity 1 Name",
+        "Entity 2 Type", "Entity 2 Identifier", "Entity 2 Name",
+    ]
+
+
+# ---------------------------------------------------------------------------
 # Hits file schemas  (intermediate outputs in tables/hits/)
 # These match the scraper's own column order exactly.
 # ---------------------------------------------------------------------------
@@ -739,6 +838,8 @@ SCHEMA_REGISTRY: dict[str, type[_Base]] = {
     "pub_resource_verification": PubResourceVerificationRow,
     "new_corpus": NewCorpusRow,
     "scilite": SciLiteAnnotationRow,
+    "pubtator_entities": PubTatorEntityRow,
+    "pubtator_relations": PubTatorRelationRow,
 }
 
 
@@ -763,4 +864,6 @@ VALIDATED_TARGETS: dict[str, type[_Base]] = {
     "pub_software": PubSoftwareRow,
     "pub_models": PubModelRow,
     "scilite": SciLiteAnnotationRow,
+    "pubtator_entities": PubTatorEntityRow,
+    "pubtator_relations": PubTatorRelationRow,
 }

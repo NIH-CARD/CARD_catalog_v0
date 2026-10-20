@@ -100,6 +100,25 @@ const TABLE_SCHEMAS: { name: string; route: string; file: string; columns: strin
     ],
   },
   {
+    name: "PubTator Entities",
+    route: "/annotations/pubtator",
+    file: "pubtator_entities.tsv",
+    columns: [
+      "PMID", "PMC ID", "Text Scope", "Type", "Identifier", "Database", "Name",
+      "Mention Count", "Mentions", "Sections",
+    ],
+  },
+  {
+    name: "PubTator Relations",
+    route: "/annotations/pubtator/relations",
+    file: "pubtator_relations.tsv",
+    columns: [
+      "PMID", "PMC ID", "Text Scope", "Relation Type", "Score",
+      "Entity 1 Type", "Entity 1 Identifier", "Entity 1 Name",
+      "Entity 2 Type", "Entity 2 Identifier", "Entity 2 Name",
+    ],
+  },
+  {
     name: "Human Cellular Models",
     route: "/cellular-models",
     file: "cellular_models.tsv",
@@ -239,6 +258,7 @@ export function DocsPage() {
               <li><strong>repo_analysis</strong> — LLM batch analysis of repository content</li>
               <li><strong>page_navigation</strong> — headless browser discovery of new resources</li>
               <li><strong>scilite</strong> — Europe PMC SciLite bioentity annotation scrape</li>
+              <li><strong>pubtator</strong> — NCBI PubTator3 normalised entities (full text) and typed relations (abstracts)</li>
             </ol>
           </div>
           <div>
