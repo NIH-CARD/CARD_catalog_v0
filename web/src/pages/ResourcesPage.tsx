@@ -7,7 +7,7 @@ import { FilterRail } from "../components/FilterRail";
 import { GraphControls, buildEdgeFields } from "../components/GraphControls";
 import { InfoList } from "../components/HoverInfo";
 import { KnowledgeGraph } from "../components/KnowledgeGraph";
-import { FAIR_LEVEL_LEGEND, fairLevelColor } from "../lib/graphColors";
+import { FAIR_LEVEL_LEGEND, fairLevel, fairLevelColor } from "../lib/graphColors";
 import { AnalysisPanel } from "../components/AnalysisPanel";
 import { ExportButton } from "../components/ExportButton";
 import { PageShell } from "../components/PageShell";
@@ -33,6 +33,7 @@ const FACET_FIELDS = [
   "Diseases Included",
   "Coarse Data Modality",
   "Granular Data Modality",
+  "FAIR Compliance Notes",
   "Is Part Of",
 ] as const;
 
@@ -73,6 +74,7 @@ export function ResourcesPage() {
       { field: "Diseases Included", multivalue: true, canonicalize: canonicalizeDisease },
       { field: "Coarse Data Modality", multivalue: true, delimiter: "," },
       { field: "Granular Data Modality", multivalue: true, canonicalize: canonicalizeModality },
+      { field: "FAIR Compliance Notes", label: "FAIR Compliance", canonicalize: fairLevel },
       PART_OF_SPEC,
     ],
     [canonicalizeDisease, canonicalizeModality],

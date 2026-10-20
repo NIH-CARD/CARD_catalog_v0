@@ -19,9 +19,17 @@ export const FAIR_LEVEL_LEGEND: ColorLegend = {
   items: [...FAIR_LEVELS, { label: "Not rated", color: UNKNOWN }],
 };
 
+/** A resource's FAIR level, read from the start of its "FAIR Compliance Notes" (e.g.
+ * "Excellent FAIR compliance: ..."). Matching the prefix, not any mention, keeps a
+ * "Strong" note that says "not excellent" further on from reading as Excellent. */
+export function fairLevel(notes: string | undefined): string {
+  const lower = (notes ?? "").trim().toLowerCase();
+  return FAIR_LEVELS.find((l) => lower.startsWith(l.label.toLowerCase()))?.label ?? "Not rated";
+}
+
 export function fairLevelColor(notes: string | undefined): string {
-  const lower = (notes ?? "").toLowerCase();
-  return FAIR_LEVELS.find((l) => lower.includes(l.label.toLowerCase()))?.color ?? UNKNOWN;
+  const level = fairLevel(notes);
+  return FAIR_LEVELS.find((l) => l.label === level)?.color ?? UNKNOWN;
 }
 
 const FAIR_SCORE_BINS = [
